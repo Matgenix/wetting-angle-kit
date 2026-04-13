@@ -72,7 +72,7 @@ highlighting module code... [ 94%] wetting_angle_kit.visualization_statistics_an
 highlighting module code... [100%] wetting_angle_kit.visualization_statistics_angles.tools_visu
 
 writing additional pages... search done
-copying images... [ 33%] ../images/logo-wetting_angle_kit.png
+copying images... [ 33%] ../images/logo_wetting_angle_kit.png
 copying images... [ 67%] ../images/bin_plot.png
 copying images... [100%] ../images/droplet_plot.png
 

@@ -3,7 +3,7 @@
 Welcome to wetting_angle_kit's documentation!
 ===============================================
 
-.. image:: ../images/logo-wetting_angle_kit.png
+.. image:: ../images/logo_wetting_angle_kit.png
    :align: center
 
 Introduction

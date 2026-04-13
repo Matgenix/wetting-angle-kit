@@ -1,7 +1,7 @@
 Introduction
 ============
 
-.. image:: ../../images/logo-wetting_angle_kit.png
+.. image:: ../../images/logo_wetting_angle_kit.png
    :width: 400
    :align: center
    :alt: wetting_angle_kit Logo
