@@ -5,7 +5,7 @@ wetting_angle_kit provides modular tools to parse MD trajectories (LAMMPS dump, 
 1. Sliced Method (per-frame circle fit) – robust against transient shape changes.
 2. Binning Density Method – averages frames into a density field for a single representative angle.
 
-The documentation is available [here](https://Matgenix.github.io/wetting_angle_kit/), you can find examples and tutorials.
+The documentation is available [here](https://Matgenix.github.io/wetting_angle_kit), you can find examples and tutorials.
 
 ## Installation
 
