@@ -1,0 +1,126 @@
+# Tests for hydro_angle_analyzer
+
+This directory contains tests for the `hydro_angle_analyzer` Python package, focused on testing the functionality with existing trajectory files.
+
+## Components Tested
+
+- **FrameProcessor**: Processes trajectory frames in parallel
+- **DumpParser**: Parses LAMMPS trajectory files
+- **ContactAngleAnalyzer**: Analyzes contact angles using different models
+
+## Test Files
+
+- `test_hydro_angle_analyzer.py`: Unit and integration tests for all components
+- `test_dump_parser.py`: Specific tests for the DumpParser class
+- `test_contact_angle_analyzer.py`: Specific tests for the ContactAngleAnalyzer class
+- `test_integration.py`: Integration tests using real trajectory files
+- `conftest.py`: Pytest fixtures and configuration
+- `pytest.ini`: Pytest configuration
+
+## Running Tests
+
+### Prerequisites
+
+1. Make sure you have the test trajectory file available:
+   - `traj_10_3_330w_nve_4k_reajust.lammpstrj`
+   - Place this file in the root directory where you run the tests
+
+2. Install testing requirements:
+   ```bash
+   pip install pytest
+   ```
+
+### Running All Tests
+
+```bash
+python -m pytest
+```
+
+### Running Specific Test Files
+
+```bash
+python -m pytest tests/test_dump_parser.py
+```
+
+### Skipping Slow Tests
+
+```bash
+python -m pytest -m "not slow"
+```
+
+### Running Only Integration Tests
+
+```bash
+python -m pytest -m "integration"
+```
+
+## Testing Approach
+
+These tests are designed to work with your existing trajectory files without generating new ones. The approach includes:
+
+1. **Unit Tests**: Testing individual methods with minimal dependencies
+2. **Integration Tests**: Testing the full processing workflow
+3. **Mocked Tests**: Tests that don't require real files
+4. **Parameter Variations**: Testing different combinations of parameters
+
+## Key Test Categories
+
+### DumpParser Tests
+
+- Testing file loading and validation
+- Reading single and multiple frames
+- Extracting atom types and box dimensions
+- Error handling for missing files
+
+### ContactAngleAnalyzer Tests
+
+- Testing initialization with different parameters
+- Processing single batches and all batches
+- Testing different model types (cylinder, spherical)
+- Testing with different binning parameters
+- Using mocked parsers to avoid file dependencies
+
+### FrameProcessor Tests
+
+- Testing initialization and configuration
+- Parallel processing of frames
+- Testing different processor types
+- Mock testing without file dependencies
+
+## Directory Setup
+
+For proper organization, create a `tests` directory in your project root and place these test files inside it:
+
+```
+hydro_angle_analyzer/
+├── hydro_angle_analyzer/
+│   └── ... (package source files)
+├── tests/
+│   ├── conftest.py
+│   ├── test_hydro_angle_analyzer.py
+│   ├── test_dump_parser.py
+│   ├── test_contact_angle_analyzer.py
+│   ├── test_integration.py
+│   └── pytest.ini
+├── traj_10_3_330w_nve_4k_reajust.lammpstrj
+└── ... (other project files)
+```
+
+## Testing Without Real Files
+
+If you need to run tests without actual trajectory files, you can use the mock tests:
+
+```bash
+python -m pytest -k "mock"
+```
+
+This will run only the tests that use mocked components and don't require real trajectory files.
+
+## Extending the Tests
+
+To add new tests:
+
+1. Add test methods to the existing test classes
+2. Create new test classes for new components
+3. Use the `@needs_traj_file` decorator for tests that require trajectory files
+4. Use fixtures from `conftest.py` for common setup

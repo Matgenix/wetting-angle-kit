@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial: Using the Parser Module &mdash; wetting_angle_kit 0.1.2 documentation</title>
+  <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+  <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+  <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  <link rel="stylesheet" type="text/css" href="../_static/code-tabs.css?v=1bc26e2f" />
+
+
+  <script src="../_static/jquery.js?v=5d32c60e"></script>
+  <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+  <script src="../_static/documentation_options.js?v=92734c54"></script>
+  <script src="../_static/doctools.js?v=9bcbadda"></script>
+  <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+  <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+  <script src="../_static/copybutton.js?v=6dbb43f8"></script>
+  <script src="../_static/code-tabs.js?v=c983d12e"></script>
+  <script src="../_static/js/theme.js"></script>
+  <link rel="index" title="Index" href="../genindex.html" />
+  <link rel="search" title="Search" href="../search.html" />
+  <link rel="next" title="Tutorial: Contact Angle Analysis (Binning Method)" href="Binning_method_tuto.html" />
+  <link rel="prev" title="Tutorials" href="index.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+
+
+
+          <a href="../index.html" class="icon icon-home">
+            wetting_angle_kit
+          </a>
+          <div role="search">
+            <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+              <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+          </div>
+        </div>
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+          <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+          <ul class="current">
+            <li class="toctree-l1"><a class="reference internal" href="../introduction/index.html">Introduction</a></li>
+            <li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a>
+              <ul class="current">
+                <li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial: Using the Parser
+                    Module</a>
+                  <ul>
+                    <li class="toctree-l3"><a class="reference internal" href="#general-workflow">1. General
+                        Workflow</a></li>
+                    <li class="toctree-l3"><a class="reference internal" href="#example-lammps-dump-file">2. Example:
+                        LAMMPS Dump File</a></li>
+                    <li class="toctree-l3"><a class="reference internal" href="#example-ase-trajectory-file">3. Example:
+                        ASE Trajectory File</a></li>
+                    <li class="toctree-l3"><a class="reference internal" href="#example-xyz-file">4. Example: XYZ
+                        File</a></li>
+                    <li class="toctree-l3"><a class="reference internal" href="#summary">5. Summary</a></li>
+                  </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="Binning_method_tuto.html">Tutorial: Contact
+                    Angle Analysis (Binning Method)</a></li>
+                <li class="toctree-l2"><a class="reference internal" href="Sliced_method_tuto.html">Tutorial: Contact
+                    Angle Analysis (Sliced Method)</a></li>
+                <li class="toctree-l2"><a class="reference internal"
+                    href="Visualization_sliced_droplet.html">Visualization Tutorial — Droplet Surface and Contact
+                    Angle</a></li>
+                <li class="toctree-l2"><a class="reference internal"
+                    href="Visualization_trajectories_comparison_methods.html">Tutorial: Comparing Trajectory Analysis
+                    Methods</a></li>
+                <li class="toctree-l2"><a class="reference internal"
+                    href="Visualisation_size_changing_droplet_infinit_angle.html">Visualization: Size-Changing Droplet
+                    with Infinite Angle</a></li>
+              </ul>
+            </li>
+            <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples</a></li>
+            <li class="toctree-l1"><a class="reference internal" href="../API/index.html">API Reference</a></li>
+          </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" aria-label="Mobile navigation menu">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">wetting_angle_kit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+            <ul class="wy-breadcrumbs">
+              <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+              <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
+              <li class="breadcrumb-item active">Tutorial: Using the Parser Module</li>
+              <li class="wy-breadcrumbs-aside">
+                <a href="../_sources/tutorials/Parser_tutorial.rst.txt" rel="nofollow"> View page source</a>
+              </li>
+            </ul>
+            <hr />
+          </div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div itemprop="articleBody">
+
+              <section id="tutorial-using-the-parser-module">
+                <h1>Tutorial: Using the Parser Module<a class="headerlink" href="#tutorial-using-the-parser-module"
+                    title="Link to this heading"></a></h1>
+                <p>This tutorial shows how to load different trajectory formats using the <code
+                    class="docutils literal notranslate"><span class="pre">wetting_angle_kit.parser</span></code>
+                  submodule.</p>
+                <p>The parser provides a unified interface to read atomic coordinates from:</p>
+                <ul class="simple">
+                  <li>
+                    <p>LAMMPS dump files (<code
+                        class="docutils literal notranslate"><span class="pre">DumpParser</span></code>, ``
+                      DumpWaterMoleculeFinder``)</p>
+                  </li>
+                  <li>
+                    <p>ASE <code class="docutils literal notranslate"><span class="pre">.traj</span></code> files (<code
+                        class="docutils literal notranslate"><span class="pre">AseParser</span></code>, <code
+                        class="docutils literal notranslate"><span class="pre">AseWaterMoleculeFinder</span></code>)</p>
+                  </li>
+                  <li>
+                    <p>XYZ files (<code class="docutils literal notranslate"><span class="pre">XYZParser</span></code>)
+                    </p>
+                  </li>
+                </ul>
+                <p>Each parser can extract atomic positions for selected frames and atoms, allowing efficient and
+                  flexible analysis of molecular simulations.</p>
+                <hr class="docutils" />
+                <section id="general-workflow">
+                  <h2>1. General Workflow<a class="headerlink" href="#general-workflow"
+                      title="Link to this heading"></a></h2>
+                  <p>Every parser follows the same pattern:</p>
+                  <ol class="arabic simple">
+                    <li>
+                      <p>Initialize the parser with your trajectory file.</p>
+                    </li>
+                    <li>
+                      <p>(Optional) Use a <code
+                          class="docutils literal notranslate"><span class="pre">WaterMoleculeFinder</span></code> class
+                        to locate oxygen atoms belonging to water molecules.</p>
+                    </li>
+                    <li>
+                      <p>Extract coordinates of all atoms or only selected indices using <code
+                          class="docutils literal notranslate"><span class="pre">.parse(frame_index,</span> <span class="pre">indices)</span></code>.
+                      </p>
+                    </li>
+                  </ol>
+                  <p>The <code class="docutils literal notranslate"><span class="pre">.parse()</span></code> method
+                    always returns a NumPy array of shape <code
+                      class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">3)</span></code>
+                    containing the atomic coordinates.</p>
+                </section>
+                <hr class="docutils" />
+                <section id="example-lammps-dump-file">
+                  <h2>2. Example: LAMMPS Dump File<a class="headerlink" href="#example-lammps-dump-file"
+                      title="Link to this heading"></a></h2>
+                  <div class="highlight-python notranslate">
+                    <div class="highlight">
+                      <pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">wetting_angle_kit.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">DumpParser</span><span class="p">,</span> <span class="n">DumpWaterMoleculeFinder</span>
+
+<span class="c1"># --- Step 1: Define the trajectory file ---</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj&quot;</span>
+
+<span class="c1"># --- Step 2: Initialize the water molecule finder ---</span>
+<span class="c1"># Specify particle types for the wall and for water oxygens and hydrogens</span>
+<span class="n">wat_find</span> <span class="o">=</span> <span class="n">DumpWaterMoleculeFinder</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">,</span> <span class="n">particle_type_wall</span><span class="o">=</span><span class="p">{</span><span class="mi">3</span><span class="p">},</span> <span class="n">oxygen_type</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">hydrogen_type</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span>
+
+<span class="c1"># --- Step 3: Identify oxygen atoms for frame 0 ---</span>
+<span class="n">oxygen_indices</span> <span class="o">=</span> <span class="n">wat_find</span><span class="o">.</span><span class="n">get_water_oxygen_ids</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of water molecules:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">oxygen_indices</span><span class="p">))</span>
+
+<span class="c1"># --- Step 4: Initialize the parser ---</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">DumpParser</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+<span class="c1"># --- Step 5: Extract coordinates of only the water oxygens ---</span>
+<span class="n">oxygen_positions</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="n">oxygen_indices</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracted positions for&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">oxygen_positions</span><span class="p">),</span> <span class="s2">&quot;oxygen atoms.&quot;</span><span class="p">)</span>
+</pre>
+                    </div>
+                  </div>
+                  <p><strong>Notes:</strong></p>
+                  <ul class="simple">
+                    <li>
+                      <p>Use <code class="docutils literal notranslate"><span class="pre">indices=None</span></code> to
+                        parse all atoms.</p>
+                    </li>
+                    <li>
+                      <p><code class="docutils literal notranslate"><span class="pre">.parse()</span></code> returns
+                        NumPy coordinates for the selected frame.</p>
+                    </li>
+                  </ul>
+                </section>
+                <hr class="docutils" />
+                <section id="example-ase-trajectory-file">
+                  <h2>3. Example: ASE Trajectory File<a class="headerlink" href="#example-ase-trajectory-file"
+                      title="Link to this heading"></a></h2>
+                  <div class="highlight-python notranslate">
+                    <div class="highlight">
+                      <pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">wetting_angle_kit.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">AseParser</span><span class="p">,</span> <span class="n">AseWaterMoleculeFinder</span>
+
+<span class="c1"># --- Step 1: Define the trajectory file ---</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;../../tests/trajectories/slice_10_mace_mlips_cylindrical_2_5.traj&quot;</span>
+
+<span class="c1"># --- Step 2: Initialize the water molecule finder ---</span>
+<span class="n">wat_find</span> <span class="o">=</span> <span class="n">AseWaterMoleculeFinder</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">,</span>
+    <span class="n">particle_type_wall</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;C&quot;</span><span class="p">],</span>  <span class="c1"># Wall elements (e.g., carbon)</span>
+    <span class="n">oh_cutoff</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>  <span class="c1"># O–H bond cutoff distance</span>
+<span class="p">)</span>
+
+<span class="c1"># --- Step 3: Identify water oxygens for frame 0 ---</span>
+<span class="n">oxygen_indices</span> <span class="o">=</span> <span class="n">wat_find</span><span class="o">.</span><span class="n">get_water_oxygen_indices</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of water molecules:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">oxygen_indices</span><span class="p">))</span>
+
+<span class="c1"># --- Step 4: Initialize the parser ---</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">AseParser</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+<span class="c1"># --- Step 5: Extract oxygen atom positions only ---</span>
+<span class="n">oxygen_positions</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="n">oxygen_indices</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extracted positions for&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">oxygen_positions</span><span class="p">),</span> <span class="s2">&quot;oxygen atoms.&quot;</span><span class="p">)</span>
+</pre>
+                    </div>
+                  </div>
+                  <p><strong>Tip:</strong> The ASE parser works for any ASE-compatible trajectory (e.g., <code
+                      class="docutils literal notranslate"><span class="pre">.traj</span></code>, <code
+                      class="docutils literal notranslate"><span class="pre">.extxyz</span></code>, etc.).</p>
+                </section>
+                <hr class="docutils" />
+                <section id="example-xyz-file">
+                  <h2>4. Example: XYZ File<a class="headerlink" href="#example-xyz-file"
+                      title="Link to this heading"></a></h2>
+                  <div class="highlight-python notranslate">
+                    <div class="highlight">
+                      <pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">wetting_angle_kit.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">XYZParser</span>
+
+<span class="c1"># --- Step 1: Define the trajectory file ---</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;../../tests/trajectories/slice_10_mace_mlips_cylindrical_2_5.xyz&quot;</span>
+
+<span class="c1"># --- Step 2: Initialize the parser ---</span>
+<span class="n">xyz_parser</span> <span class="o">=</span> <span class="n">XYZParser</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+<span class="c1"># --- Step 3: Retrieve positions for the first frame ---</span>
+<span class="n">positions</span> <span class="o">=</span> <span class="n">xyz_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Loaded frame with&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">positions</span><span class="p">),</span> <span class="s2">&quot;atoms.&quot;</span><span class="p">)</span>
+
+<span class="c1"># --- Step 4 (Optional): Parse only a subset of atoms ---</span>
+<span class="c1"># For example, extract the first 50 atoms</span>
+<span class="n">subset_positions</span> <span class="o">=</span> <span class="n">xyz_parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">)))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Subset of 50 atoms extracted successfully.&quot;</span><span class="p">)</span>
+</pre>
+                    </div>
+                  </div>
+                </section>
+                <hr class="docutils" />
+                <section id="summary">
+                  <h2>5. Summary<a class="headerlink" href="#summary" title="Link to this heading"></a></h2>
+                  <p>The parser module provides:</p>
+                  <ul class="simple">
+                    <li>
+                      <p><strong>Unified interface</strong> across LAMMPS, ASE, and XYZ formats</p>
+                    </li>
+                    <li>
+                      <p><strong>Selective parsing</strong> using frame number and atom indices</p>
+                    </li>
+                    <li>
+                      <p><strong>Water molecule identification</strong> to filter oxygen atoms from bulk water with
+                        tools from ase and ovito library</p>
+                    </li>
+                  </ul>
+                  <p>All parsers return NumPy arrays of shape <code
+                      class="docutils literal notranslate"><span class="pre">(N,</span> <span class="pre">3)</span></code>
+                    for direct use in analysis pipelines.</p>
+                </section>
+              </section>
+
+
+            </div>
+          </div>
+          <footer>
+            <div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+              <a href="index.html" class="btn btn-neutral float-left" title="Tutorials" accesskey="p" rel="prev"><span
+                  class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+              <a href="Binning_method_tuto.html" class="btn btn-neutral float-right"
+                title="Tutorial: Contact Angle Analysis (Binning Method)" accesskey="n" rel="next">Next <span
+                  class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+            </div>
+
+            <hr />
+
+            <div role="contentinfo">
+              <p>&#169; Copyright 2025, Gabriel.</p>
+            </div>
+
+            Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+            <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+            provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+          </footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+    jQuery(function () {
+      SphinxRtdTheme.Navigation.enable(true);
+    });
+  </script>
+
+</body>
+
+</html>

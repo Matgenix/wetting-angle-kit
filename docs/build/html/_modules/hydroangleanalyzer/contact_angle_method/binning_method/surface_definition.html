@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wetting_angle_kit.contact_angle_method.binning_method.surface_definition &mdash; wetting_angle_kit 0.1.2
+        documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/code-tabs.css?v=1bc26e2f" />
+
+
+    <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../../../../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=6dbb43f8"></script>
+    <script src="../../../../_static/code-tabs.js?v=c983d12e"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+        const initStyles = () => {
+            const defaultStyle = document.createElement('style');
+            defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+            document.head.appendChild(defaultStyle);
+
+            const fullscreenStyle = document.createElement('style');
+            fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+            document.head.appendChild(fullscreenStyle);
+        }
+
+        // Detect if page has dark background
+        const isDarkTheme = () => {
+            // We use a set of heuristics:
+            // 1. Check for common dark mode classes or attributes
+            // 2. Check computed background color brightness
+            if (document.documentElement.classList.contains('dark') ||
+                document.documentElement.getAttribute('data-theme') === 'dark' ||
+                document.body.classList.contains('dark') ||
+                document.body.getAttribute('data-theme') === 'dark') {
+                // console.log("Dark theme detected via class/attribute");
+                return true;
+            }
+            if (document.documentElement.classList.contains('light') ||
+                document.documentElement.getAttribute('data-theme') === 'light' ||
+                document.body.classList.contains('light') ||
+                document.body.getAttribute('data-theme') === 'light') {
+                // console.log("Light theme detected via class/attribute");
+                return false;
+            }
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                // console.log("Dark theme detected via prefers-color-scheme");
+                return true;
+            }
+            const bgColor = window.getComputedStyle(document.body).backgroundColor;
+            const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+            if (match) {
+                const r = parseInt(match[1]);
+                const g = parseInt(match[2]);
+                const b = parseInt(match[3]);
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                // console.log("Background color brightness:", brightness);
+                return brightness < 128;
+            }
+            // console.log("No dark or light theme detected, defaulting to light theme");
+            return false;
+        };
+
+        let darkTheme = isDarkTheme();
+        let modal = null;
+        let modalContent = null;
+        let previousScrollOffset = [window.scrollX, window.scrollY];
+
+        const runMermaid = async (rerun) => {
+            console.log("Running mermaid diagrams, rerun =", rerun);
+            // clear all existing mermaid charts
+            let all_mermaids = document.querySelectorAll(".mermaid");
+
+            if (rerun) {
+                all_mermaids.forEach((el) => {
+                    if (!el.hasAttribute("data-original-code")) {
+                        // store original code
+                        // console.log(`Storing original code for first run: `, el.innerHTML);
+                        el.setAttribute('data-original-code', el.innerHTML);
+                    }
+                    if (el.getAttribute("data-processed") === "true") {
+                        // remove and restore original
+                        el.removeAttribute("data-processed");
+                        // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                        el.innerHTML = el.getAttribute('data-original-code');
+                    } else {
+                        // store original code
+                        // console.log(`Storing original code for re-run: `, el.innerHTML);
+                        el.setAttribute('data-original-code', el.innerHTML);
+                    }
+                });
+                await mermaid.run();
+            }
+
+            all_mermaids = document.querySelectorAll(".mermaid");
+            const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+            if ("False" === "True") {
+                const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+                if (mermaids_to_add_zoom > 0) {
+                    var svgs = d3.selectAll("");
+                    if (all_mermaids.length !== mermaids_processed.length) {
+                        setTimeout(() => runMermaid(false), 200);
+                        return;
+                    } else if (svgs.size() !== mermaids_to_add_zoom) {
+                        setTimeout(() => runMermaid(false), 200);
+                        return;
+                    } else {
+                        svgs.each(function () {
+                            var svg = d3.select(this);
+                            svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                            var inner = svg.select("g");
+                            var zoom = d3.zoom().on("zoom", function (event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svg.call(zoom);
+                        });
+                    }
+                }
+            } else if (all_mermaids.length !== mermaids_processed.length) {
+                // Wait for mermaid to process all diagrams
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+
+            // Stop here if not adding fullscreen capability
+            if ("True" !== "True") return;
+
+            if (modal !== null) {
+                // Destroy existing modal
+                modal.remove();
+                modal = null;
+                modalContent = null;
+            }
+
+            modal = document.createElement('div');
+            modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+            modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+            document.body.appendChild(modal);
+
+            modalContent = modal.querySelector('.mermaid-container-fullscreen');
+            const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+            const closeModal = () => {
+                modal.classList.remove('active');
+                modalContent.innerHTML = '';
+                document.body.style.overflow = ''
+                window.scrollTo({ left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant' });
+            };
+
+            closeBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    closeModal();
+                }
+            });
+
+            document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+                if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+                    mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+                    // Already processed, adjust button class if needed
+                    const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+                    if (existingBtn) {
+                        existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+                    }
+                    return;
+                }
+
+                const container = document.createElement('div');
+                container.className = 'mermaid-container';
+                mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+                container.appendChild(mermaidDiv);
+
+                const fullscreenBtn = document.createElement('button');
+                fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+                fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.style.opacity = '50%';
+
+                // Calculate dynamic position based on diagram's margin and padding
+                const diagramStyle = window.getComputedStyle(mermaidDiv);
+                const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+                const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+                const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+                const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+                fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+                fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+                fullscreenBtn.addEventListener('click', () => {
+                    previousScrollOffset = [window.scroll, window.scrollY];
+                    const clone = mermaidDiv.cloneNode(true);
+                    modalContent.innerHTML = '';
+                    modalContent.appendChild(clone);
+
+                    const svg = clone.querySelector('svg');
+                    if (svg) {
+                        svg.removeAttribute('width');
+                        svg.removeAttribute('height');
+                        svg.style.width = '100%';
+                        svg.style.height = 'auto';
+                        svg.style.maxWidth = '100%';
+                        svg.style.sdisplay = 'block';
+
+                        if ("False" === "True") {
+                            setTimeout(() => {
+                                const g = svg.querySelector('g');
+                                if (g) {
+                                    var svgD3 = d3.select(svg);
+                                    svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                                    var inner = svgD3.select("g");
+                                    var zoom = d3.zoom().on("zoom", function (event) {
+                                        inner.attr("transform", event.transform);
+                                    });
+                                    svgD3.call(zoom);
+                                }
+                            }, 100);
+                        }
+                    }
+
+                    modal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+                container.appendChild(fullscreenBtn);
+            });
+        };
+
+        const load = async () => {
+            initStyles();
+
+            await runMermaid(true);
+
+            const reRunIfThemeChanges = async () => {
+                const newDarkTheme = isDarkTheme();
+                if (newDarkTheme !== darkTheme) {
+                    darkTheme = newDarkTheme;
+                    console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+                    await mermaid.initialize(
+                        {
+                            ...JSON.parse(
+                                `{"startOnLoad": false}`
+                            ),
+                            ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                        }
+                    );
+                    await runMermaid(true);
+                }
+            };
+
+            // Update theme classes when theme changes
+            const themeObserver = new MutationObserver(reRunIfThemeChanges);
+            themeObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class', 'style', 'data-theme']
+            });
+            themeObserver.observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class', 'style', 'data-theme']
+            });
+        };
+
+
+
+
+
+        console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+        mermaid.initialize(
+            {
+                ...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+            }
+        );
+
+        window.addEventListener("load", load);</script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+    <div class="wy-grid-for-nav">
+        <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+            <div class="wy-side-scroll">
+                <div class="wy-side-nav-search">
+
+
+
+                    <a href="../../../../index.html" class="icon icon-home">
+                        wetting_angle_kit
+                    </a>
+                    <div role="search">
+                        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+                            <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+                            <input type="hidden" name="check_keywords" value="yes" />
+                            <input type="hidden" name="area" value="default" />
+                        </form>
+                    </div>
+                </div>
+                <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+                    <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+                    <ul>
+                        <li class="toctree-l1"><a class="reference internal"
+                                href="../../../../tutorials/index.html">Tutorials</a></li>
+                        <li class="toctree-l1"><a class="reference internal"
+                                href="../../../../examples/index.html">Examples</a></li>
+                        <li class="toctree-l1"><a class="reference internal" href="../../../../API/index.html">API
+                                Reference</a></li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+
+        <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+            <nav class="wy-nav-top" aria-label="Mobile navigation menu">
+                <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+                <a href="../../../../index.html">wetting_angle_kit</a>
+            </nav>
+
+            <div class="wy-nav-content">
+                <div class="rst-content">
+                    <div role="navigation" aria-label="Page navigation">
+                        <ul class="wy-breadcrumbs">
+                            <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+                            <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+                            <li class="breadcrumb-item active">
+                                wetting_angle_kit.contact_angle_method.binning_method.surface_definition</li>
+                            <li class="wy-breadcrumbs-aside">
+                            </li>
+                        </ul>
+                        <hr />
+                    </div>
+                    <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+                        <div itemprop="articleBody">
+
+                            <h1>Source code for wetting_angle_kit.contact_angle_method.binning_method.surface_definition
+                            </h1>
+                            <div class="highlight">
+                                <pre>
+<span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">curve_fit</span>
+
+
+<span class="k">class</span> <span class="nc">SurfaceModel</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base for surface models used in contact angle analysis.</span>
+
+<span class="sd">    Subclasses must implement ``fit`` and ``evaluate``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    initial_params : sequence of float, optional</span>
+<span class="sd">        Initial guess for model parameters. Interpretation is left to subclasses.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Store initial parameters and prepare covariance placeholder.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">initial_params</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_data</span><span class="p">,</span> <span class="n">density_data</span><span class="p">):</span>  <span class="c1"># pragma: no cover - abstract</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the model to density data.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x_data : Any</span>
+<span class="sd">            Coordinate representation consumed by the concrete model.</span>
+<span class="sd">        density_data : ndarray</span>
+<span class="sd">            1D array of density values matching ``x_data``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        SurfaceModel</span>
+<span class="sd">            The fitted model instance (``self``) for chaining.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>  <span class="c1"># pragma: no cover - abstract</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the fitted function at point ``x``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : Any</span>
+<span class="sd">            Coordinate(s) accepted by the concrete model.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Evaluated density value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Subclasses must implement this method&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">evaluate_on_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xi_grid</span><span class="p">,</span> <span class="n">zi_grid</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the fitted function on a 2D (xi, zi) grid.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        xi_grid : sequence of float</span>
+<span class="sd">            Radial or in-plane coordinate values.</span>
+<span class="sd">        zi_grid : sequence of float</span>
+<span class="sd">            Height (z) coordinate values.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray, shape (len(xi_grid), len(zi_grid))</span>
+<span class="sd">            2D array of evaluated density values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">out_fitted</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">xi_grid</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">zi_grid</span><span class="p">)))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">xi_grid</span><span class="p">)):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">zi_grid</span><span class="p">)):</span>
+                <span class="n">out_fitted</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">evaluate</span><span class="p">((</span><span class="n">xi_grid</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">zi_grid</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+        <span class="k">return</span> <span class="n">out_fitted</span>
+
+
+<div class="viewcode-block" id="HyperbolicTangentModel">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.binning_method.HyperbolicTangentModel">[docs]</a>
+<span class="k">class</span> <span class="nc">HyperbolicTangentModel</span><span class="p">(</span><span class="n">SurfaceModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Liquid–vapor interface model using a hyperbolic tangent profile.</span>
+
+<span class="sd">    The density field is modeled as the product of two sigmoidal (tanh) terms: one</span>
+<span class="sd">    depending on the spherical radial distance and one along the vertical axis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    initial_params : list[float], optional</span>
+<span class="sd">        Seven parameters ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]``:</span>
+
+<span class="sd">        - rho1 : Liquid-phase density.</span>
+<span class="sd">        - rho2 : Vapor-phase density.</span>
+<span class="sd">        - R_eq : Equivalent spherical radius.</span>
+<span class="sd">        - zi_c : z-coordinate of the sphere center.</span>
+<span class="sd">        - zi_0 : Reference wall z-coordinate.</span>
+<span class="sd">        - t1 : Interface thickness (radial component).</span>
+<span class="sd">        - t2 : Interface thickness (vertical component).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">initial_params</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">initial_params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">initial_params</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1e-3</span><span class="p">,</span> <span class="mf">3e-2</span><span class="p">,</span> <span class="mf">40.0</span><span class="p">,</span> <span class="mf">20.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">initial_params</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_fitting_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">rho1</span><span class="p">,</span> <span class="n">rho2</span><span class="p">,</span> <span class="n">R_eq</span><span class="p">,</span> <span class="n">zi_c</span><span class="p">,</span> <span class="n">zi_0</span><span class="p">,</span> <span class="n">t1</span><span class="p">,</span> <span class="n">t2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Internal hyperbolic tangent density expression.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : tuple(float, float)</span>
+<span class="sd">            Coordinates ``(xi, zi)``.</span>
+<span class="sd">        rho1, rho2 : float</span>
+<span class="sd">            Liquid and vapor densities.</span>
+<span class="sd">        R_eq : float</span>
+<span class="sd">            Sphere radius.</span>
+<span class="sd">        zi_c : float</span>
+<span class="sd">            Sphere center z-coordinate.</span>
+<span class="sd">        zi_0 : float</span>
+<span class="sd">            Wall reference z-coordinate.</span>
+<span class="sd">        t1, t2 : float</span>
+<span class="sd">            Interface thickness parameters (radial, vertical).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Density value at the given coordinates.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">xi</span><span class="p">,</span> <span class="n">zi</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">g</span><span class="p">(</span><span class="n">r</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">rho1</span> <span class="o">+</span> <span class="n">rho2</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="n">rho1</span> <span class="o">-</span> <span class="n">rho2</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">r</span> <span class="o">-</span> <span class="n">R_eq</span><span class="p">)</span> <span class="o">/</span> <span class="n">t1</span><span class="p">))</span>
+
+        <span class="k">def</span> <span class="nf">h</span><span class="p">(</span><span class="n">z</span><span class="p">):</span>
+            <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">z</span> <span class="o">/</span> <span class="n">t2</span><span class="p">))</span>
+
+        <span class="n">r</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">xi</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">zi</span> <span class="o">-</span> <span class="n">zi_c</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">z</span> <span class="o">=</span> <span class="n">zi</span> <span class="o">-</span> <span class="n">zi_0</span>
+        <span class="k">return</span> <span class="n">g</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="o">*</span> <span class="n">h</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+
+<div class="viewcode-block" id="HyperbolicTangentModel.fit">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.binning_method.HyperbolicTangentModel.fit">[docs]</a>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x_data</span><span class="p">,</span> <span class="n">density_data</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the model parameters to provided density samples.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x_data : tuple(ndarray, ndarray)</span>
+<span class="sd">            Coordinate arrays ``(xi_array, zi_array)`` flattened or broadcastable.</span>
+<span class="sd">        density_data : ndarray</span>
+<span class="sd">            Density values corresponding to ``x_data``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        HyperbolicTangentModel</span>
+<span class="sd">            Fitted model instance (``self``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">covariance</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_fitting_function</span><span class="p">,</span>
+            <span class="n">x_data</span><span class="p">,</span>
+            <span class="n">density_data</span><span class="p">,</span>
+            <span class="n">p0</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">,</span>
+            <span class="n">maxfev</span><span class="o">=</span><span class="mi">1_000_000</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span></div>
+
+
+<div class="viewcode-block" id="HyperbolicTangentModel.evaluate">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.binning_method.HyperbolicTangentModel.evaluate">[docs]</a>
+    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate the fitted hyperbolic tangent model at ``x``.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : tuple(float, float)</span>
+<span class="sd">            Coordinates ``(xi, zi)``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Density value at the given point.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model must be fitted before evaluation&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fitting_function</span><span class="p">(</span>
+            <span class="n">x</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span>
+        <span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="HyperbolicTangentModel.compute_isoline">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.binning_method.HyperbolicTangentModel.compute_isoline">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_isoline</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">0.95</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute an iso-surface circle and wall line approximation.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        scale_factor : float, default 0.95</span>
+<span class="sd">            Factor applied to fitted radius for visualization.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        tuple(ndarray, ndarray, ndarray, ndarray)</span>
+<span class="sd">            ``(circle_xi, circle_zi, wall_line_xi, wall_line_zi)`` arrays.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model must be fitted before computing isoline&quot;</span><span class="p">)</span>
+
+        <span class="n">R</span> <span class="o">=</span> <span class="n">scale_factor</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>  <span class="c1"># R_eq</span>
+        <span class="n">Zcenter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>  <span class="c1"># zi_c</span>
+        <span class="n">Zwall</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>  <span class="c1"># zi_0</span>
+
+        <span class="n">xi_wall</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">R</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">Zwall</span> <span class="o">-</span> <span class="n">Zcenter</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">alpha_inf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">((</span><span class="n">Zwall</span> <span class="o">-</span> <span class="n">Zcenter</span><span class="p">)</span> <span class="o">/</span> <span class="n">xi_wall</span><span class="p">)</span>
+        <span class="n">alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">alpha_inf</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+
+        <span class="n">Xicenter</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="n">circle_xi</span> <span class="o">=</span> <span class="n">Xicenter</span> <span class="o">+</span> <span class="n">R</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">circle_zi</span> <span class="o">=</span> <span class="n">Zcenter</span> <span class="o">+</span> <span class="n">R</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
+        <span class="n">wall_line_xi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">Xicenter</span><span class="p">,</span> <span class="n">xi_wall</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="n">wall_line_zi</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">wall_line_xi</span><span class="p">)))</span> <span class="o">*</span> <span class="n">Zwall</span>
+
+        <span class="k">return</span> <span class="n">circle_xi</span><span class="p">,</span> <span class="n">circle_zi</span><span class="p">,</span> <span class="n">wall_line_xi</span><span class="p">,</span> <span class="n">wall_line_zi</span></div>
+
+
+<div class="viewcode-block" id="HyperbolicTangentModel.compute_contact_angle">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.binning_method.HyperbolicTangentModel.compute_contact_angle">[docs]</a>
+    <span class="k">def</span> <span class="nf">compute_contact_angle</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the contact angle (degrees) implied by fitted parameters.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Contact angle in degrees.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model must be fitted before computing contact angle&quot;</span><span class="p">)</span>
+
+        <span class="n">R_eq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">zita_c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="n">zita_wall</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span>
+
+        <span class="n">xi_cross</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">R_eq</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="p">(</span><span class="n">zita_wall</span> <span class="o">-</span> <span class="n">zita_c</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan</span><span class="p">((</span><span class="n">zita_wall</span> <span class="o">-</span> <span class="n">zita_c</span><span class="p">)</span> <span class="o">/</span> <span class="n">xi_cross</span><span class="p">))</span> <span class="o">*</span> <span class="mi">180</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span>
+        <span class="k">return</span> <span class="n">theta</span></div>
+
+
+<div class="viewcode-block" id="HyperbolicTangentModel.get_parameters">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.binning_method.HyperbolicTangentModel.get_parameters">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a mapping of parameter names to fitted values.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict[str, float]</span>
+<span class="sd">            Dictionary of parameter names and values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model must be fitted before getting parameters&quot;</span><span class="p">)</span>
+
+        <span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rho1&quot;</span><span class="p">,</span> <span class="s2">&quot;rho2&quot;</span><span class="p">,</span> <span class="s2">&quot;R_eq&quot;</span><span class="p">,</span> <span class="s2">&quot;zi_c&quot;</span><span class="p">,</span> <span class="s2">&quot;zi_0&quot;</span><span class="p">,</span> <span class="s2">&quot;t1&quot;</span><span class="p">,</span> <span class="s2">&quot;t2&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">param_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)}</span></div>
+
+
+<div class="viewcode-block" id="HyperbolicTangentModel.get_parameter_strings">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.binning_method.HyperbolicTangentModel.get_parameter_strings">[docs]</a>
+    <span class="k">def</span> <span class="nf">get_parameter_strings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return formatted parameter strings suitable for logging.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list[str]</span>
+<span class="sd">            Formatted parameter strings (``&quot;name:value\\n&quot;``).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model must be fitted before getting parameter strings&quot;</span><span class="p">)</span>
+
+        <span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;rho1&quot;</span><span class="p">,</span> <span class="s2">&quot;rho2&quot;</span><span class="p">,</span> <span class="s2">&quot;R_eq&quot;</span><span class="p">,</span> <span class="s2">&quot;zi_c&quot;</span><span class="p">,</span> <span class="s2">&quot;zi_0&quot;</span><span class="p">,</span> <span class="s2">&quot;t1&quot;</span><span class="p">,</span> <span class="s2">&quot;t2&quot;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">param_names</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)]</span></div>
+</div>
+
+</pre>
+                            </div>
+
+                        </div>
+                    </div>
+                    <footer>
+
+                        <hr />
+
+                        <div role="contentinfo">
+                            <p>&#169; Copyright 2025, Gabriel.</p>
+                        </div>
+
+                        Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+                        <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+                        provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+                    </footer>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+
+</html>

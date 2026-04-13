@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../../">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wetting_angle_kit.contact_angle_method.sliced_method.surface_defined &mdash; wetting_angle_kit 0.1.2
+        documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=b86133f3" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/css/theme.css?v=9edc463e" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../../_static/code-tabs.css?v=1bc26e2f" />
+
+
+    <script src="../../../../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../../../../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../../_static/copybutton.js?v=6dbb43f8"></script>
+    <script src="../../../../_static/code-tabs.js?v=c983d12e"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"></script>
+    <script type="module"
+        src="https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"></script>
+    <script
+        type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs"; import elkLayouts from "https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.0/dist/mermaid-layout-elk.esm.min.mjs"; mermaid.registerLayoutLoaders(elkLayouts); mermaid.initialize({ startOnLoad: false });</script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+        const defaultStyle = document.createElement('style');
+        defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+`;
+        document.head.appendChild(defaultStyle);
+
+        const fullscreenStyle = document.createElement('style');
+        fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+        document.head.appendChild(fullscreenStyle);
+
+        // Detect if page has dark background
+        const isDarkTheme = () => {
+            const bgColor = window.getComputedStyle(document.body).backgroundColor;
+            const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+            if (match) {
+                const r = parseInt(match[1]);
+                const g = parseInt(match[2]);
+                const b = parseInt(match[3]);
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                return brightness < 128;
+            }
+            return false;
+        };
+
+        const load = async () => {
+            await mermaid.run();
+
+            const all_mermaids = document.querySelectorAll(".mermaid");
+            const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+            if ("False" === "True") {
+                const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+                if (mermaids_to_add_zoom > 0) {
+                    var svgs = d3.selectAll("");
+                    if (all_mermaids.length !== mermaids_processed.length) {
+                        setTimeout(load, 200);
+                        return;
+                    } else if (svgs.size() !== mermaids_to_add_zoom) {
+                        setTimeout(load, 200);
+                        return;
+                    } else {
+                        svgs.each(function () {
+                            var svg = d3.select(this);
+                            svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                            var inner = svg.select("g");
+                            var zoom = d3.zoom().on("zoom", function (event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svg.call(zoom);
+                        });
+                    }
+                }
+            } else if (all_mermaids.length !== mermaids_processed.length) {
+                // Wait for mermaid to process all diagrams
+                setTimeout(load, 200);
+                return;
+            }
+
+            const darkTheme = isDarkTheme();
+
+            // Stop here if not adding fullscreen capability
+            if ("True" !== "True") return;
+
+            const modal = document.createElement('div');
+            modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+            modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+            document.body.appendChild(modal);
+
+            const modalContent = modal.querySelector('.mermaid-container-fullscreen');
+            const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+            let previousScrollOffset = [window.scrollX, window.scrollY];
+
+            const closeModal = () => {
+                modal.classList.remove('active');
+                modalContent.innerHTML = '';
+                document.body.style.overflow = ''
+                window.scrollTo({ left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant' });
+            };
+
+            closeBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    closeModal();
+                }
+            });
+
+            const allButtons = [];
+
+            document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+                if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+                    mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+                    return;
+                }
+
+                const container = document.createElement('div');
+                container.className = 'mermaid-container';
+                mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+                container.appendChild(mermaidDiv);
+
+                const fullscreenBtn = document.createElement('button');
+                fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+                fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.style.opacity = '50%';
+
+                // Calculate dynamic position based on diagram's margin and padding
+                const diagramStyle = window.getComputedStyle(mermaidDiv);
+                const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+                const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+                const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+                const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+                fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+                fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+                fullscreenBtn.addEventListener('click', () => {
+                    previousScrollOffset = [window.scroll, window.scrollY];
+                    const clone = mermaidDiv.cloneNode(true);
+                    modalContent.innerHTML = '';
+                    modalContent.appendChild(clone);
+
+                    const svg = clone.querySelector('svg');
+                    if (svg) {
+                        svg.removeAttribute('width');
+                        svg.removeAttribute('height');
+                        svg.style.width = '100%';
+                        svg.style.height = 'auto';
+                        svg.style.maxWidth = '100%';
+                        svg.style.sdisplay = 'block';
+
+                        if ("False" === "True") {
+                            setTimeout(() => {
+                                const g = svg.querySelector('g');
+                                if (g) {
+                                    var svgD3 = d3.select(svg);
+                                    svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                                    var inner = svgD3.select("g");
+                                    var zoom = d3.zoom().on("zoom", function (event) {
+                                        inner.attr("transform", event.transform);
+                                    });
+                                    svgD3.call(zoom);
+                                }
+                            }, 100);
+                        }
+                    }
+
+                    modal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+
+                container.appendChild(fullscreenBtn);
+                allButtons.push(fullscreenBtn);
+            });
+
+            // Update theme classes when theme changes
+            const updateTheme = () => {
+                const dark = isDarkTheme();
+                allButtons.forEach(btn => {
+                    if (dark) {
+                        btn.classList.add('dark-theme');
+                    } else {
+                        btn.classList.remove('dark-theme');
+                    }
+                });
+                if (dark) {
+                    modal.classList.add('dark-theme');
+                    modalContent.classList.add('dark-theme');
+                    closeBtn.classList.add('dark-theme');
+                } else {
+                    modal.classList.remove('dark-theme');
+                    modalContent.classList.remove('dark-theme');
+                    closeBtn.classList.remove('dark-theme');
+                }
+            };
+
+            // Watch for theme changes
+            const observer = new MutationObserver(updateTheme);
+            observer.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class', 'style', 'data-theme']
+            });
+            observer.observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class', 'style']
+            });
+        };
+
+        window.addEventListener("load", load);
+    </script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+    <div class="wy-grid-for-nav">
+        <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+            <div class="wy-side-scroll">
+                <div class="wy-side-nav-search">
+
+
+
+                    <a href="../../../../index.html" class="icon icon-home">
+                        wetting_angle_kit
+                    </a>
+                    <div role="search">
+                        <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+                            <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+                            <input type="hidden" name="check_keywords" value="yes" />
+                            <input type="hidden" name="area" value="default" />
+                        </form>
+                    </div>
+                </div>
+                <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+                    <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+                    <ul>
+                        <li class="toctree-l1"><a class="reference internal"
+                                href="../../../../introduction/index.html">Introduction</a></li>
+                        <li class="toctree-l1"><a class="reference internal"
+                                href="../../../../tutorials/index.html">Tutorials</a></li>
+                        <li class="toctree-l1"><a class="reference internal"
+                                href="../../../../examples/index.html">Examples</a></li>
+                        <li class="toctree-l1"><a class="reference internal" href="../../../../API/index.html">API
+                                Reference</a></li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+
+        <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+            <nav class="wy-nav-top" aria-label="Mobile navigation menu">
+                <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+                <a href="../../../../index.html">wetting_angle_kit</a>
+            </nav>
+
+            <div class="wy-nav-content">
+                <div class="rst-content">
+                    <div role="navigation" aria-label="Page navigation">
+                        <ul class="wy-breadcrumbs">
+                            <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+                            <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+                            <li class="breadcrumb-item active">
+                                wetting_angle_kit.contact_angle_method.sliced_method.surface_defined</li>
+                            <li class="wy-breadcrumbs-aside">
+                            </li>
+                        </ul>
+                        <hr />
+                    </div>
+                    <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+                        <div itemprop="articleBody">
+
+                            <h1>Source code for wetting_angle_kit.contact_angle_method.sliced_method.surface_defined
+                            </h1>
+                            <div class="highlight">
+                                <pre>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.optimize</span><span class="w"> </span><span class="kn">import</span> <span class="n">curve_fit</span>
+
+
+<div class="viewcode-block" id="SurfaceDefinition">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.sliced_method.SurfaceDefinition">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">SurfaceDefinition</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Radial line sampling interface estimator for sliced contact angle.</span>
+
+<span class="sd">    For each attitudinal angle beta the density is sampled along a ray emerging</span>
+<span class="sd">    from the droplet geometric center. A simple tanh profile is fitted to obtain</span>
+<span class="sd">    the interface position (&quot;re&quot;) which is then projected back to XZ plane.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    atom_coords : ndarray, shape (N, 3)</span>
+<span class="sd">        Cartesian coordinates of liquid atoms.</span>
+<span class="sd">    delta_angle : float</span>
+<span class="sd">        Angular increment (degrees) between successive sampling rays.</span>
+<span class="sd">    max_dist : float</span>
+<span class="sd">        Maximum radial distance sampled along each ray.</span>
+<span class="sd">    center_geom : ndarray, shape (3,)</span>
+<span class="sd">        Approximate droplet geometric center.</span>
+<span class="sd">    gamma : float</span>
+<span class="sd">        Tilt angle (degrees) controlling rotation about the x-axis.</span>
+<span class="sd">    density_conversion : float, default 1.0</span>
+<span class="sd">        Factor applied multiplicatively to raw density contributions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">atom_coords</span><span class="p">,</span>
+        <span class="n">delta_angle</span><span class="p">,</span>
+        <span class="n">max_dist</span><span class="p">,</span>
+        <span class="n">center_geom</span><span class="p">,</span>
+        <span class="n">gamma</span><span class="p">,</span>
+        <span class="n">density_conversion</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atom_coords</span> <span class="o">=</span> <span class="n">atom_coords</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center_geom</span> <span class="o">=</span> <span class="n">center_geom</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density_conversion</span> <span class="o">=</span> <span class="n">density_conversion</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gamma</span> <span class="o">=</span> <span class="n">gamma</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_angle</span> <span class="o">=</span> <span class="n">delta_angle</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_dist</span> <span class="o">=</span> <span class="n">max_dist</span>
+
+<div class="viewcode-block" id="SurfaceDefinition.density_contribution">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.sliced_method.SurfaceDefinition.density_contribution">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density_contribution</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span> <span class="n">coords</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">2.0</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return Gaussian-smoothed density contributions at sampling positions.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        positions : ndarray, shape (M, 3)</span>
+<span class="sd">            Ray sampling coordinates.</span>
+<span class="sd">        coords : ndarray, shape (N, 3)</span>
+<span class="sd">            Atom coordinates contributing to density.</span>
+<span class="sd">        sigma : float, default 2.0</span>
+<span class="sd">            Gaussian standard deviation (Å). Larger values broaden contributions.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray, shape (M,)</span>
+<span class="sd">            Density values at each sampling position.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sigma2</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">sigma</span>
+        <span class="n">prefactor</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">sigma2</span><span class="p">)</span> <span class="o">**</span> <span class="mf">1.5</span>
+        <span class="n">differences</span> <span class="o">=</span> <span class="n">positions</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:]</span> <span class="o">-</span> <span class="n">coords</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="n">ri2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">differences</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">den_contributions</span> <span class="o">=</span> <span class="n">prefactor</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">ri2</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sigma2</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">den_contributions</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="SurfaceDefinition.density_profile">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.sliced_method.SurfaceDefinition.density_profile">[docs]</a>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">density_profile</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">zd</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">h</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Simple hyperbolic tangent profile used for interface localization.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z : ndarray</span>
+<span class="sd">            Distances along the sampling ray (Å).</span>
+<span class="sd">        zd : float</span>
+<span class="sd">            Interface position parameter to be fitted.</span>
+<span class="sd">        d : float</span>
+<span class="sd">            Amplitude scaling parameter.</span>
+<span class="sd">        h : float</span>
+<span class="sd">            Offset parameter.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        ndarray</span>
+<span class="sd">            Modeled density values at each z.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="o">-</span><span class="n">z</span> <span class="o">+</span> <span class="n">zd</span><span class="p">)</span> <span class="o">*</span> <span class="n">d</span> <span class="o">+</span> <span class="n">h</span></div>
+
+
+<div class="viewcode-block" id="SurfaceDefinition.fit_density_profile">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.sliced_method.SurfaceDefinition.fit_density_profile">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">fit_density_profile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z_data</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">param_bounds</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit the profile and return estimated interface position.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        z_data : ndarray</span>
+<span class="sd">            Distances along the ray.</span>
+<span class="sd">        density : ndarray</span>
+<span class="sd">            Observed (smoothed) density values.</span>
+<span class="sd">        param_bounds : tuple(list, list)</span>
+<span class="sd">            Lower and upper bounds for ``(zd, d, h)``.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        float</span>
+<span class="sd">            Fitted ``zd`` value (interface location).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">popt</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">curve_fit</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">density_profile</span><span class="p">,</span> <span class="n">z_data</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">param_bounds</span><span class="p">)</span>
+        <span class="n">zd</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">popt</span>  <span class="c1"># noqa: F841 - d, h retained for clarity if extended later</span>
+        <span class="k">return</span> <span class="n">zd</span></div>
+
+
+<div class="viewcode-block" id="SurfaceDefinition.analyze_lines">
+<a class="viewcode-back" href="../../../../API/index.html#wetting_angle_kit.contact_angle_method.sliced_method.SurfaceDefinition.analyze_lines">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">analyze_lines</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Sample density along radial lines and fit interface positions.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        list_rbeta : list[list[float]]</span>
+<span class="sd">            Fitted interface distance and its azimuth angle</span>
+<span class="sd">             ``[interface_re, beta_deg]``.</span>
+<span class="sd">        list_xz : list[list[float]]</span>
+<span class="sd">            Projected interface coordinates ``[x_proj, z_proj]`` in XZ plane.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">360</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="mi">360</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">delta_angle</span><span class="p">),</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">list_rbeta</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">list_xz</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">nn</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dist</span>  <span class="c1"># one point per Å</span>
+        <span class="n">param_bounds</span> <span class="o">=</span> <span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">10</span><span class="p">],</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">max_dist</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">])</span>
+        <span class="n">cos_beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span>
+        <span class="n">sin_beta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="n">beta</span><span class="p">))</span>
+        <span class="n">cos_gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">))</span>
+        <span class="n">sin_gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gamma</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">beta</span><span class="p">)):</span>
+            <span class="n">x_dir</span> <span class="o">=</span> <span class="n">cos_beta</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">cos_gamma</span>
+            <span class="n">y_dir</span> <span class="o">=</span> <span class="n">sin_gamma</span> <span class="o">*</span> <span class="n">cos_beta</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">z_dir</span> <span class="o">=</span> <span class="n">sin_beta</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">x_dir</span><span class="p">,</span> <span class="n">y_dir</span><span class="p">,</span> <span class="n">z_dir</span><span class="p">])</span>
+            <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">center_geom</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">center_geom</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dist</span> <span class="o">*</span> <span class="n">direction</span><span class="p">,</span>
+                <span class="nb">int</span><span class="p">(</span><span class="n">nn</span><span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_dist</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">nn</span><span class="p">))</span>
+            <span class="n">sigma</span> <span class="o">=</span> <span class="mf">3.0</span>  <span class="c1"># tuned for water system at RT</span>
+            <span class="n">density</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_conversion</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_contribution</span><span class="p">(</span>
+                <span class="n">positions</span><span class="p">,</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">atom_coords</span><span class="p">,</span>
+                <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">interface_re</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fit_density_profile</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="n">density</span><span class="p">,</span> <span class="n">param_bounds</span><span class="p">)</span>
+            <span class="n">list_rbeta</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">interface_re</span><span class="p">,</span> <span class="n">beta</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span>
+            <span class="n">list_xz</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">[</span>
+                    <span class="n">cos_beta</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">interface_re</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">center_geom</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                    <span class="n">sin_beta</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">interface_re</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">center_geom</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span>
+                <span class="p">]</span>
+            <span class="p">)</span>
+        <span class="k">return</span> <span class="n">list_rbeta</span><span class="p">,</span> <span class="n">list_xz</span></div>
+</div>
+
+</pre>
+                            </div>
+
+                        </div>
+                    </div>
+                    <footer>
+
+                        <hr />
+
+                        <div role="contentinfo">
+                            <p>&#169; Copyright 2025, Gabriel.</p>
+                        </div>
+
+                        Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+                        <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+                        provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+                    </footer>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+
+</html>

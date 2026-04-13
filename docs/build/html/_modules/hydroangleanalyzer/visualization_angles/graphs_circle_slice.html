@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>wetting_angle_kit.visualization_angles.graphs_circle_slice &mdash; wetting_angle_kit 0.1.2 documentation
+    </title>
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=80d5e7a1" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/code-tabs.css?v=1bc26e2f" />
+
+
+    <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../../../_static/documentation_options.js?v=92734c54"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=6dbb43f8"></script>
+    <script src="../../../_static/code-tabs.js?v=c983d12e"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+    <script type="module">import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11.12.1/dist/mermaid.esm.min.mjs";
+
+
+
+
+
+        const initStyles = () => {
+            const defaultStyle = document.createElement('style');
+            defaultStyle.textContent = `pre.mermaid {
+    /* Same as .mermaid-container > pre */
+    display: block;
+    width: 100%;
+}
+
+pre.mermaid > svg {
+    /* Same as .mermaid-container > pre > svg */
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}`;
+            document.head.appendChild(defaultStyle);
+
+            const fullscreenStyle = document.createElement('style');
+            fullscreenStyle.textContent = `.mermaid-container {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
+
+.mermaid-container > pre {
+    display: block;
+    width: 100%;
+}
+
+.mermaid-container > pre > svg {
+    height: 500px;
+    width: 100%;
+    max-width: 100% !important;
+}
+
+.mermaid-fullscreen-btn {
+    width: 28px;
+    height: 28px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    font-size: 14px;
+    line-height: 1;
+    padding: 0;
+    color: #333;
+}
+
+.mermaid-fullscreen-btn:hover {
+    opacity: 100% !important;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-btn.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-btn.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 3px 10px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal {
+    display: none;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 95vw;
+    height: 100vh;
+    background: rgba(255, 255, 255, 0.98);
+    z-index: 9999;
+    padding: 20px;
+    overflow: auto;
+}
+
+.mermaid-fullscreen-modal.dark-theme {
+    background: rgba(0, 0, 0, 0.98);
+}
+
+.mermaid-fullscreen-modal.active {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen {
+    position: relative;
+    width: 95vw;
+    height: 90vh;
+    max-width: 95vw;
+    max-height: 90vh;
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen.dark-theme {
+    background: #1a1a1a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.mermaid-container-fullscreen pre.mermaid {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.mermaid-container-fullscreen .mermaid svg {
+    height: 100% !important;
+    width: 100% !important;
+    cursor: grab;
+}
+
+.mermaid-fullscreen-close {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.2s;
+    font-size: 24px;
+    line-height: 1;
+    color: #333;
+}
+
+.mermaid-fullscreen-close:hover {
+    background: white;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+    transform: scale(1.1);
+}
+
+.mermaid-fullscreen-close.dark-theme {
+    background: rgba(50, 50, 50, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e0e0;
+}
+
+.mermaid-fullscreen-close.dark-theme:hover {
+    background: rgba(60, 60, 60, 1);
+    box-shadow: 0 6px 16px rgba(255, 255, 255, 0.2);
+}
+
+.mermaid-fullscreen-modal .mermaid-fullscreen-btn {
+    display: none !important;
+}`;
+            document.head.appendChild(fullscreenStyle);
+        }
+
+        // Detect if page has dark background
+        const isDarkTheme = () => {
+            // We use a set of heuristics:
+            // 1. Check for common dark mode classes or attributes
+            // 2. Check computed background color brightness
+            if (document.documentElement.classList.contains('dark') ||
+                document.documentElement.getAttribute('data-theme') === 'dark' ||
+                document.body.classList.contains('dark') ||
+                document.body.getAttribute('data-theme') === 'dark') {
+                // console.log("Dark theme detected via class/attribute");
+                return true;
+            }
+            if (document.documentElement.classList.contains('light') ||
+                document.documentElement.getAttribute('data-theme') === 'light' ||
+                document.body.classList.contains('light') ||
+                document.body.getAttribute('data-theme') === 'light') {
+                // console.log("Light theme detected via class/attribute");
+                return false;
+            }
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                // console.log("Dark theme detected via prefers-color-scheme");
+                return true;
+            }
+            const bgColor = window.getComputedStyle(document.body).backgroundColor;
+            const match = bgColor.match(/rgb\((\d+),\s*(\d+),\s*(\d+)/);
+            if (match) {
+                const r = parseInt(match[1]);
+                const g = parseInt(match[2]);
+                const b = parseInt(match[3]);
+                const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+                // console.log("Background color brightness:", brightness);
+                return brightness < 128;
+            }
+            // console.log("No dark or light theme detected, defaulting to light theme");
+            return false;
+        };
+
+        let darkTheme = isDarkTheme();
+        let modal = null;
+        let modalContent = null;
+        let previousScrollOffset = [window.scrollX, window.scrollY];
+
+        const runMermaid = async (rerun) => {
+            console.log("Running mermaid diagrams, rerun =", rerun);
+            // clear all existing mermaid charts
+            let all_mermaids = document.querySelectorAll(".mermaid");
+
+            if (rerun) {
+                all_mermaids.forEach((el) => {
+                    if (!el.hasAttribute("data-original-code")) {
+                        // store original code
+                        // console.log(`Storing original code for first run: `, el.innerHTML);
+                        el.setAttribute('data-original-code', el.innerHTML);
+                    }
+                    if (el.getAttribute("data-processed") === "true") {
+                        // remove and restore original
+                        el.removeAttribute("data-processed");
+                        // console.log(`Restoring original code for re-run: `, el.getAttribute('data-original-code'));
+                        el.innerHTML = el.getAttribute('data-original-code');
+                    } else {
+                        // store original code
+                        // console.log(`Storing original code for re-run: `, el.innerHTML);
+                        el.setAttribute('data-original-code', el.innerHTML);
+                    }
+                });
+                await mermaid.run();
+            }
+
+            all_mermaids = document.querySelectorAll(".mermaid");
+            const mermaids_processed = document.querySelectorAll(".mermaid[data-processed='true']");
+
+            if ("False" === "True") {
+                const mermaids_to_add_zoom = -1 === -1 ? all_mermaids.length : -1;
+                if (mermaids_to_add_zoom > 0) {
+                    var svgs = d3.selectAll("");
+                    if (all_mermaids.length !== mermaids_processed.length) {
+                        setTimeout(() => runMermaid(false), 200);
+                        return;
+                    } else if (svgs.size() !== mermaids_to_add_zoom) {
+                        setTimeout(() => runMermaid(false), 200);
+                        return;
+                    } else {
+                        svgs.each(function () {
+                            var svg = d3.select(this);
+                            svg.html("<g class='wrapper'>" + svg.html() + "</g>");
+                            var inner = svg.select("g");
+                            var zoom = d3.zoom().on("zoom", function (event) {
+                                inner.attr("transform", event.transform);
+                            });
+                            svg.call(zoom);
+                        });
+                    }
+                }
+            } else if (all_mermaids.length !== mermaids_processed.length) {
+                // Wait for mermaid to process all diagrams
+                setTimeout(() => runMermaid(false), 200);
+                return;
+            }
+
+            // Stop here if not adding fullscreen capability
+            if ("True" !== "True") return;
+
+            if (modal !== null) {
+                // Destroy existing modal
+                modal.remove();
+                modal = null;
+                modalContent = null;
+            }
+
+            modal = document.createElement('div');
+            modal.className = 'mermaid-fullscreen-modal' + (darkTheme ? ' dark-theme' : '');
+            modal.setAttribute('role', 'dialog');
+            modal.setAttribute('aria-modal', 'true');
+            modal.setAttribute('aria-label', 'Fullscreen diagram viewer');
+            modal.innerHTML = `
+        <button class="mermaid-fullscreen-close${darkTheme ? ' dark-theme' : ''}" aria-label="Close fullscreen">✕</button>
+        <div class="mermaid-container-fullscreen${darkTheme ? ' dark-theme' : ''}"></div>
+    `;
+            document.body.appendChild(modal);
+
+            modalContent = modal.querySelector('.mermaid-container-fullscreen');
+            const closeBtn = modal.querySelector('.mermaid-fullscreen-close');
+
+            const closeModal = () => {
+                modal.classList.remove('active');
+                modalContent.innerHTML = '';
+                document.body.style.overflow = ''
+                window.scrollTo({ left: previousScrollOffset[0], top: previousScrollOffset[1], behavior: 'instant' });
+            };
+
+            closeBtn.addEventListener('click', closeModal);
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) closeModal();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && modal.classList.contains('active')) {
+                    closeModal();
+                }
+            });
+
+            document.querySelectorAll('.mermaid').forEach((mermaidDiv) => {
+                if (mermaidDiv.parentNode.classList.contains('mermaid-container') ||
+                    mermaidDiv.closest('.mermaid-fullscreen-modal')) {
+                    // Already processed, adjust button class if needed
+                    const existingBtn = mermaidDiv.parentNode.querySelector('.mermaid-fullscreen-btn');
+                    if (existingBtn) {
+                        existingBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+                    }
+                    return;
+                }
+
+                const container = document.createElement('div');
+                container.className = 'mermaid-container';
+                mermaidDiv.parentNode.insertBefore(container, mermaidDiv);
+                container.appendChild(mermaidDiv);
+
+                const fullscreenBtn = document.createElement('button');
+                fullscreenBtn.className = 'mermaid-fullscreen-btn' + (darkTheme ? ' dark-theme' : '');
+                fullscreenBtn.setAttribute('aria-label', 'View diagram in fullscreen');
+                fullscreenBtn.textContent = '⛶';
+                fullscreenBtn.style.opacity = '50%';
+
+                // Calculate dynamic position based on diagram's margin and padding
+                const diagramStyle = window.getComputedStyle(mermaidDiv);
+                const marginTop = parseFloat(diagramStyle.marginTop) || 0;
+                const marginRight = parseFloat(diagramStyle.marginRight) || 0;
+                const paddingTop = parseFloat(diagramStyle.paddingTop) || 0;
+                const paddingRight = parseFloat(diagramStyle.paddingRight) || 0;
+                fullscreenBtn.style.top = `${marginTop + paddingTop + 4}px`;
+                fullscreenBtn.style.right = `${marginRight + paddingRight + 4}px`;
+
+                fullscreenBtn.addEventListener('click', () => {
+                    previousScrollOffset = [window.scroll, window.scrollY];
+                    const clone = mermaidDiv.cloneNode(true);
+                    modalContent.innerHTML = '';
+                    modalContent.appendChild(clone);
+
+                    const svg = clone.querySelector('svg');
+                    if (svg) {
+                        svg.removeAttribute('width');
+                        svg.removeAttribute('height');
+                        svg.style.width = '100%';
+                        svg.style.height = 'auto';
+                        svg.style.maxWidth = '100%';
+                        svg.style.sdisplay = 'block';
+
+                        if ("False" === "True") {
+                            setTimeout(() => {
+                                const g = svg.querySelector('g');
+                                if (g) {
+                                    var svgD3 = d3.select(svg);
+                                    svgD3.html("<g class='wrapper'>" + svgD3.html() + "</g>");
+                                    var inner = svgD3.select("g");
+                                    var zoom = d3.zoom().on("zoom", function (event) {
+                                        inner.attr("transform", event.transform);
+                                    });
+                                    svgD3.call(zoom);
+                                }
+                            }, 100);
+                        }
+                    }
+
+                    modal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                });
+                container.appendChild(fullscreenBtn);
+            });
+        };
+
+        const load = async () => {
+            initStyles();
+
+            await runMermaid(true);
+
+            const reRunIfThemeChanges = async () => {
+                const newDarkTheme = isDarkTheme();
+                if (newDarkTheme !== darkTheme) {
+                    darkTheme = newDarkTheme;
+                    console.log("Theme change detected, re-running mermaid with", darkTheme ? "dark" : "default", "theme");
+                    await mermaid.initialize(
+                        {
+                            ...JSON.parse(
+                                `{"startOnLoad": false}`
+                            ),
+                            ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+                        }
+                    );
+                    await runMermaid(true);
+                }
+            };
+
+            // Update theme classes when theme changes
+            const themeObserver = new MutationObserver(reRunIfThemeChanges);
+            themeObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeFilter: ['class', 'style', 'data-theme']
+            });
+            themeObserver.observe(document.body, {
+                attributes: true,
+                attributeFilter: ['class', 'style', 'data-theme']
+            });
+        };
+
+
+
+
+
+        console.log("Initializing mermaid with", darkTheme ? "dark" : "default", "theme");
+        mermaid.initialize(
+            {
+                ...JSON.parse(
+                    `{"startOnLoad": false}`
+                ),
+                ...{ darkMode: darkTheme, theme: darkTheme ? 'dark' : 'default' },
+            }
+        );
+
+        window.addEventListener("load", load);</script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+</head>
+
+<body class="wy-body-for-nav">
+    <div class="wy-grid-for-nav">
+        <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+            <div class="wy-side-scroll">
+                <div class="wy-side-nav-search">
+
+
+
+                    <a href="../../../index.html" class="icon icon-home">
+                        wetting_angle_kit
+                    </a>
+                    <div role="search">
+                        <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+                            <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+                            <input type="hidden" name="check_keywords" value="yes" />
+                            <input type="hidden" name="area" value="default" />
+                        </form>
+                    </div>
+                </div>
+                <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+                    <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+                    <ul>
+                        <li class="toctree-l1"><a class="reference internal"
+                                href="../../../tutorials/index.html">Tutorials</a></li>
+                        <li class="toctree-l1"><a class="reference internal"
+                                href="../../../examples/index.html">Examples</a></li>
+                        <li class="toctree-l1"><a class="reference internal" href="../../../API/index.html">API
+                                Reference</a></li>
+                    </ul>
+
+                </div>
+            </div>
+        </nav>
+
+        <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+            <nav class="wy-nav-top" aria-label="Mobile navigation menu">
+                <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+                <a href="../../../index.html">wetting_angle_kit</a>
+            </nav>
+
+            <div class="wy-nav-content">
+                <div class="rst-content">
+                    <div role="navigation" aria-label="Page navigation">
+                        <ul class="wy-breadcrumbs">
+                            <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+                            <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+                            <li class="breadcrumb-item active">
+                                wetting_angle_kit.visualization_angles.graphs_circle_slice</li>
+                            <li class="wy-breadcrumbs-aside">
+                            </li>
+                        </ul>
+                        <hr />
+                    </div>
+                    <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+                        <div itemprop="articleBody">
+
+                            <h1>Source code for wetting_angle_kit.visualization_angles.graphs_circle_slice</h1>
+                            <div class="highlight">
+                                <pre>
+<span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">plotly.graph_objects</span> <span class="k">as</span> <span class="nn">go</span>
+<span class="kn">from</span> <span class="nn">matplotlib.ticker</span> <span class="kn">import</span> <span class="n">AutoMinorLocator</span>
+
+<span class="kn">from</span> <span class="nn">wetting_angle_kit.contact_angle_method.sliced_method</span> <span class="kn">import</span> <span class="n">ContactAngleSliced</span>
+<span class="kn">from</span> <span class="nn">wetting_angle_kit.parser</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">DumpParser</span><span class="p">,</span>
+    <span class="n">DumpWallParser</span><span class="p">,</span>
+    <span class="n">DumpWaterMoleculeFinder</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">use</span><span class="p">(</span><span class="s2">&quot;seaborn-v0_8-whitegrid&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="DropletSlicedPlotter">
+<a class="viewcode-back" href="../../../API/index.html#wetting_angle_kit.visualization_angles.DropletSlicedPlotter">[docs]</a>
+<span class="k">class</span> <span class="nc">DropletSlicedPlotter</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot droplet slice: surface contours, fitted circle and tangent line.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    center : bool, default True</span>
+<span class="sd">        If True recentre z coordinates by subtracting mean wall z.</span>
+<span class="sd">    show_wall : bool, default True</span>
+<span class="sd">        Whether to draw wall particles.</span>
+<span class="sd">    molecule_view : bool, default True</span>
+<span class="sd">        If True draw fake hydrogens around each oxygen (schematic water view).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">show_wall</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">molecule_view</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">center</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">show_wall</span> <span class="o">=</span> <span class="n">show_wall</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">molecule_view</span> <span class="o">=</span> <span class="n">molecule_view</span>
+
+        <span class="c1"># Colors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oxygen_color</span> <span class="o">=</span> <span class="s2">&quot;#d62828&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hydrogen_color</span> <span class="o">=</span> <span class="s2">&quot;white&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface_color</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circle_color</span> <span class="o">=</span> <span class="s2">&quot;#0A9396&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wall_color</span> <span class="o">=</span> <span class="s2">&quot;black&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tangent_color</span> <span class="o">=</span> <span class="s2">&quot;#bb3e03&quot;</span>
+
+<div class="viewcode-block" id="DropletSlicedPlotter.plot_surface_points">
+<a class="viewcode-back" href="../../../API/index.html#wetting_angle_kit.visualization_angles.DropletSlicedPlotter.plot_surface_points">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot_surface_points</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">oxygen_position</span><span class="p">,</span>
+        <span class="n">surface_data</span><span class="p">,</span>
+        <span class="n">popt</span><span class="p">,</span>
+        <span class="n">wall_coords</span><span class="p">,</span>
+        <span class="n">output_filename</span><span class="p">,</span>
+        <span class="n">y_com</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc_y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Render slice figure and save to file.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        oxygen_position : ndarray (N, 3)</span>
+<span class="sd">            Cartesian coordinates of oxygen atoms for the frame.</span>
+<span class="sd">        surface_data : list[array]</span>
+<span class="sd">            List of arrays with surface line coordinates (x, z) for each slice.</span>
+<span class="sd">        popt : sequence</span>
+<span class="sd">            Fitted circle parameters (Xc, Zc, R, extra) for chosen slice.</span>
+<span class="sd">        wall_coords : ndarray (M, 3)</span>
+<span class="sd">            Wall particle coordinates.</span>
+<span class="sd">        output_filename : str or Path</span>
+<span class="sd">            Path to save the PNG figure.</span>
+<span class="sd">        y_com : float, optional</span>
+<span class="sd">            Y centre used to select atoms in a thin slice. If None computed.</span>
+<span class="sd">        pbc_y : float, optional</span>
+<span class="sd">            Box length in y for PBC wrapping; if provided shortest-distance used.</span>
+<span class="sd">        alpha : float, optional</span>
+<span class="sd">            Contact angle in degrees; if given draw tangent line and arc.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">            Saves figure to ``output_filename`` and closes it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">y_com</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">y_com</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">oxygen_position</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="c1"># Select atoms near the Y center (±3 Å)</span>
+        <span class="k">if</span> <span class="n">pbc_y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">oxygen_position</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_com</span><span class="p">)</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">pbc_y</span> <span class="o">-</span> <span class="n">dy</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">&lt;=</span> <span class="mi">3</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">oxygen_position</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_com</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span>
+        <span class="n">oxygen_selected</span> <span class="o">=</span> <span class="n">oxygen_position</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+
+        <span class="c1"># --- Subsample for clarity ---</span>
+        <span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+        <span class="n">keep_fraction</span> <span class="o">=</span> <span class="mf">0.70</span>
+        <span class="n">sample_idx</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">oxygen_selected</span><span class="p">),</span>
+            <span class="n">size</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">oxygen_selected</span><span class="p">)</span> <span class="o">*</span> <span class="n">keep_fraction</span><span class="p">),</span>
+            <span class="n">replace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">oxygen_selected</span> <span class="o">=</span> <span class="n">oxygen_selected</span><span class="p">[</span><span class="n">sample_idx</span><span class="p">]</span>
+
+        <span class="c1"># --- Limit wall region under droplet (±5 Å margin) ---</span>
+        <span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">oxygen_selected</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">5</span><span class="p">,</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">oxygen_selected</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">wall_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">x_min</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">x_max</span><span class="p">)</span>
+        <span class="n">wall_coords</span> <span class="o">=</span> <span class="n">wall_coords</span><span class="p">[</span><span class="n">wall_mask</span><span class="p">]</span>
+
+        <span class="c1"># --- Optional recentring ---</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">:</span>
+            <span class="n">z_shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">oxygen_selected</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">z_shift</span>
+            <span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">z_shift</span>
+            <span class="n">surface_data</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">surf</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">surf</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">z_shift</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="n">surface_data</span>
+            <span class="p">]</span>
+            <span class="n">Xc</span><span class="p">,</span> <span class="n">Zc</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">limit_med</span> <span class="o">=</span> <span class="n">popt</span>
+            <span class="n">Zc</span> <span class="o">-=</span> <span class="n">z_shift</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Xc</span><span class="p">,</span> <span class="n">Zc</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">limit_med</span> <span class="o">=</span> <span class="n">popt</span>
+
+        <span class="c1"># --- Plot setup ---</span>
+        <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mf">4.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">),</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
+
+        <span class="c1"># --- Wall atoms ---</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">show_wall</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+                <span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wall_color</span><span class="p">,</span>
+                <span class="n">s</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                <span class="n">zorder</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- Water representation ---</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">molecule_view</span><span class="p">:</span>
+            <span class="n">h_dist</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="k">for</span> <span class="n">ox</span><span class="p">,</span> <span class="n">_oy</span><span class="p">,</span> <span class="n">oz</span> <span class="ow">in</span> <span class="n">oxygen_selected</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+                    <span class="n">ox</span><span class="p">,</span>
+                    <span class="n">oz</span><span class="p">,</span>
+                    <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">oxygen_color</span><span class="p">,</span>
+                    <span class="n">s</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+                    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                    <span class="n">edgecolors</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span>
+                    <span class="n">linewidths</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+                    <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="p">)</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+                    <span class="n">angle</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+                    <span class="n">dx</span><span class="p">,</span> <span class="n">dz</span> <span class="o">=</span> <span class="n">h_dist</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">angle</span><span class="p">),</span> <span class="n">h_dist</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+                        <span class="n">ox</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span>
+                        <span class="n">oz</span> <span class="o">+</span> <span class="n">dz</span><span class="p">,</span>
+                        <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hydrogen_color</span><span class="p">,</span>
+                        <span class="n">s</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                        <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+                        <span class="n">edgecolors</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+                        <span class="n">linewidths</span><span class="o">=</span><span class="mf">0.15</span><span class="p">,</span>
+                        <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span>
+                <span class="n">oxygen_selected</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                <span class="n">oxygen_selected</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">oxygen_color</span><span class="p">,</span>
+                <span class="n">s</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span>
+                <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- Surface line ---</span>
+        <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="n">surface_data</span><span class="p">:</span>
+            <span class="n">X_data</span><span class="p">,</span> <span class="n">Z_data</span> <span class="o">=</span> <span class="n">surf</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">surf</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">([</span><span class="n">X_data</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">Z_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="p">[</span><span class="n">X_data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">Z_data</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]]):</span>
+                <span class="n">X_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">X_data</span><span class="p">,</span> <span class="n">X_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">Z_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Z_data</span><span class="p">,</span> <span class="n">Z_data</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">X_data</span><span class="p">,</span> <span class="n">Z_data</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+
+        <span class="c1"># --- Fitted circle ---</span>
+        <span class="n">circle</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Circle</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">Xc</span><span class="p">,</span> <span class="n">Zc</span><span class="p">),</span> <span class="n">R</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">circle_color</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">2.5</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">4</span>
+        <span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">add_artist</span><span class="p">(</span><span class="n">circle</span><span class="p">)</span>
+        <span class="c1"># --- Tangent line (based on circle–surface intersection) ---</span>
+        <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">alpha_rad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+
+            <span class="c1"># --- Determine the contact point from the surface bottom ---</span>
+            <span class="n">z_line</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">surf</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="n">surface_data</span><span class="p">])</span>
+            <span class="n">Xc</span><span class="p">,</span> <span class="n">Zc</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">popt</span>
+
+            <span class="n">delta_z</span> <span class="o">=</span> <span class="n">z_line</span> <span class="o">-</span> <span class="n">Zc</span>
+            <span class="n">discriminant</span> <span class="o">=</span> <span class="n">R</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">delta_z</span><span class="o">**</span><span class="mi">2</span>
+            <span class="k">if</span> <span class="n">discriminant</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span>
+
+            <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">discriminant</span><span class="p">)</span>
+
+            <span class="c1"># Choose correct side (right if α &gt; 90°, left if α &lt; 90°)</span>
+            <span class="k">if</span> <span class="n">alpha</span> <span class="o">&gt;</span> <span class="mi">90</span><span class="p">:</span>
+                <span class="n">x_contact</span> <span class="o">=</span> <span class="n">Xc</span> <span class="o">+</span> <span class="n">dx</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x_contact</span> <span class="o">=</span> <span class="n">Xc</span> <span class="o">-</span> <span class="n">dx</span>
+            <span class="n">z_contact</span> <span class="o">=</span> <span class="n">z_line</span>
+
+            <span class="c1"># --- Tangent slope at the intersection point ---</span>
+            <span class="n">m_tangent</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">x_contact</span> <span class="o">-</span> <span class="n">Xc</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">z_contact</span> <span class="o">-</span> <span class="n">Zc</span><span class="p">)</span>
+
+            <span class="c1"># --- Extend tangent line upwards to top of circle ---</span>
+            <span class="n">z_top</span> <span class="o">=</span> <span class="n">Zc</span> <span class="o">+</span> <span class="n">R</span> <span class="o">*</span> <span class="mf">1.1</span>  <span class="c1"># extend slightly above for visibility</span>
+            <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="n">m_tangent</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mf">1e-6</span><span class="p">:</span>
+                <span class="n">x_top</span> <span class="o">=</span> <span class="n">x_contact</span> <span class="o">+</span> <span class="p">(</span><span class="n">z_top</span> <span class="o">-</span> <span class="n">z_contact</span><span class="p">)</span> <span class="o">/</span> <span class="n">m_tangent</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x_top</span> <span class="o">=</span> <span class="n">x_contact</span>
+            <span class="n">x_line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_contact</span><span class="p">,</span> <span class="n">x_top</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">z_line</span> <span class="o">=</span> <span class="n">m_tangent</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_line</span> <span class="o">-</span> <span class="n">x_contact</span><span class="p">)</span> <span class="o">+</span> <span class="n">z_contact</span>
+
+            <span class="c1"># Draw tangent line</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">x_line</span><span class="p">,</span>
+                <span class="n">z_line</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tangent_color</span><span class="p">,</span>
+                <span class="n">lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+                <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Tangent (α=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">°)&quot;</span><span class="p">,</span>
+                <span class="n">zorder</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># --- Parameters from the circle fit ---</span>
+            <span class="n">Xc</span><span class="p">,</span> <span class="n">Zc</span><span class="p">,</span> <span class="n">R</span> <span class="o">=</span> <span class="n">popt</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span>
+
+            <span class="c1"># --- Determine intersection (right side only) ---</span>
+            <span class="n">z_line</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">surf</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="n">surface_data</span><span class="p">])</span>
+            <span class="n">delta_z</span> <span class="o">=</span> <span class="n">z_line</span> <span class="o">-</span> <span class="n">Zc</span>
+            <span class="n">discriminant</span> <span class="o">=</span> <span class="n">R</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">delta_z</span><span class="o">**</span><span class="mi">2</span>
+            <span class="k">if</span> <span class="n">discriminant</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">return</span>
+
+            <span class="n">x_contact</span> <span class="o">=</span> <span class="n">Xc</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">discriminant</span><span class="p">)</span>  <span class="c1"># right-side intersection</span>
+            <span class="n">z_contact</span> <span class="o">=</span> <span class="n">z_line</span>
+
+            <span class="c1"># --- Tangent slope at contact point ---</span>
+            <span class="n">m_tangent</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">x_contact</span> <span class="o">-</span> <span class="n">Xc</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">z_contact</span> <span class="o">-</span> <span class="n">Zc</span><span class="p">)</span>
+
+            <span class="c1"># --- Draw tangent line up to top of circle ---</span>
+            <span class="n">z_top</span> <span class="o">=</span> <span class="n">Zc</span> <span class="o">+</span> <span class="n">R</span> <span class="o">*</span> <span class="mf">1.1</span>
+            <span class="n">x_top</span> <span class="o">=</span> <span class="n">x_contact</span> <span class="o">+</span> <span class="p">(</span><span class="n">z_top</span> <span class="o">-</span> <span class="n">z_contact</span><span class="p">)</span> <span class="o">/</span> <span class="n">m_tangent</span>
+            <span class="n">x_line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_contact</span><span class="p">,</span> <span class="n">x_top</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+            <span class="n">z_line_tan</span> <span class="o">=</span> <span class="n">m_tangent</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_line</span> <span class="o">-</span> <span class="n">x_contact</span><span class="p">)</span> <span class="o">+</span> <span class="n">z_contact</span>
+
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                <span class="n">x_line</span><span class="p">,</span>
+                <span class="n">z_line_tan</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s2">&quot;tab:orange&quot;</span><span class="p">,</span>
+                <span class="n">lw</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span>
+                <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Tangent (α=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">°)&quot;</span><span class="p">,</span>
+                <span class="n">zorder</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+            <span class="p">)</span>
+
+            <span class="c1"># --- Draw arc centered at contact point (right side) ---</span>
+            <span class="n">alpha_rad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="n">arc_radius</span> <span class="o">=</span> <span class="n">R</span> <span class="o">*</span> <span class="mf">0.25</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">alpha_rad</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">100</span>
+            <span class="p">)</span>  <span class="c1"># from horizontal (0) to tangent (α)</span>
+            <span class="n">arc_x</span> <span class="o">=</span> <span class="n">x_contact</span> <span class="o">+</span> <span class="n">arc_radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+            <span class="n">arc_z</span> <span class="o">=</span> <span class="n">z_contact</span> <span class="o">+</span> <span class="n">arc_radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">arc_x</span><span class="p">,</span> <span class="n">arc_z</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+
+            <span class="c1"># --- Label α value near the middle of the arc ---</span>
+            <span class="n">mid_theta</span> <span class="o">=</span> <span class="n">alpha_rad</span> <span class="o">/</span> <span class="mi">2</span>
+            <span class="n">text_x</span> <span class="o">=</span> <span class="n">x_contact</span> <span class="o">+</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">arc_radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">mid_theta</span><span class="p">)</span>
+            <span class="n">text_z</span> <span class="o">=</span> <span class="n">z_contact</span> <span class="o">+</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">arc_radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">mid_theta</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span>
+                <span class="n">text_x</span><span class="p">,</span>
+                <span class="n">text_z</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">°&quot;</span><span class="p">,</span>
+                <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+                <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+                <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
+                <span class="n">zorder</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+            <span class="p">)</span>
+
+        <span class="c1"># --- Axes ---</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;x (Å)&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;z (Å)&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;major&quot;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">xaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">AutoMinorLocator</span><span class="p">())</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">yaxis</span><span class="o">.</span><span class="n">set_minor_locator</span><span class="p">(</span><span class="n">AutoMinorLocator</span><span class="p">())</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">,</span> <span class="n">adjustable</span><span class="o">=</span><span class="s2">&quot;box&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">x_min</span> <span class="o">-</span> <span class="mi">5</span><span class="p">,</span> <span class="n">x_max</span> <span class="o">+</span> <span class="mi">5</span><span class="p">)</span>
+
+        <span class="c1"># --- Legend ---</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span>
+            <span class="n">handles</span><span class="o">=</span><span class="p">[</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">Line2D</span><span class="p">(</span>
+                    <span class="p">[],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Surface contour&quot;</span>
+                <span class="p">),</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">Line2D</span><span class="p">(</span>
+                    <span class="p">[],</span>
+                    <span class="p">[],</span>
+                    <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">circle_color</span><span class="p">,</span>
+                    <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span>
+                    <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Fitted circle&quot;</span><span class="p">,</span>
+                <span class="p">),</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">Line2D</span><span class="p">(</span>
+                    <span class="p">[],</span> <span class="p">[],</span> <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tangent_color</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Tangent line&quot;</span>
+                <span class="p">),</span>
+            <span class="p">],</span>
+            <span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">,</span>
+            <span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">fontsize</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+        <span class="p">)</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">(</span><span class="n">pad</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">output_filename</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s2">&quot;tight&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="DropletSlicedPlotterPlotly">
+<a class="viewcode-back" href="../../../API/index.html#wetting_angle_kit.visualization_angles.DropletSlicedPlotterPlotly">[docs]</a>
+<span class="k">class</span> <span class="nc">DropletSlicedPlotterPlotly</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interactive Plotly slice visualization with toggleable layers.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">center</span>
+        <span class="c1"># Colors</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oxygen_color</span> <span class="o">=</span> <span class="s2">&quot;#d62828&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hydrogen_color</span> <span class="o">=</span> <span class="s2">&quot;#FFFFFF&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">surface_color</span> <span class="o">=</span> <span class="s2">&quot;#000000&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">circle_color</span> <span class="o">=</span> <span class="s2">&quot;#0A9396&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wall_color</span> <span class="o">=</span> <span class="s2">&quot;#000000&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tangent_color</span> <span class="o">=</span> <span class="s2">&quot;#bb3e03&quot;</span>
+
+<div class="viewcode-block" id="DropletSlicedPlotterPlotly.plot_surface_points">
+<a class="viewcode-back" href="../../../API/index.html#wetting_angle_kit.visualization_angles.DropletSlicedPlotterPlotly.plot_surface_points">[docs]</a>
+    <span class="k">def</span> <span class="nf">plot_surface_points</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">oxygen_position</span><span class="p">,</span>
+        <span class="n">surface_data</span><span class="p">,</span>
+        <span class="n">popt</span><span class="p">,</span>
+        <span class="n">wall_coords</span><span class="p">,</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">y_com</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">pbc_y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+        <span class="n">show_water</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_surface</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_circle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_tangent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">show_wall</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create interactive Plotly figure for a single frame slice.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        oxygen_position : ndarray (N, 3)</span>
+<span class="sd">            Oxygen atom coordinates.</span>
+<span class="sd">        surface_data : list[array]</span>
+<span class="sd">            List of surface contours for selected slice.</span>
+<span class="sd">        popt : sequence</span>
+<span class="sd">            Fitted circle parameters (Xc, Zc, R, extra).</span>
+<span class="sd">        wall_coords : ndarray (M, 3)</span>
+<span class="sd">            Wall particle coordinates.</span>
+<span class="sd">        alpha : float, optional</span>
+<span class="sd">            Contact angle for tangent construction.</span>
+<span class="sd">        y_com : float, optional</span>
+<span class="sd">            Mean y used for slicing; computed if None.</span>
+<span class="sd">        pbc_y : float, optional</span>
+<span class="sd">            Y box length for periodic slicing.</span>
+<span class="sd">        show_water, show_surface, show_circle, show_tangent, show_wall : bool</span>
+<span class="sd">            Layer visibility toggles.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        plotly.graph_objects.Figure</span>
+<span class="sd">            Configured figure object (not saved).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">y_com</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">y_com</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">oxygen_position</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="c1"># Select slice in y-direction</span>
+        <span class="k">if</span> <span class="n">pbc_y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">oxygen_position</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_com</span><span class="p">)</span>
+            <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">pbc_y</span> <span class="o">-</span> <span class="n">dy</span><span class="p">)</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">dy</span> <span class="o">&lt;=</span> <span class="mi">3</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mask</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">oxygen_position</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">y_com</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">3</span>
+        <span class="n">oxygen_selected</span> <span class="o">=</span> <span class="n">oxygen_position</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span>
+        <span class="c1"># Recenter if needed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">:</span>
+            <span class="n">z_shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span>
+            <span class="n">oxygen_selected</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">z_shift</span>
+            <span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-=</span> <span class="n">z_shift</span>
+            <span class="n">surface_data</span> <span class="o">=</span> <span class="p">[</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">([</span><span class="n">surf</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">surf</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">z_shift</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="n">surface_data</span>
+            <span class="p">]</span>
+            <span class="n">Xc</span><span class="p">,</span> <span class="n">Zc</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">popt</span>
+            <span class="n">Zc</span> <span class="o">-=</span> <span class="n">z_shift</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">Xc</span><span class="p">,</span> <span class="n">Zc</span><span class="p">,</span> <span class="n">R</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">popt</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+        <span class="c1"># --- Wall ---</span>
+        <span class="k">if</span> <span class="n">show_wall</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">wall_coords</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers&quot;</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Wall&quot;</span><span class="p">,</span>
+                    <span class="n">marker</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wall_color</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>
+                    <span class="n">opacity</span><span class="o">=</span><span class="mf">0.7</span><span class="p">,</span>
+                    <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="c1"># --- Water molecules ---</span>
+        <span class="k">if</span> <span class="n">show_water</span><span class="p">:</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">oxygen_selected</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">oxygen_selected</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;markers&quot;</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Water&quot;</span><span class="p">,</span>
+                    <span class="n">marker</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">oxygen_color</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
+                    <span class="n">opacity</span><span class="o">=</span><span class="mf">0.8</span><span class="p">,</span>
+                    <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="c1"># --- Surface contour ---</span>
+        <span class="k">if</span> <span class="n">show_surface</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="n">surface_data</span><span class="p">:</span>
+                <span class="c1"># Append the first point to the end to close the contour</span>
+                <span class="n">closed_surf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">([</span><span class="n">surf</span><span class="p">,</span> <span class="n">surf</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                    <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">closed_surf</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">closed_surf</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+                        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                        <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Surface contour&quot;</span><span class="p">,</span>
+                        <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">surface_color</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>  <span class="c1"># Thicker line</span>
+                        <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+        <span class="c1"># --- Fitted circle ---</span>
+        <span class="k">if</span> <span class="n">show_circle</span><span class="p">:</span>
+            <span class="n">theta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">200</span><span class="p">)</span>
+            <span class="n">circle_x</span> <span class="o">=</span> <span class="n">Xc</span> <span class="o">+</span> <span class="n">R</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+            <span class="n">circle_z</span> <span class="o">=</span> <span class="n">Zc</span> <span class="o">+</span> <span class="n">R</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">circle_x</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">circle_z</span><span class="p">,</span>
+                    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="s2">&quot;Fitted Circle&quot;</span><span class="p">,</span>
+                    <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                        <span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">circle_color</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">dash</span><span class="o">=</span><span class="s2">&quot;dash&quot;</span>
+                    <span class="p">),</span>  <span class="c1"># Thicker line</span>
+                    <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="c1"># --- Tangent + α arc ---</span>
+        <span class="k">if</span> <span class="n">show_tangent</span> <span class="ow">and</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">z_line</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">surf</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">surf</span> <span class="ow">in</span> <span class="n">surface_data</span><span class="p">])</span>
+            <span class="n">delta_z</span> <span class="o">=</span> <span class="n">z_line</span> <span class="o">-</span> <span class="n">Zc</span>
+            <span class="n">discriminant</span> <span class="o">=</span> <span class="n">R</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">delta_z</span><span class="o">**</span><span class="mi">2</span>
+            <span class="k">if</span> <span class="n">discriminant</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">x_contact</span> <span class="o">=</span> <span class="n">Xc</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">discriminant</span><span class="p">)</span>  <span class="c1"># Right side</span>
+                <span class="n">z_contact</span> <span class="o">=</span> <span class="n">z_line</span>
+                <span class="n">m_tangent</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="n">x_contact</span> <span class="o">-</span> <span class="n">Xc</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">z_contact</span> <span class="o">-</span> <span class="n">Zc</span><span class="p">)</span>
+                <span class="c1"># Tangent line</span>
+                <span class="n">z_top</span> <span class="o">=</span> <span class="n">Zc</span> <span class="o">+</span> <span class="n">R</span> <span class="o">*</span> <span class="mf">1.1</span>
+                <span class="n">x_top</span> <span class="o">=</span> <span class="n">x_contact</span> <span class="o">+</span> <span class="p">(</span><span class="n">z_top</span> <span class="o">-</span> <span class="n">z_contact</span><span class="p">)</span> <span class="o">/</span> <span class="n">m_tangent</span>
+                <span class="n">x_line</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">x_contact</span><span class="p">,</span> <span class="n">x_top</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+                <span class="n">z_line_tan</span> <span class="o">=</span> <span class="n">m_tangent</span> <span class="o">*</span> <span class="p">(</span><span class="n">x_line</span> <span class="o">-</span> <span class="n">x_contact</span><span class="p">)</span> <span class="o">+</span> <span class="n">z_contact</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                    <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">x_line</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">z_line_tan</span><span class="p">,</span>
+                        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">°&quot;</span><span class="p">,</span>  <span class="c1"># Only show angle value</span>
+                        <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tangent_color</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span>  <span class="c1"># Thicker line</span>
+                        <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+                <span class="c1"># α arc (left side)</span>
+                <span class="n">alpha_rad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+                <span class="n">arc_radius</span> <span class="o">=</span> <span class="n">R</span> <span class="o">*</span> <span class="mf">0.25</span>
+                <span class="n">theta_arc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">-</span> <span class="n">alpha_rad</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+                <span class="n">arc_x</span> <span class="o">=</span> <span class="n">x_contact</span> <span class="o">+</span> <span class="n">arc_radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">theta_arc</span><span class="p">)</span>
+                <span class="n">arc_z</span> <span class="o">=</span> <span class="n">z_contact</span> <span class="o">+</span> <span class="n">arc_radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">theta_arc</span><span class="p">)</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">add_trace</span><span class="p">(</span>
+                    <span class="n">go</span><span class="o">.</span><span class="n">Scatter</span><span class="p">(</span>
+                        <span class="n">x</span><span class="o">=</span><span class="n">arc_x</span><span class="p">,</span>
+                        <span class="n">y</span><span class="o">=</span><span class="n">arc_z</span><span class="p">,</span>
+                        <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span>
+                        <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">° Arc&quot;</span><span class="p">,</span>  <span class="c1"># Only show angle value</span>
+                        <span class="n">line</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+                        <span class="n">visible</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">showlegend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Label α near mid-arc</span>
+                <span class="n">mid_theta</span> <span class="o">=</span> <span class="n">alpha_rad</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="n">text_x</span> <span class="o">=</span> <span class="n">x_contact</span> <span class="o">+</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">arc_radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">mid_theta</span><span class="p">)</span>
+                <span class="n">text_z</span> <span class="o">=</span> <span class="n">z_contact</span> <span class="o">+</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="n">arc_radius</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">mid_theta</span><span class="p">)</span>
+                <span class="n">fig</span><span class="o">.</span><span class="n">add_annotation</span><span class="p">(</span>
+                    <span class="n">x</span><span class="o">=</span><span class="n">text_x</span><span class="p">,</span>
+                    <span class="n">y</span><span class="o">=</span><span class="n">text_z</span><span class="p">,</span>
+                    <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">°&quot;</span><span class="p">,</span>
+                    <span class="n">showarrow</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">font</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">),</span>
+                <span class="p">)</span>
+        <span class="c1"># --- Layout ---</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+            <span class="n">width</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="mi">450</span><span class="p">,</span>
+            <span class="n">xaxis_title</span><span class="o">=</span><span class="s2">&quot;x (Å)&quot;</span><span class="p">,</span>
+            <span class="n">yaxis_title</span><span class="o">=</span><span class="s2">&quot;z (Å)&quot;</span><span class="p">,</span>
+            <span class="n">template</span><span class="o">=</span><span class="s2">&quot;plotly_white&quot;</span><span class="p">,</span>
+            <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">legend</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># Position legend outside the plot</span>
+                <span class="n">bgcolor</span><span class="o">=</span><span class="s2">&quot;rgba(255, 255, 255, 0.8)&quot;</span><span class="p">,</span>
+                <span class="n">bordercolor</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span>
+                <span class="n">borderwidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">itemsizing</span><span class="o">=</span><span class="s2">&quot;constant&quot;</span><span class="p">,</span>  <span class="c1"># Ensures checkboxes are clearly visible</span>
+                <span class="n">font</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">10</span><span class="p">),</span>
+            <span class="p">),</span>
+            <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">scaleanchor</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">scaleratio</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">fig</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ContactAngleAnimator">
+<a class="viewcode-back" href="../../../API/index.html#wetting_angle_kit.visualization_angles.ContactAngleAnimator">[docs]</a>
+<span class="k">class</span> <span class="nc">ContactAngleAnimator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate interactive Plotly slider animation of median slice angle per frame.&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">filename</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+        <span class="n">particle_type_wall</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span>
+        <span class="n">oxygen_type</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">hydrogen_type</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
+        <span class="n">particule_liquid_type</span><span class="p">:</span> <span class="nb">set</span><span class="p">,</span>
+        <span class="n">n_frames</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
+        <span class="n">droplet_geometry</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cylinder_y&quot;</span><span class="p">,</span>
+        <span class="n">delta_cylinder</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
+        <span class="n">max_dist</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+        <span class="n">width_cylinder</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">21</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particle_type_wall</span> <span class="o">=</span> <span class="n">particle_type_wall</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oxygen_type</span> <span class="o">=</span> <span class="n">oxygen_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hydrogen_type</span> <span class="o">=</span> <span class="n">hydrogen_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">particule_liquid_type</span> <span class="o">=</span> <span class="n">particule_liquid_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span> <span class="o">=</span> <span class="n">n_frames</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">droplet_geometry</span> <span class="o">=</span> <span class="n">droplet_geometry</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delta_cylinder</span> <span class="o">=</span> <span class="n">delta_cylinder</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_dist</span> <span class="o">=</span> <span class="n">max_dist</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width_cylinder</span> <span class="o">=</span> <span class="n">width_cylinder</span>
+
+        <span class="c1"># Initialize objects</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wat_find</span> <span class="o">=</span> <span class="n">DumpWaterMoleculeFinder</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span>
+            <span class="n">particle_type_wall</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">particle_type_wall</span><span class="p">,</span>
+            <span class="n">oxygen_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">oxygen_type</span><span class="p">,</span>
+            <span class="n">hydrogen_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">hydrogen_type</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">oxygen_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">wat_find</span><span class="o">.</span><span class="n">get_water_oxygen_ids</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coord_wall</span> <span class="o">=</span> <span class="n">DumpWallParser</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">particule_liquid_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">particule_liquid_type</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">wall_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coord_wall</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parser</span> <span class="o">=</span> <span class="n">DumpParser</span><span class="p">(</span><span class="n">filepath</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plotter</span> <span class="o">=</span> <span class="n">DropletSlicedPlotterPlotly</span><span class="p">(</span><span class="n">center</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ContactAngleAnimator.generate_animation">
+<a class="viewcode-back" href="../../../API/index.html#wetting_angle_kit.visualization_angles.ContactAngleAnimator.generate_animation">[docs]</a>
+    <span class="k">def</span> <span class="nf">generate_animation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">output_filename</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;ContactAngle_Median_PerFrame_Slider.html&quot;</span>
+    <span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build and write HTML with slider of median contact angles over frames.</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        output_filename : str, default &quot;ContactAngle_Median_PerFrame_Slider.html&quot;</span>
+<span class="sd">            Output HTML file path.</span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        None</span>
+<span class="sd">            Writes HTML file and prints path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Figure</span><span class="p">()</span>
+        <span class="n">frames_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">frame_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">median_angles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">frame_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_frames</span><span class="p">):</span>
+            <span class="n">oxygen_position</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parser</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span>
+                <span class="n">frame_index</span><span class="o">=</span><span class="n">frame_idx</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">oxygen_indices</span>
+            <span class="p">)</span>
+            <span class="n">processor</span> <span class="o">=</span> <span class="n">ContactAngleSliced</span><span class="p">(</span>
+                <span class="n">liquid_coordinates</span><span class="o">=</span><span class="n">oxygen_position</span><span class="p">,</span>
+                <span class="n">liquid_geom_center</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">oxygen_position</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+                <span class="n">droplet_geometry</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">droplet_geometry</span><span class="p">,</span>
+                <span class="n">delta_cylinder</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">delta_cylinder</span><span class="p">,</span>
+                <span class="n">max_dist</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">max_dist</span><span class="p">,</span>
+                <span class="n">width_cylinder</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">width_cylinder</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">list_alfas</span><span class="p">,</span> <span class="n">array_surfaces</span><span class="p">,</span> <span class="n">array_popt</span> <span class="o">=</span> <span class="n">processor</span><span class="o">.</span><span class="n">predict_contact_angle</span><span class="p">()</span>
+            <span class="n">median_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">list_alfas</span><span class="p">)[</span><span class="nb">len</span><span class="p">(</span><span class="n">list_alfas</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+            <span class="n">alpha</span> <span class="o">=</span> <span class="n">list_alfas</span><span class="p">[</span><span class="n">median_idx</span><span class="p">]</span>
+            <span class="n">popt</span> <span class="o">=</span> <span class="n">array_popt</span><span class="p">[</span><span class="n">median_idx</span><span class="p">]</span>
+            <span class="n">surface</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">array_surfaces</span><span class="p">[</span><span class="n">median_idx</span><span class="p">]])</span>
+            <span class="n">median_angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span>
+            <span class="n">fig_frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">plotter</span><span class="o">.</span><span class="n">plot_surface_points</span><span class="p">(</span>
+                <span class="n">oxygen_position</span><span class="o">=</span><span class="n">oxygen_position</span><span class="p">,</span>
+                <span class="n">surface_data</span><span class="o">=</span><span class="n">surface</span><span class="p">,</span>
+                <span class="n">popt</span><span class="o">=</span><span class="n">popt</span><span class="p">,</span>
+                <span class="n">wall_coords</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">wall_coords</span><span class="o">.</span><span class="n">copy</span><span class="p">(),</span>
+                <span class="n">y_com</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">oxygen_position</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]),</span>
+                <span class="n">pbc_y</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">alpha</span><span class="o">=</span><span class="n">alpha</span><span class="p">,</span>
+                <span class="n">show_water</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">show_surface</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">show_circle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">show_tangent</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">show_wall</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">frame</span> <span class="o">=</span> <span class="n">go</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span>
+                <span class="n">data</span><span class="o">=</span><span class="n">fig_frame</span><span class="o">.</span><span class="n">data</span><span class="p">,</span>
+                <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Frame </span><span class="si">{</span><span class="n">frame_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="n">layout</span><span class="o">=</span><span class="n">go</span><span class="o">.</span><span class="n">Layout</span><span class="p">(</span>
+                    <span class="n">title_text</span><span class="o">=</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s2">&quot;Frame </span><span class="si">{</span><span class="n">frame_idx</span><span class="si">}</span><span class="s2"> | Median contact angle = &quot;</span>
+                        <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="se">\u00b0</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="n">frames_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+            <span class="n">frame_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Frame </span><span class="si">{</span><span class="n">frame_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">frames</span> <span class="o">=</span> <span class="n">frames_list</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">add_traces</span><span class="p">(</span><span class="n">frames_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">update_layout</span><span class="p">(</span>
+            <span class="n">title</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;Interactive Contact Angle Evolution (Median Slice per &quot;</span> <span class="s2">&quot;Frame)&quot;</span><span class="p">),</span>
+            <span class="n">width</span><span class="o">=</span><span class="mi">800</span><span class="p">,</span>
+            <span class="n">height</span><span class="o">=</span><span class="mi">600</span><span class="p">,</span>
+            <span class="n">margin</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">l</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">r</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">100</span><span class="p">),</span>
+            <span class="n">xaxis_title</span><span class="o">=</span><span class="s2">&quot;x (</span><span class="se">\u03c3</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="n">yaxis_title</span><span class="o">=</span><span class="s2">&quot;z (</span><span class="se">\u03c3</span><span class="s2">)&quot;</span><span class="p">,</span>
+            <span class="n">template</span><span class="o">=</span><span class="s2">&quot;simple_white&quot;</span><span class="p">,</span>
+            <span class="n">showlegend</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">legend</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">x</span><span class="o">=</span><span class="mf">1.05</span><span class="p">,</span>
+                <span class="n">y</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span>
+                <span class="n">bgcolor</span><span class="o">=</span><span class="s2">&quot;rgba(255,255,255,0.8)&quot;</span><span class="p">,</span>
+                <span class="n">bordercolor</span><span class="o">=</span><span class="s2">&quot;lightgray&quot;</span><span class="p">,</span>
+                <span class="n">borderwidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                <span class="n">font</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">11</span><span class="p">),</span>
+            <span class="p">),</span>
+            <span class="n">xaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">mirror</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">showline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">linecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+                <span class="n">ticks</span><span class="o">=</span><span class="s2">&quot;outside&quot;</span><span class="p">,</span>
+                <span class="n">showgrid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">gridcolor</span><span class="o">=</span><span class="s2">&quot;lightgray&quot;</span><span class="p">,</span>
+                <span class="n">zeroline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">yaxis</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span>
+                <span class="n">mirror</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">showline</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">linecolor</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span>
+                <span class="n">ticks</span><span class="o">=</span><span class="s2">&quot;outside&quot;</span><span class="p">,</span>
+                <span class="n">showgrid</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">gridcolor</span><span class="o">=</span><span class="s2">&quot;lightgray&quot;</span><span class="p">,</span>
+                <span class="n">zeroline</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">scaleanchor</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+                <span class="n">scaleratio</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="n">sliders</span><span class="o">=</span><span class="p">[</span>
+                <span class="p">{</span>
+                    <span class="s2">&quot;active&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                    <span class="s2">&quot;pad&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;b&quot;</span><span class="p">:</span> <span class="mi">60</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="mi">40</span><span class="p">},</span>
+                    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+                    <span class="s2">&quot;len&quot;</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span>
+                    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.1</span><span class="p">,</span>
+                    <span class="s2">&quot;yanchor&quot;</span><span class="p">:</span> <span class="s2">&quot;top&quot;</span><span class="p">,</span>
+                    <span class="s2">&quot;steps&quot;</span><span class="p">:</span> <span class="p">[</span>
+                        <span class="p">{</span>
+                            <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="p">[</span>
+                                <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;Frame </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">],</span>
+                                <span class="p">{</span>
+                                    <span class="s2">&quot;frame&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;duration&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;redraw&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+                                    <span class="s2">&quot;mode&quot;</span><span class="p">:</span> <span class="s2">&quot;immediate&quot;</span><span class="p">,</span>
+                                <span class="p">},</span>
+                            <span class="p">],</span>
+                            <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="s2">&quot;animate&quot;</span><span class="p">,</span>
+                        <span class="p">}</span>
+                        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">frames_list</span><span class="p">))</span>
+                    <span class="p">],</span>
+                <span class="p">}</span>
+            <span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">write_html</span><span class="p">(</span><span class="n">output_filename</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Interactive HTML saved: </span><span class="si">{</span><span class="n">output_filename</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+</div>
+
+
+
+<span class="c1"># Example usage</span>
+<span class="c1"># if __name__ == &quot;__main__&quot;:</span>
+<span class="c1">#    animator = ContactAngleAnimator(</span>
+<span class="c1">#        filename=&quot;../wetting_angle_kit/tests/trajectories/&quot;</span>
+<span class="c1">#        &quot;traj_10_3_330w_nve_4k_reajust.lammpstrj&quot;,</span>
+<span class="c1">#        particle_type_wall={3},</span>
+<span class="c1">#        oxygen_type=1,</span>
+<span class="c1">#        hydrogen_type=2,</span>
+<span class="c1">#        particule_liquid_type={2, 1},</span>
+<span class="c1">#        n_frames=10,</span>
+<span class="c1">#    )</span>
+<span class="c1">#    animator.generate_animation()</span>
+</pre>
+                            </div>
+
+                        </div>
+                    </div>
+                    <footer>
+
+                        <hr />
+
+                        <div role="contentinfo">
+                            <p>&#169; Copyright 2025, Gabriel.</p>
+                        </div>
+
+                        Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+                        <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+                        provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+                    </footer>
+                </div>
+            </div>
+        </section>
+    </div>
+    <script>
+        jQuery(function () {
+            SphinxRtdTheme.Navigation.enable(true);
+        });
+    </script>
+
+</body>
+
+</html>

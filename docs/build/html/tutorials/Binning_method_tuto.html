@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tutorial: Contact Angle Analysis (Binning Method) &mdash; wetting_angle_kit 0.1.2 documentation</title>
+  <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+  <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=9edc463e" />
+  <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+  <link rel="stylesheet" type="text/css" href="../_static/code-tabs.css?v=1bc26e2f" />
+
+
+  <script src="../_static/jquery.js?v=5d32c60e"></script>
+  <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+  <script src="../_static/documentation_options.js?v=92734c54"></script>
+  <script src="../_static/doctools.js?v=9bcbadda"></script>
+  <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+  <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+  <script src="../_static/copybutton.js?v=6dbb43f8"></script>
+  <script src="../_static/code-tabs.js?v=c983d12e"></script>
+  <script src="../_static/js/theme.js"></script>
+  <link rel="index" title="Index" href="../genindex.html" />
+  <link rel="search" title="Search" href="../search.html" />
+  <link rel="next" title="Tutorial: Contact Angle Analysis (Sliced Method)" href="Sliced_method_tuto.html" />
+  <link rel="prev" title="Tutorial: Using the Parser Module" href="Parser_tutorial.html" />
+</head>
+
+<body class="wy-body-for-nav">
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+
+
+
+          <a href="../index.html" class="icon icon-home">
+            wetting_angle_kit
+          </a>
+          <div role="search">
+            <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+              <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+              <input type="hidden" name="check_keywords" value="yes" />
+              <input type="hidden" name="area" value="default" />
+            </form>
+          </div>
+        </div>
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+          <p class="caption" role="heading"><span class="caption-text">Contents</span></p>
+          <ul class="current">
+            <li class="toctree-l1"><a class="reference internal" href="../introduction/index.html">Introduction</a></li>
+            <li class="toctree-l1 current"><a class="reference internal" href="index.html">Tutorials</a>
+              <ul class="current">
+                <li class="toctree-l2"><a class="reference internal" href="Parser_tutorial.html">Tutorial: Using the
+                    Parser Module</a></li>
+                <li class="toctree-l2 current"><a class="current reference internal" href="#">Tutorial: Contact Angle
+                    Analysis (Binning Method)</a>
+                  <ul>
+                    <li class="toctree-l3"><a class="reference internal" href="#overview">1. Overview</a></li>
+                    <li class="toctree-l3"><a class="reference internal" href="#prerequisites">2. Prerequisites</a></li>
+                    <li class="toctree-l3"><a class="reference internal" href="#example-script">3. Example Script</a>
+                    </li>
+                    <li class="toctree-l3"><a class="reference internal" href="#output">4. Output</a></li>
+                    <li class="toctree-l3"><a class="reference internal" href="#tips">5. Tips</a></li>
+                  </ul>
+                </li>
+                <li class="toctree-l2"><a class="reference internal" href="Sliced_method_tuto.html">Tutorial: Contact
+                    Angle Analysis (Sliced Method)</a></li>
+                <li class="toctree-l2"><a class="reference internal"
+                    href="Visualization_sliced_droplet.html">Visualization Tutorial — Droplet Surface and Contact
+                    Angle</a></li>
+                <li class="toctree-l2"><a class="reference internal"
+                    href="Visualization_trajectories_comparison_methods.html">Tutorial: Comparing Trajectory Analysis
+                    Methods</a></li>
+                <li class="toctree-l2"><a class="reference internal"
+                    href="Visualisation_size_changing_droplet_infinit_angle.html">Visualization: Size-Changing Droplet
+                    with Infinite Angle</a></li>
+              </ul>
+            </li>
+            <li class="toctree-l1"><a class="reference internal" href="../examples/index.html">Examples</a></li>
+            <li class="toctree-l1"><a class="reference internal" href="../API/index.html">API Reference</a></li>
+          </ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+      <nav class="wy-nav-top" aria-label="Mobile navigation menu">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../index.html">wetting_angle_kit</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+            <ul class="wy-breadcrumbs">
+              <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+              <li class="breadcrumb-item"><a href="index.html">Tutorials</a></li>
+              <li class="breadcrumb-item active">Tutorial: Contact Angle Analysis (Binning Method)</li>
+              <li class="wy-breadcrumbs-aside">
+                <a href="../_sources/tutorials/Binning_method_tuto.rst.txt" rel="nofollow"> View page source</a>
+              </li>
+            </ul>
+            <hr />
+          </div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+            <div itemprop="articleBody">
+
+              <section id="tutorial-contact-angle-analysis-binning-method">
+                <h1>Tutorial: Contact Angle Analysis (Binning Method)<a class="headerlink"
+                    href="#tutorial-contact-angle-analysis-binning-method" title="Link to this heading"></a></h1>
+                <p>This tutorial demonstrates how to compute the contact angle using the <strong>binning method</strong>
+                  in <code class="docutils literal notranslate"><span class="pre">wetting_angle_kit</span></code>.
+                  The method divides the simulation box into spatial bins to calculate the liquid–solid interface and
+                  the corresponding contact angle, for a group of frames.</p>
+                <hr class="docutils" />
+                <section id="overview">
+                  <h2>1. Overview<a class="headerlink" href="#overview" title="Link to this heading"></a></h2>
+                  <p>The <strong>binning method</strong> works by:</p>
+                  <ol class="arabic simple">
+                    <li>
+                      <p>Collecting the positions of water molecules (typically oxygen atoms).</p>
+                    </li>
+                    <li>
+                      <p>Dividing the region of interest into bins in the <strong>x–z</strong> plane.</p>
+                    </li>
+                    <li>
+                      <p>Computing density profiles and fitting the interface shape.</p>
+                    </li>
+                    <li>
+                      <p>Deriving the contact angle from the interface curvature.</p>
+                    </li>
+                  </ol>
+                </section>
+                <hr class="docutils" />
+                <section id="prerequisites">
+                  <h2>2. Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a>
+                  </h2>
+                  <p>Your trajectory file (e.g., a LAMMPS dump file) contain:</p>
+                  <ul class="simple">
+                    <li>
+                      <p>Atom IDs, types, and positions</p>
+                    </li>
+                    <li>
+                      <p>Liquid particles (in this cas Water molecules: O and H atoms)</p>
+                    </li>
+                  </ul>
+                  <p>Example trajectory:</p>
+                  <div class="highlight-default notranslate">
+                    <div class="highlight">
+                      <pre><span></span><span class="n">tests</span><span class="o">/</span><span class="n">trajectories</span><span class="o">/</span><span class="n">traj_10_3_330w_nve_4k_reajust</span><span class="o">.</span><span class="n">lammpstrj</span>
+</pre>
+                    </div>
+                  </div>
+                </section>
+                <hr class="docutils" />
+                <section id="example-script">
+                  <h2>3. Example Script<a class="headerlink" href="#example-script" title="Link to this heading"></a>
+                  </h2>
+                  <div class="highlight-python notranslate">
+                    <div class="highlight">
+                      <pre><span></span><span class="c1"># Import necessary modules</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wetting_angle_kit.parser</span><span class="w"> </span><span class="kn">import</span> <span class="n">DumpParser</span><span class="p">,</span> <span class="n">DumpWaterMoleculeFinder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">wetting_angle_kit.contact_angle_method</span><span class="w"> </span><span class="kn">import</span> <span class="n">contact_angle_analyzer</span>
+
+<span class="c1"># --- Step 1: Define the trajectory file ---</span>
+<span class="n">filename</span> <span class="o">=</span> <span class="s2">&quot;../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj&quot;</span>
+
+<span class="c1"># --- Step 2: Initialize the water molecule finder ---</span>
+<span class="c1"># This identifies O and H atoms in water molecules</span>
+<span class="n">wat_find</span> <span class="o">=</span> <span class="n">DumpWaterMoleculeFinder</span><span class="p">(</span>
+    <span class="n">filename</span><span class="p">,</span>
+    <span class="n">particle_type_wall</span><span class="o">=</span><span class="p">{</span><span class="mi">3</span><span class="p">},</span>  <span class="c1"># Wall atom types</span>
+    <span class="n">oxygen_type</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># Oxygen atom type</span>
+    <span class="n">hydrogen_type</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>  <span class="c1"># Hydrogen atom type</span>
+<span class="p">)</span>
+
+<span class="c1"># --- Step 3: Get oxygen atom indices for the first frame ---</span>
+<span class="n">oxygen_indices</span> <span class="o">=</span> <span class="n">wat_find</span><span class="o">.</span><span class="n">get_water_oxygen_ids</span><span class="p">(</span><span class="n">frame_index</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Number of water molecules:&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">oxygen_indices</span><span class="p">))</span>
+
+<span class="c1"># --- Step 4: Define binning parameters ---</span>
+<span class="n">binning_params</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;xi_0&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># Minimum x-coordinate</span>
+    <span class="s2">&quot;xi_f&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>  <span class="c1"># Maximum x-coordinate</span>
+    <span class="s2">&quot;nbins_xi&quot;</span><span class="p">:</span> <span class="mi">50</span><span class="p">,</span>  <span class="c1"># Number of bins along x</span>
+    <span class="s2">&quot;zi_0&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="c1"># Minimum z-coordinate</span>
+    <span class="s2">&quot;zi_f&quot;</span><span class="p">:</span> <span class="mf">100.0</span><span class="p">,</span>  <span class="c1"># Maximum z-coordinate</span>
+    <span class="s2">&quot;nbins_zi&quot;</span><span class="p">:</span> <span class="mi">25</span><span class="p">,</span>  <span class="c1"># Number of bins along z</span>
+<span class="p">}</span>
+
+<span class="c1"># --- Step 5: Initialize the parser ---</span>
+<span class="n">parser</span> <span class="o">=</span> <span class="n">DumpParser</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+
+<span class="c1"># --- Step 6: Create the contact angle analyzer ---</span>
+<span class="n">analyzer</span> <span class="o">=</span> <span class="n">contact_angle_analyzer</span><span class="p">(</span>
+    <span class="n">method</span><span class="o">=</span><span class="s2">&quot;binning&quot;</span><span class="p">,</span>
+    <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span>
+    <span class="n">output_dir</span><span class="o">=</span><span class="s2">&quot;results_binned_example&quot;</span><span class="p">,</span>
+    <span class="n">liquid_indices</span><span class="o">=</span><span class="n">oxygen_indices</span><span class="p">,</span>
+    <span class="n">droplet_geometry</span><span class="o">=</span><span class="s2">&quot;cylinder_y&quot;</span><span class="p">,</span>  <span class="c1"># Interface fitting model</span>
+    <span class="n">width_cylinder</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span>  <span class="c1"># Width parameter for interface fit</span>
+    <span class="n">binning_params</span><span class="o">=</span><span class="n">binning_params</span><span class="p">,</span>
+    <span class="n">plot_graphs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>  <span class="c1"># Disable plotting for automated runs</span>
+<span class="p">)</span>
+
+<span class="c1"># --- Step 7: Run analysis for a frame range ---</span>
+<span class="n">results</span> <span class="o">=</span> <span class="n">analyzer</span><span class="o">.</span><span class="n">analyze</span><span class="p">([</span><span class="mi">1</span><span class="p">])</span>  <span class="c1"># Analyze frame 1</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Analysis results:&quot;</span><span class="p">,</span> <span class="n">results</span><span class="p">)</span>
+</pre>
+                    </div>
+                  </div>
+                </section>
+                <hr class="docutils" />
+                <section id="output">
+                  <h2>4. Output<a class="headerlink" href="#output" title="Link to this heading"></a></h2>
+                  <p>Running this example will:</p>
+                  <ul class="simple">
+                    <li>
+                      <p>Parse the trajectory</p>
+                    </li>
+                    <li>
+                      <p>Compute the interface shape and local contact angle</p>
+                    </li>
+                    <li>
+                      <p>Save results (if enabled) under <code
+                          class="docutils literal notranslate"><span class="pre">results_binned_example/</span></code>
+                      </p>
+                    </li>
+                  </ul>
+                  <p>Example printed output:</p>
+                  <div class="highlight-default notranslate">
+                    <div class="highlight">
+                      <pre><span></span><span class="n">Number</span> <span class="n">of</span> <span class="n">water</span> <span class="n">molecules</span><span class="p">:</span> <span class="mi">4000</span>
+
+<span class="n">xi</span> <span class="nb">range</span><span class="p">:</span>       <span class="p">(</span><span class="mf">0.22795857644950415</span><span class="p">,</span><span class="mf">41.63623606829102</span><span class="p">)</span>
+<span class="n">zi</span> <span class="nb">range</span><span class="p">:</span>       <span class="p">(</span><span class="mf">7.54989</span><span class="p">,</span><span class="mf">47.3742</span><span class="p">)</span>
+
+<span class="n">Number</span> <span class="n">of</span> <span class="n">fluid</span> <span class="n">particles</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">:</span>     <span class="mf">4000.0</span>
+
+<span class="n">Binning</span> <span class="k">with</span> <span class="n">model</span><span class="p">:</span> <span class="n">spherical</span> <span class="o">...</span>
+<span class="n">Advancement</span><span class="p">:</span> <span class="mf">0.00</span><span class="o">%</span>
+<span class="n">Advancement</span><span class="p">:</span> <span class="mf">35.71</span><span class="o">%</span>
+<span class="n">Advancement</span><span class="p">:</span> <span class="mf">71.43</span><span class="o">%</span>
+
+<span class="n">Fitted</span> <span class="n">parameters</span> <span class="k">for</span> <span class="n">batch</span><span class="p">:</span>
+<span class="n">rho1</span><span class="p">:</span><span class="o">-</span><span class="mf">3.387136459516587e-05</span>
+<span class="n">rho2</span><span class="p">:</span><span class="mf">0.03389671977759232</span>
+<span class="n">R_eq</span><span class="p">:</span><span class="mf">37.22899870907881</span>
+<span class="n">zi_c</span><span class="p">:</span><span class="mf">9.244210981996149</span>
+<span class="n">zi_0</span><span class="p">:</span><span class="mf">6.265045941194059</span>
+<span class="n">t1</span><span class="p">:</span><span class="o">-</span><span class="mf">4.384696208816467</span>
+<span class="n">t2</span><span class="p">:</span><span class="mf">0.07378719793487698</span>
+
+<span class="n">Contact</span> <span class="n">angle</span> <span class="k">for</span> <span class="n">batch</span><span class="p">:</span>        <span class="mf">94.58987060394456</span>
+</pre>
+                    </div>
+                  </div>
+                  <p>A heat map representation of the particles density and the fitted semi-circle to get the contact
+                    angle.</p>
+                  <img alt="Heat maps density particles" src="../_images/bin_plot.png" />
+                </section>
+                <hr class="docutils" />
+                <section id="tips">
+                  <h2>5. Tips<a class="headerlink" href="#tips" title="Link to this heading"></a></h2>
+                  <ul class="simple">
+                    <li>
+                      <p>Adjust <code class="docutils literal notranslate"><span class="pre">xi_f</span></code>, <code
+                          class="docutils literal notranslate"><span class="pre">zi_f</span></code>, and the bin counts
+                        (<code class="docutils literal notranslate"><span class="pre">nbins_xi</span></code>, <code
+                          class="docutils literal notranslate"><span class="pre">nbins_zi</span></code>) according to
+                        your simulation box dimensions.</p>
+                    </li>
+                    <li>
+                      <p>If the wall surface is not flat or the system is tilted, pre-align it before analysis.</p>
+                    </li>
+                    <li>
+                      <p>Use <code class="docutils literal notranslate"><span class="pre">plot_graphs=True</span></code>
+                        to visualize the binning density and interface fitting.</p>
+                    </li>
+                    <li>
+                      <p>For multiple frames: <code
+                          class="docutils literal notranslate"><span class="pre">analyzer.analyze(range(0,</span> <span class="pre">100,</span> <span class="pre">10))</span></code>.
+                      </p>
+                    </li>
+                  </ul>
+                </section>
+              </section>
+
+
+            </div>
+          </div>
+          <footer>
+            <div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+              <a href="Parser_tutorial.html" class="btn btn-neutral float-left"
+                title="Tutorial: Using the Parser Module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"
+                  aria-hidden="true"></span> Previous</a>
+              <a href="Sliced_method_tuto.html" class="btn btn-neutral float-right"
+                title="Tutorial: Contact Angle Analysis (Sliced Method)" accesskey="n" rel="next">Next <span
+                  class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+            </div>
+
+            <hr />
+
+            <div role="contentinfo">
+              <p>&#169; Copyright 2025, Gabriel.</p>
+            </div>
+
+            Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+            <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+            provided by <a href="https://readthedocs.org">Read the Docs</a>.
+
+
+          </footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+    jQuery(function () {
+      SphinxRtdTheme.Navigation.enable(true);
+    });
+  </script>
+
+</body>
+
+</html>

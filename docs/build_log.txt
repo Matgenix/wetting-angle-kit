@@ -1,0 +1,83 @@
+Running Sphinx v8.2.3
+loading translations [en]... done
+making output directory... done
+[autosummary] generating autosummary for: API/index.rst, examples/index.rst, index.rst, tutorials/Binning_method_tuto.rst, tutorials/Parser_tutorial.rst, tutorials/Sliced_method_tuto.rst, tutorials/Visualisation_size_changing_droplet_infinit_angle.rst, tutorials/Visualization_sliced_droplet.rst, tutorials/Visualization_trajectories_comparison_methods.rst, tutorials/index.rst
+WARNING: Failed to import wetting_angle_kit.contact_angle_method.binned_method.
+Possible hints:
+* ModuleNotFoundError: No module named 'wetting_angle_kit.contact_angle_method.binned_method'
+* AttributeError: module 'wetting_angle_kit.contact_angle_method' has no attribute 'binned_method'
+building [mo]: targets for 0 po files that are out of date
+writing output...
+building [html]: targets for 10 source files that are out of date
+updating environment: [new config] 10 added, 0 changed, 0 removed
+reading sources... [ 10%] API/index
+reading sources... [ 20%] examples/index
+reading sources... [ 30%] index
+reading sources... [ 40%] tutorials/Binning_method_tuto
+reading sources... [ 50%] tutorials/Parser_tutorial
+reading sources... [ 60%] tutorials/Sliced_method_tuto
+reading sources... [ 70%] tutorials/Visualisation_size_changing_droplet_infinit_angle
+reading sources... [ 80%] tutorials/Visualization_sliced_droplet
+reading sources... [ 90%] tutorials/Visualization_trajectories_comparison_methods
+reading sources... [100%] tutorials/index
+
+/auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/wetting_angle_kit/contact_angle_method/sliced_method/__init__.py:docstring of wetting_angle_kit.contact_angle_method.sliced_method.angle_fitting_sliced.ContactAngleSliced:1: WARNING: duplicate object description of wetting_angle_kit.contact_angle_method.sliced_method.angle_fitting_sliced.ContactAngleSliced, other instance in API/index, use :no-index: for one of them
+/auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/wetting_angle_kit/contact_angle_method/sliced_method/__init__.py:docstring of wetting_angle_kit.contact_angle_method.sliced_method.multi_processing.ContactAngleSlicedParallel:1: WARNING: duplicate object description of wetting_angle_kit.contact_angle_method.sliced_method.multi_processing.ContactAngleSlicedParallel, other instance in API/index, use :no-index: for one of them
+/auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/wetting_angle_kit/contact_angle_method/sliced_method/__init__.py:docstring of wetting_angle_kit.contact_angle_method.sliced_method.surface_defined.SurfaceDefinition.analyze_lines:5: ERROR: Unexpected indentation. [docutils]
+/auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/wetting_angle_kit/contact_angle_method/sliced_method/__init__.py:docstring of wetting_angle_kit.contact_angle_method.sliced_method.surface_defined.SurfaceDefinition.analyze_lines:6: WARNING: Block quote ends without a blank line; unexpected unindent. [docutils]
+WARNING: autodoc: failed to import module 'binned_method' from module 'wetting_angle_kit.contact_angle_method'; the following exception was raised:
+['Traceback (most recent call last):\n', '  File "/home/ucl/modl/gtaillan/miniconda3/lib/python3.12/site-packages/sphinx/ext/autodoc/importer.py", line 269, in import_object\n    module = import_module(modname, try_reload=True)\n             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', '  File "/home/ucl/modl/gtaillan/miniconda3/lib/python3.12/site-packages/sphinx/ext/autodoc/importer.py", line 172, in import_module\n    raise ModuleNotFoundError(msg, name=modname)  # NoQA: TRY301\n    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n', "ModuleNotFoundError: No module named 'wetting_angle_kit.contact_angle_method.binned_method'\n"] [autodoc.import_object]
+/auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/wetting_angle_kit/parser/__init__.py:docstring of wetting_angle_kit.parser.parser_xyz.XYZParser.box_length_max:6: ERROR: Undefined substitution referenced: "a_i". [docutils]
+looking for now-outdated files... none found
+pickling environment... done
+checking consistency... done
+preparing documents... done
+copying assets...
+copying static files...
+Writing evaluated template result to /auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/docs/build/html/_static/language_data.js
+Writing evaluated template result to /auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/docs/build/html/_static/basic.css
+Writing evaluated template result to /auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/docs/build/html/_static/documentation_options.js
+Writing evaluated template result to /auto/home/users/g/t/gtaillan/lib_python_Hydro/wetting_angle_kit/docs/build/html/_static/alabaster.css
+copying static files: done
+copying extra files...
+copying extra files: done
+copying assets: done
+writing output... [ 10%] API/index
+writing output... [ 20%] examples/index
+writing output... [ 30%] index
+writing output... [ 40%] tutorials/Binning_method_tuto
+writing output... [ 50%] tutorials/Parser_tutorial
+writing output... [ 60%] tutorials/Sliced_method_tuto
+writing output... [ 70%] tutorials/Visualisation_size_changing_droplet_infinit_angle
+writing output... [ 80%] tutorials/Visualization_sliced_droplet
+writing output... [ 90%] tutorials/Visualization_trajectories_comparison_methods
+writing output... [100%] tutorials/index
+
+generating indices... genindex py-modindex done
+highlighting module code... [  6%] wetting_angle_kit.contact_angle_method.binning_method.angle_fitting_binning
+highlighting module code... [ 12%] wetting_angle_kit.contact_angle_method.contact_angle_analyzer
+highlighting module code... [ 19%] wetting_angle_kit.contact_angle_method.factory
+highlighting module code... [ 25%] wetting_angle_kit.contact_angle_method.sliced_method.angle_fitting_sliced
+highlighting module code... [ 31%] wetting_angle_kit.contact_angle_method.sliced_method.multi_processing
+highlighting module code... [ 38%] wetting_angle_kit.contact_angle_method.sliced_method.surface_defined
+highlighting module code... [ 44%] wetting_angle_kit.parser.base_parser
+highlighting module code... [ 50%] wetting_angle_kit.parser.parser_ase
+highlighting module code... [ 56%] wetting_angle_kit.parser.parser_dump
+highlighting module code... [ 62%] wetting_angle_kit.parser.parser_xyz
+highlighting module code... [ 69%] wetting_angle_kit.visualization_statistics_angles.base_trajectory_analyzer
+highlighting module code... [ 75%] wetting_angle_kit.visualization_statistics_angles.binning_trajectory_evolution
+highlighting module code... [ 81%] wetting_angle_kit.visualization_statistics_angles.comparison_methods
+highlighting module code... [ 88%] wetting_angle_kit.visualization_statistics_angles.graphs_circle_slice
+highlighting module code... [ 94%] wetting_angle_kit.visualization_statistics_angles.sliced_trajectory_evolution
+highlighting module code... [100%] wetting_angle_kit.visualization_statistics_angles.tools_visu
+
+writing additional pages... search done
+copying images... [ 33%] ../images/logo-wetting_angle_kit.png
+copying images... [ 67%] ../images/bin_plot.png
+copying images... [100%] ../images/droplet_plot.png
+
+dumping search index in English (code: en)... done
+dumping object inventory... done
+build succeeded, 7 warnings.
+
+The HTML pages are in build/html.
