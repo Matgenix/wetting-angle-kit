@@ -2,6 +2,7 @@ import pathlib
 
 import numpy as np
 import pytest
+
 from wetting_angle_kit.contact_angle_method import contact_angle_analyzer
 from wetting_angle_kit.parser import DumpParser, DumpWaterMoleculeFinder
 

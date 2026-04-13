@@ -6,6 +6,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Dict, List, Optional, Tuple, Type
 
 import numpy as np
+
 from wetting_angle_kit.parser import BaseParser
 
 multiprocessing.set_start_method("spawn", force=True)

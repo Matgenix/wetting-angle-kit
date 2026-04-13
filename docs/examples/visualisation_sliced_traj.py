@@ -1,4 +1,5 @@
 import numpy as np
+
 from wetting_angle_kit.contact_angle_method.sliced_method import ContactAngleSliced
 from wetting_angle_kit.parser import (
     DumpParser,
