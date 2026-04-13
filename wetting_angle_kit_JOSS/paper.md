@@ -49,13 +49,13 @@ It supports a variety of standard file formats including extended XYZ, LAMMPS, a
 
 # Statement of need
 
-The measurement of contact angles in molecular dynamics simulations has advanced significantly since early methodologies were proposed in 1997, with notable developments occurring in 2012, 2016, and 2024 [1-4]. Despite these advancements, the field currently lacks a standardized, unified platform for comparing and validating the diverse methods used to derive contact angles. This fragmentation poses challenges to reproducibility and collaborative research.
+The measurement of contact angles in molecular dynamics simulations has advanced significantly since early methodologies were proposed in 1997, with notable developments occurring in 2012, 2016, and 2024 [@Hautman1997; @Rafiee2012; @Vega2016; @Carlson2024]. Despite these advancements, the field currently lacks a standardized, unified platform for comparing and validating the diverse methods used to derive contact angles. This fragmentation poses challenges to reproducibility and collaborative research.
 
 Wetting-angle-kit addresses this gap by providing a flexible, open-source framework. It allows researchers to implement new post-processing of the MD simulation of contact angle, benchmark them against established techniques, and establish a consistent baseline for wettability analysis in molecular dynamics.
 
 # State of the field
 
-General-purpose molecular simulation post-process analysis tools, such as MDAnalysis and MDsuite, provide flexible frameworks for analyzing and visualizing trajectories. However, they do not include a standardized implementation of contact angle extraction methods, which are typically developed as custom scripts tailored to specific systems.
+General-purpose molecular simulation post-process analysis tools, such as OVITO [@Stukowski2010], MDSuite [@Tovey2023], and MDAnalysis [@Gowers2016; @MichaudAgrawal2011], provide flexible frameworks for analyzing and visualizing trajectories. However, they do not include a standardized implementation of contact angle extraction methods, which are typically developed as custom scripts tailored to specific systems.
 
 Existing approaches to estimating the contact angle vary significantly, ranging from geometric fitting techniques to density-based methods, and often offer limited interoperability and comparability. Wetting-angle-kit complements existing tools by focusing specifically on wettability analysis and providing a consistent environment for comparing multiple methods. This design promotes reproducibility and facilitates the development and/or implementation of other methods.
 
@@ -63,7 +63,11 @@ Existing approaches to estimating the contact angle vary significantly, ranging 
 
 Wetting-angle-kit is organized into three main components: parsing, analysis, and visualization. This modular design separates data handling, analysis, and visualization, allowing each component to evolve independently and simplifying the integration of new features.
 
-![3D spherical droplet scheme](package_overviewDiagram.drawio.pdf){width=50%}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.9\textwidth, trim=50 400 50 100, clip]{package_overviewDiagram.drawio.pdf}
+\caption{Package workflow scheme}
+\end{figure}
 
 
 The parser module provides a unified interface for reading trajectory data from multiple formats, ensuring consistent handling of atomic coordinates, simulation boxes, and frame information. This abstraction ensures that analyses are independent of the input format, enabling consistent workflows across different simulation engines.
@@ -72,9 +76,13 @@ This consistency facilitates seamless integration with downstream analysis metho
 
 The analysis module implements two complementary approaches for contact angle estimation. The slicing method performs frame-by-frame geometric analysis, enabling detailed temporal resolution at the cost of higher computational expense. In contrast, the binning method constructs time-averaged density fields, providing a computationally efficient approach suitable for large datasets and symmetric systems. Supporting both methods allows users to balance accuracy and performance depending on their application. All methods must support the two main geometric models: **spherical** (for spherical cap droplets) and **cylindrical** (for filament-like droplets, analyzed along a specific axis) [@Scocchi2011].
 
-![3D spherical droplet scheme](wetting_angle_kit_3d_droplet.pdf){width=50%}
-
-![Sliced droplet scheme](wetting_angle_kit.pdf){width=50%}
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.48\textwidth]{wetting_angle_kit_3d_droplet.pdf}
+\hfill
+\includegraphics[width=0.48\textwidth]{wetting_angle_kit_cylinder.pdf}
+\caption{Geometric representations of droplets used in the analysis: spherical droplet (left) and cylindrical droplet (right).}
+\end{figure}
 
 The software architecture relies on abstract base classes to enforce consistent interfaces and facilitate extensibility. This design enables users to implement new analysis methods while maintaining compatibility with existing workflows, promoting reuse and method comparison.
 
@@ -95,10 +103,20 @@ By plotting $\cos\theta$ against the inverse of the contact radius (or an equiva
 
 Wetting-angle-kit provides a reproducible framework for contact angle analysis in molecular simulations, addressing a common need in studies of nanoscale wetting. The package has been validated using MD simulations of water droplets on graphene and polymer substrates, yielding contact angle values consistent with literature results (e.g., ~93° for graphene, ~110° for PTFE). This result is consistent with literature values obtained using similar carbon-oxygen LJ parameters [@Jorgensen1996].
 
-![Mean cos angle vs surface for graphite](menscosnalge_vs_surface_graphite.pdf){width=50%}
-
-![Mean cos angle vs surface for PTFE](menscosnalge_vs_surface_ptfe.pdf){width=50%}
-
+\begin{figure}[h!]
+\centering
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{mean_cos_angle_vs_surface_graphite.pdf}
+    \caption{Graphite}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{mean_cos_angle_vs_surface_ptfe.pdf}
+    \caption{PTFE}
+\end{minipage}
+\end{figure}
 By enabling systematic comparison of analysis methods and providing standardized workflows, the software supports more robust and reproducible wettability studies. Its modular design also facilitates integration into existing simulation pipelines and encourages community-driven extensions. The package is expected to be particularly useful for researchers using various types of force fields (classical and MLIPs) or investigating nanoscale interfacial phenomena.
 
 
