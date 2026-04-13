@@ -2,7 +2,6 @@ import os
 
 import numpy as np
 import pytest
-
 from wetting_angle_kit.parser.parser_ase import AseParser
 
 # Path to the test trajectory file (ASE format)

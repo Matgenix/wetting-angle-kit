@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
 from matplotlib.ticker import AutoMinorLocator
-
 from wetting_angle_kit.contact_angle_method.sliced_method import ContactAngleSliced
 from wetting_angle_kit.parser import (
     DumpParser,
