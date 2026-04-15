@@ -43,15 +43,15 @@ bibliography: paper.bib
 
 # Summary
 
-Wetting-angle-kit is a Python toolkit designed to extract wettability properties, specifically the contact angle of a droplet on a surface, from molecular dynamics (MD) simulations. The software is intended for researchers working in molecular simulation of liquids on top of solid surfaces.
+Wetting-angle-kit is a Python toolkit designed to extract wettability properties, specifically the contact angle of a droplet on a surface, from molecular dynamics (MD) simulations. The software is intended for researchers working in molecular simulation of liquids on solid surfaces.
 
-It supports a variety of standard file formats including extended XYZ, LAMMPS, and ASE-readable trajectories and offers two distinct computational methods for contact angle analysis. Furthermore, the package includes robust utilities for statistical post-processing and data visualization, providing a comprehensive workflow for wettability studies.
+It supports a variety of standard file formats including extended XYZ, LAMMPS, and ASE-readable trajectories and offers two distinct computational methods for contact angle analysis. Furthermore, the package includes robust utilities for statistical post-processing and data visualization, providing a comprehensive workflow for wettability studies. This integrated approach reduces the need for custom analysis scripts and improves reproducibility across different simulation setups.
 
 # Statement of need
 
-The measurement of contact angles in molecular dynamics simulations has advanced significantly since early methodologies were proposed in 1997, with notable developments occurring in 2012, 2016, and 2024 [@Hautman1997; @Rafiee2012; @Vega2016; @Carlson2024]. Despite these advancements, the field currently lacks a standardized, unified platform for comparing and validating the diverse methods used to derive contact angles. This fragmentation poses challenges to reproducibility and collaborative research.
+The measurement of contact angles in molecular dynamics simulations has advanced significantly since early methodologies were proposed in 1997, with notable developments occurring in 2012, 2016, and 2024 [@Hautman1997; @Rafiee2012; @Vega2016; @Carlson2024]. Despite these advancements, the field currently lacks a standardized, unified platform for comparing and validating the diverse methods used to derive contact angles. This fragmentation poses challenges to reproducibility and collaborative research. These implementations are often not publicly available or lack sufficient documentation, further limiting reproducibility. In addition, the lack of a standardized framework makes it difficult to benchmark different approaches or assess the impact of methodological choices.
 
-Wetting-angle-kit addresses this gap by providing a flexible, open-source framework. It allows researchers to implement new post-processing of the MD simulation of contact angle, benchmark them against established techniques, and establish a consistent baseline for wettability analysis in molecular dynamics.
+Wetting-angle-kit addresses this gap by providing a flexible, open-source framework. It allows researchers to implement new post-processing methods for contact angle analysis, benchmark them against established techniques, and establish a consistent baseline for wettability analysis in molecular dynamics.
 
 # State of the field
 
@@ -70,11 +70,11 @@ Wetting-angle-kit is organized into three main components: parsing, analysis, an
 \end{figure}
 
 
-The parser module provides a unified interface for reading trajectory data from multiple formats, ensuring consistent handling of atomic coordinates, simulation boxes, and frame information. This abstraction ensures that analyses are independent of the input format, enabling consistent workflows across different simulation engines.
+The parser module provides a unified interface for reading trajectory data from multiple formats, ensuring consistent handling of atomic coordinates, simulation boxes, and frame information. This abstraction ensures that analyses are independent of the input format, enabling consistent workflows across different simulation engines. The parser also consistently handles periodic boundary conditions, ensuring that droplet shapes are correctly reconstructed across simulation boundaries and avoiding artifacts in interface detection.
 
 This consistency facilitates seamless integration with downstream analysis methods and ensures the system's scalability, enabling researchers to easily incorporate support for additional file formats or simulation engines.
 
-The analysis module implements two complementary approaches for contact angle estimation. The slicing method performs frame-by-frame geometric analysis, enabling detailed temporal resolution at the cost of higher computational expense. In contrast, the binning method constructs time-averaged density fields, providing a computationally efficient approach suitable for large datasets and symmetric systems. Supporting both methods allows users to balance accuracy and performance depending on their application. All methods must support the two main geometric models: **spherical** (for spherical cap droplets) and **cylindrical** (for filament-like droplets, analyzed along a specific axis) [@Scocchi2011].
+The analysis module implements two complementary approaches for contact angle estimation. The slicing method performs frame-by-frame geometric analysis, enabling detailed temporal resolution at the cost of higher computational expense. In practice, this approach provides a local characterization of the liquid–vapor interface, allowing the detection of asymmetries and transient deformations of the droplet shape. It is particularly well suited for non-equilibrium simulations or systems where the droplet deviates from an ideal spherical cap. In contrast, the binning method constructs time-averaged density fields, providing a computationally efficient approach suitable for large datasets and symmetric systems. By averaging particle positions over time, this method reduces thermal fluctuations and produces a smoother and more stable interface. It is therefore particularly effective for extracting equilibrium contact angles from noisy datasets. However, this temporal averaging may obscure short-lived fluctuations and local deviations from ideal geometries. These two approaches reflect a trade-off between temporal resolution and statistical robustness, allowing users to select the method best suited to their system. All methods must support the two main geometric models: **spherical** (for spherical cap droplets) and **cylindrical** (for filament-like droplets, analyzed along a specific axis) [@Scocchi2011].
 
 \begin{figure}[h!]
 \centering
@@ -84,14 +84,14 @@ The analysis module implements two complementary approaches for contact angle es
 \caption{Geometric representations of droplets used in the analysis: spherical droplet (left) and cylindrical droplet (right).}
 \end{figure}
 
-The software architecture relies on abstract base classes to enforce consistent interfaces and facilitate extensibility. This design enables users to implement new analysis methods while maintaining compatibility with existing workflows, promoting reuse and method comparison.
+The software architecture relies on abstract base classes to enforce consistent interfaces and facilitate extensibility. This design enables users to implement new analysis methods while maintaining compatibility with existing workflows, promoting reuse and method comparison. It also facilitates the integration of newly developed methods into an existing and standardized analysis pipeline.
 
 Visualization tools are included to support interpretation and validation of analysis results without requiring external post-processing tools.
 
 
 # Theoretical framework: Modified Young’s Equation
 
-To extract the macroscopic contact angle from nanoscale measurements, the relationship between the measured contact angle ($\theta$) and the droplet size is analyzed using the Modified Young’s Equation. This relationship accounts for line tension effects, which are significant at the nanoscale. The equation is linearized to facilitate extrapolation:
+To extract the macroscopic contact angle from nanoscale measurements, the relationship between the measured contact angle ($\theta$) and the droplet size is analyzed using the Modified Young’s Equation. This relationship accounts for line tension effects, which are significant at the nanoscale. This formulation is commonly used to account for finite-size effects in nanoscale droplets. The equation is linearized to facilitate extrapolation:
 
 $$\cos\theta = \cos\theta_\infty - \frac{\tau}{\gamma_{LV}} \cdot \frac{1}{r_B}$$
 
