@@ -1,13 +1,13 @@
 [project]
 name = "wetting_angle_kit"
-version = "0.1.2"
-description = "A simple Python library to parse MD trajectories from LAMMPS and ASE and measure the contact through different methods"
+description = "A Python library to parse MD trajectories from LAMMPS and ASE and measure the contact through different methods"
 authors = [
     { name = "Gabriel", email = "gabriel.taillandier@matgenix.com" }
 ]
 license = "MIT"
 readme = "README.md"
 requires-python = ">=3.9"
+dynamic = ["version"]
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -55,17 +55,27 @@ ovito = ["ovito"]
 all = ["ase>=3.23.0", "ovito"]
 
 [project.urls]
-"Homepage" = "https://github.com/username/wetting_angle_kit"
-"Bug Tracker" = "https://github.com/username/wetting_angle_kit/issues"
+"Homepage" = "https://github.com/Matgenix/wetting_angle_kit"
+"Bug Tracker" = "https://github.com/Matgenix/wetting_angle_kit/issues"
 "Documentation" = "https://wetting_angle_kit.readthedocs.io/"
 
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=61.0", "versioningit ~= 1.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["wetting_angle_kit*"]
+
+[tool.versioningit]
+default-version = "0.1.2"
+
+[tool.versioningit.vcs]
+method = "git"
+default-tag = "0.1.2"
+
+[tool.versioningit.write]
+file = "wetting_angle_kit/_version.py"
 
 [tool.black]
 line-length = 88
