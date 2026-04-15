@@ -74,12 +74,12 @@ The parser module provides a unified interface for reading trajectory data from 
 
 This consistency facilitates seamless integration with downstream analysis methods and ensures the system's scalability, enabling researchers to easily incorporate support for additional file formats or simulation engines.
 
-The analysis module implements two complementary approaches for contact angle estimation. The slicing method performs a frame-by-frame geometric analysis, enabling detailed temporal resolution at the cost of higher computational expense. In contrast, the binning method constructs time-averaged density fields, providing a computationally efficient approach that is suitable for large trajectories and symmetric systems. Supporting both methods allows users to balance accuracy and performance depending on their application. 
+The analysis module implements two complementary approaches for contact angle estimation. The slicing method performs a frame-by-frame geometric analysis, enabling detailed temporal resolution at the cost of higher computational expense. In contrast, the binning method constructs time-averaged density fields, providing a computationally efficient approach that is suitable for large trajectories and symmetric systems. Supporting both methods allows users to balance accuracy and performance depending on their application.
 
-Additionally, two geometric models are considered in wetting-angle-kit, as illustrated in Fig. \ref{geometries}: 
-**spherical** (for spherical cap droplets) and **cylindrical** (for filament-like droplets, analyzed along a specific axis) [@Scocchi2011]. The cylindrical model may be used to 
+Additionally, two geometric models are considered in wetting-angle-kit, as illustrated in Fig. \ref{geometries}:
+**spherical** (for spherical cap droplets) and **cylindrical** (for filament-like droplets, analyzed along a specific axis) [@Scocchi2011]. The cylindrical model may be used to
 take advantage of periodic boundary conditions along the cylindrical axis.
-All methods implemented in the analysis module must support the two main geometric models. 
+All methods implemented in the analysis module must support the two main geometric models.
 
 \begin{figure}[h!]
 \centering
