@@ -32,6 +32,6 @@ In the case of cylindrical droplets, the procedure is similar, but the slicing p
 The binning method
 ------------------
 
-The Binning Method utilizes a global averaging approach. It aggregates particle coordinates across multiple frames into a 2D spatial grid, generating a time-averaged density field. This density field is fitted with a hyperbolic tangent model to describe the liquid-vapor interface, from which the contact angle is derived. 
+The Binning Method utilizes a global averaging approach. It aggregates particle coordinates across multiple frames into a 2D spatial grid, generating a time-averaged density field. This density field is fitted with a hyperbolic tangent model to describe the liquid-vapor interface, from which the contact angle is derived.
 
 This method is computationally efficient and is well suited for symmetric droplets or cases where a global, averaged representation is preferred. It is particularly well suited for processing large datasets due to the reduction in the problem’s dimensionality, but requires a sufficiently large sample size to generate smooth density profiles.
