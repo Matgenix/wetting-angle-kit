@@ -1,12 +1,12 @@
 # IO utilities
 # Contact angle analyzers
-from .contact_angle_method import (
+from wetting_angle_kit.contact_angle_method import (
     BaseContactAngleAnalyzer,
     BinningContactAngleAnalyzer,
     SlicedContactAngleAnalyzer,
     contact_angle_analyzer,
 )
-from .io_utils import (
+from wetting_angle_kit.io_utils import (
     detect_parser_type,
     geometric_center,
     load_dump_ovito,
@@ -14,7 +14,7 @@ from .io_utils import (
 )
 
 # Parsers
-from .parser import (
+from wetting_angle_kit.parser import (
     AseParser,
     AseWallParser,
     AseWaterMoleculeFinder,
@@ -27,7 +27,7 @@ from .parser import (
 )
 
 # Visualization utilities
-from .visualization_angles import (
+from wetting_angle_kit.visualization_angles import (
     BaseTrajectoryAnalyzer,
     BinningTrajectoryAnalyzer,
     ContactAngleAnimator,

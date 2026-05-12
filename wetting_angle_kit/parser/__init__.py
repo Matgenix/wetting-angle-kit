@@ -1,15 +1,15 @@
-from .base_parser import BaseParser
-from .parser_ase import (
+from wetting_angle_kit.parser.base_parser import BaseParser
+from wetting_angle_kit.parser.parser_ase import (
     AseParser,
     AseWallParser,
     AseWaterMoleculeFinder,
 )
-from .parser_dump import (
+from wetting_angle_kit.parser.parser_dump import (
     DumpParser,
     DumpWallParser,
     DumpWaterMoleculeFinder,
 )
-from .parser_xyz import (
+from wetting_angle_kit.parser.parser_xyz import (
     XYZParser,
     XYZWaterMoleculeFinder,
 )

@@ -1,9 +1,11 @@
+from typing import Any, Optional, Tuple
+
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 
-def plot_surface_file(file_path):
+def plot_surface_file(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
     """Return x,y columns from surface text file.
 
     Parameters
@@ -22,7 +24,7 @@ def plot_surface_file(file_path):
     return x, y
 
 
-def plot_slice(x, y):
+def plot_slice(x: np.ndarray, y: np.ndarray) -> None:
     """Plot 2D slice given x,y arrays."""
     plt.figure()
     plt.plot(x, y, label="Surface Slice")
@@ -34,7 +36,7 @@ def plot_slice(x, y):
     plt.show()
 
 
-def read_surface_file(file_path):
+def read_surface_file(file_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Load surface file returning x,y,z arrays (z zeros if absent).
 
     Parameters
@@ -56,7 +58,14 @@ def read_surface_file(file_path):
     return x, y, z
 
 
-def plot_surface_and_points(x_surf, y_surf, z_surf, x_points, y_points, z_points):
+def plot_surface_and_points(
+    x_surf: np.ndarray,
+    y_surf: np.ndarray,
+    z_surf: np.ndarray,
+    x_points: np.ndarray,
+    y_points: np.ndarray,
+    z_points: np.ndarray,
+) -> None:
     """Render 3D plot of surface curve and point cloud.
 
     Parameters
@@ -69,18 +78,18 @@ def plot_surface_and_points(x_surf, y_surf, z_surf, x_points, y_points, z_points
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     ax.plot(x_surf, y_surf, z_surf, label="Surface", color="black")
-    ax.scatter(
+    ax.scatter(  # type: ignore[misc]
         x_points, y_points, z_points, s=10, alpha=0.7, label="Points", color="tab:blue"
     )
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
+    ax.set_zlabel("Z")  # type: ignore[attr-defined]
     ax.legend()
     plt.tight_layout()
     plt.show()
 
 
-def visualize_surface_with_points(surface_file, points):
+def visualize_surface_with_points(surface_file: str, points: np.ndarray) -> None:
     """Convenience wrapper: load surface and overlay points.
 
     Parameters
@@ -95,7 +104,12 @@ def visualize_surface_with_points(surface_file, points):
     plot_surface_and_points(x_surf, y_surf, z_surf, x_points, y_points, z_points)
 
 
-def plot_liquid_particles(positions, ax=None, color="tab:blue", subsample=None):
+def plot_liquid_particles(
+    positions: np.ndarray,
+    ax: Optional[Any] = None,
+    color: str = "tab:blue",
+    subsample: Optional[int] = None,
+) -> Any:
     """Scatter plot 3D particle positions with optional subsampling.
 
     Parameters
@@ -121,12 +135,12 @@ def plot_liquid_particles(positions, ax=None, color="tab:blue", subsample=None):
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
-    ax.scatter(
+    ax.scatter(  # type: ignore[misc,union-attr]
         positions[:, 0], positions[:, 1], positions[:, 2], s=8, alpha=0.8, color=color
     )
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
-    ax.set_zlabel("Z")
+    ax.set_zlabel("Z")  # type: ignore[union-attr]
     return ax
 
 

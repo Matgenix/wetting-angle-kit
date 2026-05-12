@@ -1,4 +1,6 @@
-from .contact_angle_analyzer import (
+from typing import Any
+
+from wetting_angle_kit.contact_angle_method.contact_angle_analyzer import (
     BaseContactAngleAnalyzer,
     BinningContactAngleAnalyzer,
     SlicedContactAngleAnalyzer,
@@ -6,7 +8,7 @@ from .contact_angle_analyzer import (
 
 
 def contact_angle_analyzer(
-    method: str, parser, output_dir: str, **kwargs
+    method: str, parser: Any, output_dir: str, **kwargs: Any
 ) -> BaseContactAngleAnalyzer:
     if method == "sliced":
         return SlicedContactAngleAnalyzer(

@@ -1,6 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -9,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTrajectoryAnalyzer(ABC):
-    def __init__(self, directories, time_unit="ps"):
+    def __init__(self, directories: List[str], time_unit: str = "ps") -> None:
         """
         Initialize the analyzer with a list of directory paths.
 
@@ -21,22 +22,22 @@ class BaseTrajectoryAnalyzer(ABC):
             Time unit for the x-axis (e.g., "ps", "ns", "fs").
         """
         self.directories = directories
-        self.data = {}
+        self.data: Dict[str, Any] = {}
         self.time_unit = time_unit
         self._initialize_data_structure()
 
     @abstractmethod
-    def _initialize_data_structure(self):
+    def _initialize_data_structure(self) -> None:
         """Initialize the data dictionary structure for each directory."""
         pass
 
     @abstractmethod
-    def load_data(self):
+    def load_data(self) -> None:
         """Read and parse data from files in each directory."""
         pass
 
     @abstractmethod
-    def get_surface_areas(self, directory):
+    def get_surface_areas(self, directory: str) -> np.ndarray:
         """
         Get surface areas for a given directory.
 
@@ -53,7 +54,7 @@ class BaseTrajectoryAnalyzer(ABC):
         pass
 
     @abstractmethod
-    def get_contact_angles(self, directory):
+    def get_contact_angles(self, directory: str) -> np.ndarray:
         """
         Get contact angles for a given directory.
 
@@ -70,7 +71,7 @@ class BaseTrajectoryAnalyzer(ABC):
         pass
 
     @abstractmethod
-    def get_method_name(self):
+    def get_method_name(self) -> str:
         """
         Return the name of this analysis method.
 
@@ -81,7 +82,7 @@ class BaseTrajectoryAnalyzer(ABC):
         """
         pass
 
-    def compute_statistics(self, directory):
+    def compute_statistics(self, directory: str) -> Tuple[float, float, float]:
         """
         Compute mean surface area, mean angle, and standard error.
 
@@ -107,7 +108,7 @@ class BaseTrajectoryAnalyzer(ABC):
 
         return x, y, yerr
 
-    def get_clean_label(self, directory):
+    def get_clean_label(self, directory: str) -> str:
         """
         Generate a clean label from directory name.
 
@@ -127,7 +128,7 @@ class BaseTrajectoryAnalyzer(ABC):
             .replace("result_dump_", "")
         )
 
-    def analyze(self, output_filename="output_stats.txt"):
+    def analyze(self, output_filename: str = "output_stats.txt") -> None:
         """Analyze and save statistics for each directory to an output file."""
         self.load_data()
         for directory in self.directories:
@@ -149,7 +150,12 @@ class BaseTrajectoryAnalyzer(ABC):
                 )
             logger.info("Analysis saved to: %s", output_path)
 
-    def plot_mean_angle_vs_surface(self, labels=None, color=None, save_path=None):
+    def plot_mean_angle_vs_surface(
+        self,
+        labels: Optional[List[str]] = None,
+        color: Optional[str] = None,
+        save_path: Optional[str] = None,
+    ) -> None:
         """
         Generate a plot comparing mean angle vs surface
         area scaling. If no analysis output is found, run the analysis first.
@@ -245,8 +251,8 @@ class BaseTrajectoryAnalyzer(ABC):
 
         # Linear fit
         if len(xvals) >= 2:
-            xvals, yvals = np.array(xvals), np.array(yvals)
-            coeffs = np.polyfit(xvals, yvals, 1)
+            xvals_arr, yvals_arr = np.array(xvals), np.array(yvals)
+            coeffs = np.polyfit(xvals_arr, yvals_arr, 1)
             fit_line = np.poly1d(coeffs)
 
             # Calculate theta_infinity from intercept (x=0)

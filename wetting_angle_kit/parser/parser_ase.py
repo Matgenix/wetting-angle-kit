@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import warnings
-from typing import List
+from typing import Any, List
 
 import numpy as np
 
-from .base_parser import BaseParser
+from wetting_angle_kit.parser.base_parser import BaseParser
 
 
 class AseParser(BaseParser):
@@ -156,7 +156,7 @@ class AseWaterMoleculeFinder:
         # ASE's NeighborList uses pairwise cutoff = cutoffs[i] + cutoffs[j].
         # Use half the bond cutoff per atom so the effective pair cutoff
         # equals self.oh_cutoff.
-        cutoffs = [self.oh_cutoff / 2.0] * len(frame)
+        cutoffs = [self.oh_cutoff / 2.0] * len(frame)  # type: ignore[arg-type]
         nl = self._NeighborList(cutoffs, self_interaction=False, bothways=True)
         nl.update(frame)
         water_oxygens = []
@@ -247,7 +247,7 @@ class AseWallParser(BaseParser):
         x_wall = self.parse(frame_index)
         return float(np.max(x_wall[:, 2]))
 
-    def find_highest_wall_part(self, *args, **kwargs):
+    def find_highest_wall_part(self, *args: Any, **kwargs: Any) -> float:
         """Deprecated alias for find_highest_wall_particle."""
         warnings.warn(
             "find_highest_wall_part is deprecated, "

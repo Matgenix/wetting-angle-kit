@@ -27,6 +27,7 @@ particles · Å⁻³, and the final contact angle is returned in degrees.
 import logging
 import os
 import warnings
+from typing import Any, Dict, List, Optional, Tuple
 
 import matplotlib
 import numpy as np
@@ -45,11 +46,10 @@ if matplotlib.get_backend().lower() != "agg":
 
 import matplotlib.pyplot as plt  # noqa: E402
 
-from wetting_angle_kit.io_utils import validate_droplet_geometry  # noqa: E402
-
-from .surface_definition import (  # noqa: E402
+from wetting_angle_kit.contact_angle_method.binning_method.surface_definition import (  # noqa: E402
     HyperbolicTangentModel,
 )
+from wetting_angle_kit.io_utils import validate_droplet_geometry  # noqa: E402
 
 
 class ContactAngleBinning:
@@ -62,14 +62,14 @@ class ContactAngleBinning:
 
     def __init__(
         self,
-        parser,
-        atom_indices,
-        droplet_geometry="spherical",
-        width_cylinder=None,
-        binning_params=None,
-        output_dir="output_analysis/",
-        plot_graphs=True,
-    ):
+        parser: Any,
+        atom_indices: Any,
+        droplet_geometry: str = "spherical",
+        width_cylinder: Optional[float] = None,
+        binning_params: Optional[Dict[str, Any]] = None,
+        output_dir: str = "output_analysis/",
+        plot_graphs: bool = True,
+    ) -> None:
         validate_droplet_geometry(droplet_geometry)
         self.parser = parser
         self.atom_indices = atom_indices
@@ -118,24 +118,26 @@ class ContactAngleBinning:
                     self.width_cylinder = self.parser.box_size_y(frame_index=0)
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def _initialize_grid(self):
+    def _initialize_grid(self) -> None:
         """Initialize bin edges, centers and cell sizes from parameters."""
         self.xi = np.linspace(
             self.binning_params["xi_0"],
             self.binning_params["xi_f"],
-            self.binning_params["nbins_xi"],
+            int(self.binning_params["nbins_xi"]),
         )
         self.zi = np.linspace(
             self.binning_params["zi_0"],
             self.binning_params["zi_f"],
-            self.binning_params["nbins_zi"],
+            int(self.binning_params["nbins_zi"]),
         )
         self.dxi = self.xi[1] - self.xi[0]
         self.dzi = self.zi[1] - self.zi[0]
         self.xi_cc = 0.5 * (self.xi[1:] + self.xi[:-1])
         self.zi_cc = 0.5 * (self.zi[1:] + self.zi[:-1])
 
-    def binning(self, xi_par, zi_par, len_frames):
+    def binning(
+        self, xi_par: np.ndarray, zi_par: np.ndarray, len_frames: int
+    ) -> np.ndarray:
         """Return 2D density field by binning particle coordinates.
 
         Uses :func:`numpy.histogram2d`, which is vectorized (O(N) in the
@@ -159,9 +161,12 @@ class ContactAngleBinning:
             Averaged density field on cell centers.
         """
         counts, _, _ = np.histogram2d(
-            xi_par, zi_par, bins=(self.xi, self.zi)
+            xi_par,
+            zi_par,
+            bins=(self.xi, self.zi),  # type: ignore[arg-type]
         )  # shape (nbins_xi-1, nbins_zi-1)
         if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
+            assert self.width_cylinder is not None
             dV = 2.0 * self.width_cylinder * self.dxi * self.dzi
             rho_cc = counts / dV
         else:  # spherical — annular shell volume depends on radius
@@ -173,18 +178,18 @@ class ContactAngleBinning:
 
     def plot_density_with_isoline(
         self,
-        xi_cc,
-        zi_cc,
-        rho_cc,
-        circle_xi,
-        circle_zi,
-        wall_line_xi,
-        wall_line_zi,
-        batch_index=None,
-        clevels=20,
-        scale=0.75,
-        close=True,
-    ):
+        xi_cc: np.ndarray,
+        zi_cc: np.ndarray,
+        rho_cc: np.ndarray,
+        circle_xi: np.ndarray,
+        circle_zi: np.ndarray,
+        wall_line_xi: np.ndarray,
+        wall_line_zi: np.ndarray,
+        batch_index: Optional[int] = None,
+        clevels: int = 20,
+        scale: float = 0.75,
+        close: bool = True,
+    ) -> None:
         """Plot density contour with fitted iso-surface approximations.
 
         Parameters
@@ -222,14 +227,14 @@ class ContactAngleBinning:
 
     def save_logfile(
         self,
-        particles_number,
-        param_strings,
-        theta,
-        xi_cc,
-        zi_cc,
-        rho_cc,
-        batch_index=None,
-    ):
+        particles_number: float,
+        param_strings: List[str],
+        theta: float,
+        xi_cc: np.ndarray,
+        zi_cc: np.ndarray,
+        rho_cc: np.ndarray,
+        batch_index: Optional[int] = None,
+    ) -> None:
         """Write fitted parameters and density field CSV for a batch.
 
         Parameters
@@ -270,7 +275,12 @@ class ContactAngleBinning:
             header=(f"x_{len(xi_cc)},y_{len(zi_cc)}," f"rho_{len(xi_cc) * len(zi_cc)}"),
         )
 
-    def process_batch(self, frame_list, model=None, batch_index=None):
+    def process_batch(
+        self,
+        frame_list: List[int],
+        model: Optional[Any] = None,
+        batch_index: Optional[int] = None,
+    ) -> Tuple[float, Any]:
         """Process a batch of frames and compute contact angle.
 
         Parameters
@@ -356,7 +366,9 @@ class ContactAngleBinning:
         )
         return contact_angle, model
 
-    def process_all_batches(self, batch_size=100, save_angles=True):
+    def process_all_batches(
+        self, batch_size: int = 100, save_angles: bool = True
+    ) -> List[float]:
         """Process all frames in batches returning list of contact angles.
 
         Parameters

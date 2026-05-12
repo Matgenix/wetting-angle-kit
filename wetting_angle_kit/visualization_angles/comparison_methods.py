@@ -1,4 +1,5 @@
 import os
+from typing import Any, List, Optional, Tuple
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -14,14 +15,16 @@ class MethodComparison:
         Custom display names. If None, uses each analyzer's ``get_method_name``.
     """
 
-    def __init__(self, analyzers, method_names=None):
+    def __init__(
+        self, analyzers: List[Any], method_names: Optional[List[str]] = None
+    ) -> None:
         self.analyzers = analyzers
         self.method_names = method_names or [a.get_method_name() for a in analyzers]
         for analyzer in self.analyzers:
             if not hasattr(analyzer, "data") or not analyzer.data:
                 analyzer.load_data()
 
-    def _check_and_run_analysis(self, analyzer):
+    def _check_and_run_analysis(self, analyzer: Any) -> None:
         """Run analyzer if expected output file is absent for any directory.
         Parameters
         ----------
@@ -36,7 +39,9 @@ class MethodComparison:
                     "Please run the analysis first."
                 )
 
-    def _read_analysis_output(self, analyzer, directory):
+    def _read_analysis_output(
+        self, analyzer: Any, directory: str
+    ) -> Tuple[float, float]:
         """Return mean surface area and angle parsed from stats file.
         Parameters
         ----------
@@ -57,8 +62,11 @@ class MethodComparison:
         return mean_surface_area, mean_contact_angle
 
     def plot_side_by_side_comparison(
-        self, save_path=None, figsize=(14, 5), color="purple"
-    ):
+        self,
+        save_path: Optional[str] = None,
+        figsize: Tuple[int, int] = (14, 5),
+        color: str = "purple",
+    ) -> None:
         """
         Produce side-by-side comparison of mean contact angle vs. surface area scaling.
         Inspired by plot_mean_angle_vs_surface().
@@ -102,11 +110,11 @@ class MethodComparison:
                 yvals.append(y)
 
             # linear fit if we have ≥2 points
-            xvals, yvals = np.array(xvals), np.array(yvals)
-            if len(xvals) >= 2:
-                coeffs = np.polyfit(xvals, yvals, 1)
+            xvals_arr, yvals_arr = np.array(xvals), np.array(yvals)
+            if len(xvals_arr) >= 2:
+                coeffs = np.polyfit(xvals_arr, yvals_arr, 1)
                 fit_line = np.poly1d(coeffs)
-                x_fit = np.linspace(0, xvals.max() * 1.1, 100)
+                x_fit = np.linspace(0, xvals_arr.max() * 1.1, 100)
                 ax.plot(
                     x_fit,
                     fit_line(x_fit),
@@ -121,15 +129,20 @@ class MethodComparison:
             ax.legend(frameon=False)
             ax.set_xlim(left=-0.001)
 
-            if yvals.size > 0:
-                ax.set_ylim(min(yvals) - 2, max(yvals) + 2)
+            if yvals_arr.size > 0:
+                ax.set_ylim(min(yvals_arr) - 2, max(yvals_arr) + 2)
 
         plt.tight_layout()
         if save_path:
             plt.savefig(save_path, dpi=400, bbox_inches="tight")
         plt.close()
 
-    def plot_overlay_comparison(self, save_path=None, figsize=(8, 6), color="purple"):
+    def plot_overlay_comparison(
+        self,
+        save_path: Optional[str] = None,
+        figsize: Tuple[int, int] = (8, 6),
+        color: str = "purple",
+    ) -> None:
         """
         Overlay mean angle vs surface area scaling across all analyzers.
         Inspired by plot_mean_angle_vs_surface().
@@ -170,11 +183,11 @@ class MethodComparison:
                 yvals.append(y)
 
             # Fit per method
-            xvals, yvals = np.array(xvals), np.array(yvals)
-            if len(xvals) >= 2:
-                coeffs = np.polyfit(xvals, yvals, 1)
+            xvals_arr, yvals_arr = np.array(xvals), np.array(yvals)
+            if len(xvals_arr) >= 2:
+                coeffs = np.polyfit(xvals_arr, yvals_arr, 1)
                 fit_line = np.poly1d(coeffs)
-                x_fit = np.linspace(0, xvals.max() * 1.1, 100)
+                x_fit = np.linspace(0, xvals_arr.max() * 1.1, 100)
                 ax.plot(
                     x_fit,
                     fit_line(x_fit),
@@ -198,7 +211,7 @@ class MethodComparison:
             plt.savefig(save_path, dpi=400, bbox_inches="tight")
         plt.close()
 
-    def compare_statistics(self):
+    def compare_statistics(self) -> None:
         """Print summary statistics aggregated across methods and directories."""
         print("=" * 70)
         print("METHOD COMPARISON STATISTICS")

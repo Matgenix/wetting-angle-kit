@@ -1,3 +1,5 @@
+from typing import Any, List, Optional, Sequence
+
 import matplotlib.pyplot as plt
 import numpy as np
 import plotly.graph_objects as go
@@ -43,15 +45,15 @@ class DropletSlicedPlotter:
 
     def plot_surface_points(
         self,
-        oxygen_position,
-        surface_data,
-        popt,
-        wall_coords=None,
-        output_filename=None,
-        y_com=None,
-        pbc_y=None,
-        alpha=None,
-    ):
+        oxygen_position: np.ndarray,
+        surface_data: List[np.ndarray],
+        popt: Sequence[float],
+        wall_coords: Optional[np.ndarray] = None,
+        output_filename: Optional[Any] = None,
+        y_com: Optional[float] = None,
+        pbc_y: Optional[float] = None,
+        alpha: Optional[float] = None,
+    ) -> None:
         """Render slice figure and save to file.
 
         Parameters
@@ -130,7 +132,7 @@ class DropletSlicedPlotter:
         fig, ax = plt.subplots(figsize=(4.0, 3.0), dpi=300)
 
         # --- Wall atoms ---
-        if self.show_wall:
+        if self.show_wall and wall_coords is not None:
             ax.scatter(
                 wall_coords[:, 0],
                 wall_coords[:, 2],
@@ -311,19 +313,19 @@ class DropletSlicedPlotterPlotly:
 
     def plot_surface_points(
         self,
-        oxygen_position,
-        surface_data,
-        popt,
-        wall_coords,
-        alpha=None,
-        y_com=None,
-        pbc_y=None,
-        show_water=True,
-        show_surface=True,
-        show_circle=True,
-        show_tangent=True,
-        show_wall=True,
-    ):
+        oxygen_position: np.ndarray,
+        surface_data: List[np.ndarray],
+        popt: Sequence[float],
+        wall_coords: np.ndarray,
+        alpha: Optional[float] = None,
+        y_com: Optional[float] = None,
+        pbc_y: Optional[float] = None,
+        show_water: bool = True,
+        show_surface: bool = True,
+        show_circle: bool = True,
+        show_tangent: bool = True,
+        show_wall: bool = True,
+    ) -> Any:
         """Create interactive Plotly figure for a single frame slice.
 
         Parameters
@@ -557,7 +559,7 @@ class ContactAngleAnimator:
 
     def generate_animation(
         self, output_filename: str = "ContactAngle_Median_PerFrame_Slider.html"
-    ):
+    ) -> None:
         """Build and write HTML with slider of median contact angles over frames.
         Parameters
         ----------
@@ -588,7 +590,7 @@ class ContactAngleAnimator:
             median_idx = np.argsort(list_alfas)[len(list_alfas) // 2]
             alpha = list_alfas[median_idx]
             popt = array_popt[median_idx]
-            surface = np.array([array_surfaces[median_idx]])
+            surface = [array_surfaces[median_idx]]
             median_angles.append(alpha)
             fig_frame = self.plotter.plot_surface_points(
                 oxygen_position=oxygen_position,

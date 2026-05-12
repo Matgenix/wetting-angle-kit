@@ -22,6 +22,8 @@ For a single droplet slice the interface is recovered in two steps:
 All lengths are expected in Ångströms; angles are in degrees.
 """
 
+from typing import List, Tuple
+
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -60,15 +62,15 @@ class SurfaceDefinition:
 
     def __init__(
         self,
-        atom_coords,
-        delta_angle,
-        max_dist,
-        center_geom,
-        gamma,
-        density_conversion=1.0,
+        atom_coords: np.ndarray,
+        delta_angle: float,
+        max_dist: float,
+        center_geom: np.ndarray,
+        gamma: float,
+        density_conversion: float = 1.0,
         points_per_angstrom: float = 1.0,
         density_sigma: float = DEFAULT_DENSITY_SIGMA,
-    ):
+    ) -> None:
         self.atom_coords = atom_coords
         self.center_geom = center_geom
         self.density_conversion = density_conversion
@@ -79,7 +81,9 @@ class SurfaceDefinition:
         self.density_sigma = density_sigma
 
     @staticmethod
-    def density_contribution(positions, coords, sigma=2.0):
+    def density_contribution(
+        positions: np.ndarray, coords: np.ndarray, sigma: float = 2.0
+    ) -> np.ndarray:
         """Return Gaussian-smoothed density contributions at sampling positions.
 
         Parameters
@@ -104,7 +108,7 @@ class SurfaceDefinition:
         return np.sum(den_contributions, axis=1)
 
     @staticmethod
-    def density_profile(z, zd, d, h):
+    def density_profile(z: np.ndarray, zd: float, d: float, h: float) -> np.ndarray:
         """Simple hyperbolic tangent profile used for interface localization.
 
         Parameters
@@ -125,7 +129,12 @@ class SurfaceDefinition:
         """
         return np.tanh(-z + zd) * d + h
 
-    def fit_density_profile(self, z_data, density, param_bounds):
+    def fit_density_profile(
+        self,
+        z_data: np.ndarray,
+        density: np.ndarray,
+        param_bounds: Tuple[List[float], List[float]],
+    ) -> float:
         """Fit the profile and return estimated interface position.
 
         Parameters
@@ -146,7 +155,7 @@ class SurfaceDefinition:
         zd, d, h = popt  # noqa: F841 - d, h retained for clarity if extended later
         return zd
 
-    def analyze_lines(self):
+    def analyze_lines(self) -> Tuple[List[List[float]], List[List[float]]]:
         """Sample density along radial lines and fit interface positions.
 
         Returns
@@ -161,7 +170,7 @@ class SurfaceDefinition:
         list_rbeta = []
         list_xz = []
         nn = max(int(self.max_dist * self.points_per_angstrom), self.MIN_POINTS_PER_RAY)
-        param_bounds = ([0, -10, -10], [self.max_dist, 10, 10])
+        param_bounds = ([0.0, -10.0, -10.0], [self.max_dist, 10.0, 10.0])
         cos_beta = np.cos(np.deg2rad(beta))
         sin_beta = np.sin(np.deg2rad(beta))
         cos_gamma = np.cos(np.deg2rad(self.gamma))

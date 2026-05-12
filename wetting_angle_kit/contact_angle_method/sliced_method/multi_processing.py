@@ -3,7 +3,7 @@ import math
 import multiprocessing as mp
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Dict, List, NamedTuple, Optional, Type
+from typing import Dict, List, NamedTuple, Optional
 
 import numpy as np
 
@@ -76,8 +76,8 @@ class ContactAngleSlicedParallel:
         output_dir: Optional[str] = None,
         droplet_geometry: str = "spherical",
         atom_indices: Optional[np.ndarray] = None,
-        delta_gamma: float = None,
-        delta_cylinder: float = None,
+        delta_gamma: Optional[float] = None,
+        delta_cylinder: Optional[float] = None,
         points_per_angstrom: float = 1.0,
         output_repo: Optional[str] = None,
     ):
@@ -226,16 +226,15 @@ class ContactAngleSlicedParallel:
         try:
             parser_type = detect_parser_type(self.filename)
             logger.info(f"Detected parser type: {parser_type}")
-            parser_class: Type[BaseParser]
+            parser: BaseParser
             if parser_type == "dump":
-                parser_class = DumpParser
+                parser = DumpParser(filepath=self.filename)
             elif parser_type == "ase":
-                parser_class = AseParser
+                parser = AseParser(filepath=self.filename)
             elif parser_type == "xyz":
-                parser_class = XYZParser
+                parser = XYZParser(filepath=self.filename)
             else:
                 raise ValueError(f"Unsupported parser type: {parser_type}")
-            parser = parser_class(filepath=self.filename)
         except Exception as e:  # pragma: no cover
             logger.error(f"Error initializing parser: {e}")
             return [

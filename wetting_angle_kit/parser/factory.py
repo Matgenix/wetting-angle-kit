@@ -1,11 +1,17 @@
 import os
+from typing import Any
 
-from .parser_ase import AseWaterMoleculeFinder
-from .parser_dump import DumpWaterMoleculeFinder
-from .parser_xyz import XYZWaterMoleculeFinder
+from wetting_angle_kit.parser.parser_ase import AseWaterMoleculeFinder
+from wetting_angle_kit.parser.parser_dump import DumpWaterMoleculeFinder
+from wetting_angle_kit.parser.parser_xyz import XYZWaterMoleculeFinder
 
 
-def get_water_parser(filename, particle_type_wall, oxygen_type, hydrogen_type):
+def get_water_parser(
+    filename: str,
+    particle_type_wall: Any,
+    oxygen_type: Any,
+    hydrogen_type: Any,
+) -> Any:
     """Factory to select the correct water oxygen parser based on file extension."""
     ext = os.path.splitext(filename)[-1].lower()
 

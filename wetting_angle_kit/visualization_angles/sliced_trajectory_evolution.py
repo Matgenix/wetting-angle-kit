@@ -1,13 +1,21 @@
 import os
+from typing import Dict, List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
 
-from .base_trajectory_analyzer import BaseTrajectoryAnalyzer
+from wetting_angle_kit.visualization_angles.base_trajectory_analyzer import (
+    BaseTrajectoryAnalyzer,
+)
 
 
 class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
-    def __init__(self, directories, time_steps=None, time_unit="ps"):
+    def __init__(
+        self,
+        directories: List[str],
+        time_steps: Optional[Dict[str, float]] = None,
+        time_unit: str = "ps",
+    ) -> None:
         """
         Initialize the analyzer with a list of directory paths.
 
@@ -27,7 +35,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         for directory in directories:
             self.data[directory] = {}
 
-    def _initialize_data_structure(self):
+    def _initialize_data_structure(self) -> None:
         """Initialize data structure for sliced analysis."""
         for directory in self.directories:
             self.data[directory] = {
@@ -42,11 +50,11 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 "time_step": self.time_steps.get(directory, 1.0),
             }
 
-    def get_method_name(self):
+    def get_method_name(self) -> str:
         """Return method name."""
         return "Sliced Analysis"
 
-    def load_data(self):
+    def load_data(self) -> None:
         """Load the combined .npy files for all
         directories and calculate mean surface areas per frame."""
         for directory in self.directories:
@@ -83,7 +91,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             }
 
     @staticmethod
-    def calculate_polygon_area(points):
+    def calculate_polygon_area(points: np.ndarray) -> float:
         """
         Calculate the area of a polygon given its vertices using the Shoelace formula.
 
@@ -102,7 +110,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         area = 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
         return area
 
-    def mean_surface_frame(self, surfaces):
+    def mean_surface_frame(self, surfaces: List[np.ndarray]) -> float:
         """
         Calculate the mean surface area for a given surfaces file.
 
@@ -119,24 +127,29 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         all_surf = [self.calculate_polygon_area(surface) for surface in surfaces]
         return np.mean(np.array(all_surf))
 
-    def get_surface_areas(self, directory):
+    def get_surface_areas(self, directory: str) -> np.ndarray:
         """Get surface areas for a directory."""
         return np.array(self.data[directory]["mean_surface_areas"])
 
-    def get_contact_angles(self, directory):
+    def get_contact_angles(self, directory: str) -> np.ndarray:
         """Get contact angles (median alfas) for a directory."""
         data = np.array(self.data[directory]["median_alfas"])
         if data.ndim == 2 and data.shape[1] >= 2:
             return data[:, 1]
         return data
 
-    def plot_median_alfas_evolution(self, save_path, labels=None, plot_std=True):
+    def plot_median_alfas_evolution(
+        self,
+        save_path: str,
+        labels: Optional[Dict[str, str]] = None,
+        plot_std: bool = True,
+    ) -> None:
         """Plot evolution of median angle (Alfas) with standard deviation.
 
         Align trajectories by truncating to shortest.
         """
         if not self.data[self.directories[0]]["median_alfas"]:
-            self.analyze_alfas_only()
+            self.load_data()
 
         # Use provided labels or fall back to directory basename
         plot_labels = (
@@ -145,7 +158,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
 
         # Find the minimum number of frames across all directories
         plt.figure(figsize=(10, 6))
-        colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))
+        colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))  # type: ignore[attr-defined]
 
         for i, directory in enumerate(self.directories):
             median_alfas = self.data[directory]["median_alfas"]
@@ -182,13 +195,17 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         plt.savefig(save_path, dpi=400, bbox_inches="tight")
         plt.close()
 
-    def plot_mean_alfas_evolution(self, save_path, labels=None):
+    def plot_mean_alfas_evolution(
+        self,
+        save_path: str,
+        labels: Optional[Dict[str, str]] = None,
+    ) -> None:
         """Plot evolution of mean angle (Alfas) with standard deviation."""
         plot_labels = (
             labels if labels else {d: os.path.basename(d) for d in self.directories}
         )
         plt.figure(figsize=(10, 6))
-        colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))
+        colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))  # type: ignore[attr-defined]
 
         for i, directory in enumerate(self.directories):
             mean_alfas = self.data[directory]["mean_alfas"]

@@ -3,8 +3,12 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from .binning_method.angle_fitting_binning import ContactAngleBinning
-from .sliced_method.multi_processing import ContactAngleSlicedParallel
+from wetting_angle_kit.contact_angle_method.binning_method.angle_fitting_binning import (  # noqa: E501
+    ContactAngleBinning,
+)
+from wetting_angle_kit.contact_angle_method.sliced_method.multi_processing import (
+    ContactAngleSlicedParallel,
+)
 
 
 class BaseContactAngleAnalyzer(ABC):
@@ -12,7 +16,7 @@ class BaseContactAngleAnalyzer(ABC):
 
     @abstractmethod
     def analyze(
-        self, frame_range: Optional[List[int]] = None, **kwargs
+        self, frame_range: Optional[List[int]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         """Run the analysis and return statistics."""
         pass
@@ -39,10 +43,10 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
 
     def __init__(
         self,
-        parser,
-        output_dir: str = None,
-        output_repo: str = None,
-        **kwargs,
+        parser: Any,
+        output_dir: Optional[str] = None,
+        output_repo: Optional[str] = None,
+        **kwargs: Any,
     ):
         if output_repo is not None:
             import warnings
@@ -64,7 +68,7 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
         )
 
     def analyze(
-        self, frame_range: Optional[List[int]] = None, **kwargs
+        self, frame_range: Optional[List[int]] = None, **kwargs: Any
     ) -> Dict[str, Any]:
         if frame_range is None:
             frame_range = list(range(self.parser.frame_count()))
@@ -92,7 +96,7 @@ class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):
     It is used to analyze the contact angle of a liquid on a solid surface.
     """
 
-    def __init__(self, parser, output_dir: str, **kwargs):
+    def __init__(self, parser: Any, output_dir: str, **kwargs: Any) -> None:
         self.parser = parser
         self.output_dir = output_dir
         self._analyzer = ContactAngleBinning(
@@ -103,7 +107,7 @@ class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):
         self,
         frame_range: Optional[List[int]] = None,
         split_factor: Optional[int] = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> Dict[str, Any]:
         if frame_range is None:
             frame_range = list(range(self.parser.frame_count()))
@@ -112,15 +116,15 @@ class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):
             angles = np.array([angle])
             method_metadata = {"frames_per_angle": len(frame_range)}
         else:
-            angles = []
+            angles_list: List[float] = []
             for batch_idx, start in enumerate(range(0, len(frame_range), split_factor)):
                 end = min(start + split_factor, len(frame_range))
                 angle, _ = self._analyzer.process_batch(
                     frame_range[start:end],
                     batch_index=batch_idx + 1,  # Pass batch index
                 )
-                angles.append(angle)
-            angles = np.array(angles)
+                angles_list.append(angle)
+            angles = np.array(angles_list)
             method_metadata = {"frames_per_trajectory": split_factor}
         return {
             "mean_angle": np.mean(angles),

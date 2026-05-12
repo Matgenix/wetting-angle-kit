@@ -1,12 +1,18 @@
-from .binning_method.angle_fitting_binning import ContactAngleBinning
-from .contact_angle_analyzer import (
+from wetting_angle_kit.contact_angle_method.binning_method.angle_fitting_binning import (  # noqa: E501
+    ContactAngleBinning,
+)
+from wetting_angle_kit.contact_angle_method.contact_angle_analyzer import (
     BaseContactAngleAnalyzer,
     BinningContactAngleAnalyzer,
     SlicedContactAngleAnalyzer,
 )
-from .factory import contact_angle_analyzer
-from .sliced_method.angle_fitting_sliced import ContactAngleSliced
-from .sliced_method.multi_processing import ContactAngleSlicedParallel
+from wetting_angle_kit.contact_angle_method.factory import contact_angle_analyzer
+from wetting_angle_kit.contact_angle_method.sliced_method.angle_fitting_sliced import (
+    ContactAngleSliced,
+)
+from wetting_angle_kit.contact_angle_method.sliced_method.multi_processing import (
+    ContactAngleSlicedParallel,
+)
 
 __all__ = [
     "BaseContactAngleAnalyzer",

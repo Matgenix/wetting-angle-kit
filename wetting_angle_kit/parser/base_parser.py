@@ -62,7 +62,9 @@ class BaseParser(ABC):
     """
 
     @abstractmethod
-    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
+    def parse(
+        self, frame_index: int, indices: Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Return Cartesian coordinates for selected atoms in a frame.
 
         Parameters
@@ -118,7 +120,7 @@ class BaseParser(ABC):
         self,
         frame_indices: Sequence[int],
         droplet_geometry: str = "cylinder_y",
-        atom_indices: Optional[Sequence[int]] = None,
+        atom_indices: Optional[np.ndarray] = None,
     ) -> Tuple[np.ndarray, np.ndarray, int]:
         """Compute 2D projection coordinates (r, z) for contact angle analysis.
 

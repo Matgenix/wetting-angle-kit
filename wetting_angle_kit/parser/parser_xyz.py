@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 
-from .base_parser import BaseParser
+from wetting_angle_kit.parser.base_parser import BaseParser
 
 
 class XYZParser(BaseParser):
@@ -57,7 +57,9 @@ class XYZParser(BaseParser):
             frame_start += num_atoms
         return frames
 
-    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
+    def parse(
+        self, frame_index: int, indices: Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Return Cartesian coordinates for selected atoms in a frame.
 
         Parameters
@@ -147,7 +149,7 @@ class XYZParser(BaseParser):
         lattice_matrix = self.frames[frame_index]["lattice_matrix"]
         return float(lattice_matrix[1, 1])
 
-    def frame_count(self):
+    def frame_count(self) -> int:
         """Return total number of frames loaded."""
         return len(self.frames)
 
@@ -175,10 +177,10 @@ class XYZWaterMoleculeFinder:
 
     def __init__(
         self,
-        filepath,
-        particle_type_wall,
-        oxygen_type="O",
-        hydrogen_type="H",
+        filepath: str,
+        particle_type_wall: Any,
+        oxygen_type: str = "O",
+        hydrogen_type: str = "H",
         oh_cutoff: float = 1.2,
     ):
         self.filepath = filepath
@@ -188,7 +190,7 @@ class XYZWaterMoleculeFinder:
         self.oh_cutoff = oh_cutoff
         self.frames = self.load_xyz_file()
 
-    def load_xyz_file(self):
+    def load_xyz_file(self) -> List[Dict[str, Any]]:
         """Load frames including the lattice matrix for box-size queries."""
         frames = []
         with open(self.filepath, "r") as file:
@@ -262,7 +264,7 @@ class XYZWaterMoleculeFinder:
             )
         return float(np.max(np.linalg.norm(lattice_matrix, axis=1)))
 
-    def get_water_oxygen_indices(self, frame_index):
+    def get_water_oxygen_indices(self, frame_index: int) -> np.ndarray:
         """Return indices of oxygen atoms belonging to water molecules.
 
         Parameters
@@ -284,7 +286,7 @@ class XYZWaterMoleculeFinder:
             positions, oxygen_indices, hydrogen_indices
         )
 
-    def get_water_oxygen_positions(self, frame_index):
+    def get_water_oxygen_positions(self, frame_index: int) -> np.ndarray:
         """Return coordinates of water oxygen atoms for a frame.
 
         Parameters
@@ -303,7 +305,12 @@ class XYZWaterMoleculeFinder:
             return np.empty((0, 3))
         return positions[indices]
 
-    def _manual_water_identification(self, positions, oxygen_indices, hydrogen_indices):
+    def _manual_water_identification(
+        self,
+        positions: np.ndarray,
+        oxygen_indices: np.ndarray,
+        hydrogen_indices: np.ndarray,
+    ) -> np.ndarray:
         """Identify water oxygens by counting hydrogens within cutoff distance.
 
         Parameters

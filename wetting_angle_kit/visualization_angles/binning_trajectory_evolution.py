@@ -2,11 +2,14 @@ import glob
 import logging
 import os
 import re
+from typing import Dict, List, Optional
 
 import numpy as np
 
 # Ensure this matches your actual import structure
-from .base_trajectory_analyzer import BaseTrajectoryAnalyzer
+from wetting_angle_kit.visualization_angles.base_trajectory_analyzer import (
+    BaseTrajectoryAnalyzer,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -14,7 +17,13 @@ logger = logging.getLogger(__name__)
 class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
     """Analyze binning trajectory data using circular segment calculations."""
 
-    def __init__(self, directories, split_factor=1, time_steps=None, time_unit="ps"):
+    def __init__(
+        self,
+        directories: List[str],
+        split_factor: int = 1,
+        time_steps: Optional[Dict[str, float]] = None,
+        time_unit: str = "ps",
+    ) -> None:
         """
         Initialize the analyzer with a list of directory paths and split factor.
 
@@ -35,7 +44,7 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         # Initialize Base Class (this will trigger _initialize_data_structure)
         super().__init__(directories, time_unit=time_unit)
 
-    def _initialize_data_structure(self):
+    def _initialize_data_structure(self) -> None:
         """Initialize data structure for binning analysis."""
         for directory in self.directories:
             self.data[directory] = {
@@ -47,12 +56,12 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 "time_step": self.time_steps.get(directory, 1.0),
             }
 
-    def get_method_name(self):
+    def get_method_name(self) -> str:
         """Return method name."""
         return "Binning Analysis"
 
     @staticmethod
-    def circular_segment_area(R, z_center, z_cut):
+    def circular_segment_area(R: float, z_center: float, z_cut: float) -> float:
         """Compute the area of a circular segment for any cut position."""
         h = (z_center + R) - z_cut  # height of the cap
         if h <= 0:
@@ -68,12 +77,12 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 - (R - h_small) * np.sqrt(2 * R * h_small - h_small**2)
             )
 
-    def load_files(self):
+    def load_files(self) -> None:
         """Load and sort all relevant log files from each directory."""
         for directory in self.directories:
             log_files = sorted(
                 glob.glob(os.path.join(directory, "log_data_batch_*.txt")),
-                key=lambda x: int(re.search(r"batch_(\d+)", x).group(1)),
+                key=lambda x: int(re.search(r"batch_(\d+)", x).group(1)),  # type: ignore[union-attr]
             )
             if not log_files:
                 raise ValueError(
@@ -81,11 +90,11 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 )
             self.data[directory]["log_files"] = log_files
 
-    def read_data(self):
+    def read_data(self) -> None:
         """Alias for load_data for backward compatibility."""
         self.load_data()
 
-    def load_data(self):
+    def load_data(self) -> None:
         """Read and parse data from log files in each directory."""
         self.load_files()
         for directory in self.directories:
@@ -137,10 +146,10 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 self.data[directory]["contact_angles"].append(angle)
                 self.data[directory]["surface_areas"].append(A_seg)
 
-    def get_surface_areas(self, directory):
+    def get_surface_areas(self, directory: str) -> np.ndarray:
         """Return surface areas for a directory."""
         return np.array(self.data[directory]["surface_areas"])
 
-    def get_contact_angles(self, directory):
+    def get_contact_angles(self, directory: str) -> np.ndarray:
         """Return contact angles for a directory."""
         return np.array(self.data[directory]["contact_angles"])

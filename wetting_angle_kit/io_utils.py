@@ -1,4 +1,5 @@
 import os
+from typing import Any
 
 import numpy as np
 
@@ -17,7 +18,7 @@ def validate_droplet_geometry(droplet_geometry: str) -> None:
         )
 
 
-def load_dump_ovito(filepath):
+def load_dump_ovito(filepath: str) -> Any:
     try:
         from ovito.io import import_file
     except ImportError as e:  # add exception chaining
@@ -30,11 +31,11 @@ def load_dump_ovito(filepath):
     return pipeline
 
 
-def save_array_as_txt(array, filename):
+def save_array_as_txt(array: np.ndarray, filename: str) -> None:
     np.savetxt(filename, array, fmt="%f")
 
 
-def geometric_center(list_xyz_point):
+def geometric_center(list_xyz_point: np.ndarray) -> np.ndarray:
     return np.mean(list_xyz_point, axis=0)
 
 

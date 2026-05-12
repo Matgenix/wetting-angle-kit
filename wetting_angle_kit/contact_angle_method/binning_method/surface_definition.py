@@ -30,6 +30,7 @@ degrees.
 """
 
 import warnings
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -46,12 +47,14 @@ class SurfaceModel:
         Initial guess for model parameters. Interpretation is left to subclasses.
     """
 
-    def __init__(self, initial_params=None):
+    def __init__(self, initial_params: Optional[List[float]] = None) -> None:
         """Store initial parameters and prepare covariance placeholder."""
         self.params = initial_params
         self.covariance = None
 
-    def fit(self, x_data, density_data):  # pragma: no cover - abstract
+    def fit(
+        self, x_data: Any, density_data: np.ndarray
+    ) -> "SurfaceModel":  # pragma: no cover - abstract
         """Fit the model to density data.
 
         Parameters
@@ -68,7 +71,7 @@ class SurfaceModel:
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def evaluate(self, x):  # pragma: no cover - abstract
+    def evaluate(self, x: Any) -> float:  # pragma: no cover - abstract
         """Evaluate the fitted function at point ``x``.
 
         Parameters
@@ -83,7 +86,7 @@ class SurfaceModel:
         """
         raise NotImplementedError("Subclasses must implement this method")
 
-    def evaluate_on_grid(self, xi_grid, zi_grid):
+    def evaluate_on_grid(self, xi_grid: np.ndarray, zi_grid: np.ndarray) -> np.ndarray:
         """Evaluate the fitted function on a 2D (xi, zi) grid.
 
         Parameters
@@ -132,12 +135,22 @@ class HyperbolicTangentModel(SurfaceModel):
     #: Default initial guess for the seven fit parameters (water at RT, Å units).
     DEFAULT_INITIAL_PARAMS = [1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0]
 
-    def __init__(self, initial_params=None):
+    def __init__(self, initial_params: Optional[List[float]] = None) -> None:
         if initial_params is None:
             initial_params = list(self.DEFAULT_INITIAL_PARAMS)
         super().__init__(initial_params)
 
-    def _fitting_function(self, x, rho1, rho2, R_eq, zi_c, zi_0, t1, t2):
+    def _fitting_function(
+        self,
+        x: Any,
+        rho1: float,
+        rho2: float,
+        R_eq: float,
+        zi_c: float,
+        zi_0: float,
+        t1: float,
+        t2: float,
+    ) -> Any:
         """Internal hyperbolic tangent density expression.
 
         Parameters
@@ -162,10 +175,10 @@ class HyperbolicTangentModel(SurfaceModel):
         """
         xi, zi = x[0], x[1]
 
-        def g(r):
+        def g(r: Any) -> Any:
             return 0.5 * ((rho1 + rho2) - (rho1 - rho2) * np.tanh(2 * (r - R_eq) / t1))
 
-        def h(z):
+        def h(z: Any) -> Any:
             return 0.5 * (1 + np.tanh(2 * z / t2))
 
         r = np.sqrt(xi**2 + (zi - zi_c) ** 2)
@@ -179,7 +192,7 @@ class HyperbolicTangentModel(SurfaceModel):
     _PARAM_LOWER = np.array([0.0, 0.0, 1e-6, -np.inf, -np.inf, 1e-6, 1e-6])
     _PARAM_UPPER = np.array([np.inf] * 7)
 
-    def fit(self, x_data, density_data):
+    def fit(self, x_data: Any, density_data: np.ndarray) -> "HyperbolicTangentModel":
         """Fit the model parameters to provided density samples.
 
         Parameters
@@ -211,6 +224,7 @@ class HyperbolicTangentModel(SurfaceModel):
         This usually indicates the hyperbolic tangent model is not a good
         fit (e.g. too few frames, wrong geometry, or noisy density field).
         """
+        assert self.params is not None
         param_names = ["rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2"]
         tol = 1e-6
         at_bound = []
@@ -229,7 +243,7 @@ class HyperbolicTangentModel(SurfaceModel):
                 stacklevel=3,
             )
 
-    def evaluate(self, x):
+    def evaluate(self, x: Any) -> float:
         """Evaluate the fitted hyperbolic tangent model at ``x``.
 
         Parameters
@@ -255,7 +269,9 @@ class HyperbolicTangentModel(SurfaceModel):
             self.params[6],
         )
 
-    def compute_isoline(self, scale_factor=0.95):
+    def compute_isoline(
+        self, scale_factor: float = 0.95
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Compute an iso-surface circle and wall line approximation.
 
         Parameters
@@ -296,7 +312,7 @@ class HyperbolicTangentModel(SurfaceModel):
 
         return circle_xi, circle_zi, wall_line_xi, wall_line_zi
 
-    def compute_contact_angle(self):
+    def compute_contact_angle(self) -> float:
         """Return the contact angle (degrees) implied by fitted parameters.
 
         Returns
@@ -327,7 +343,7 @@ class HyperbolicTangentModel(SurfaceModel):
         theta = (np.pi / 2 - np.arctan((zita_wall - zita_c) / xi_cross)) * 180 / np.pi
         return theta
 
-    def get_parameters(self):
+    def get_parameters(self) -> Dict[str, float]:
         """Return a mapping of parameter names to fitted values.
 
         Returns
@@ -341,7 +357,7 @@ class HyperbolicTangentModel(SurfaceModel):
         param_names = ["rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2"]
         return {name: value for name, value in zip(param_names, self.params)}
 
-    def get_parameter_strings(self):
+    def get_parameter_strings(self) -> List[str]:
         """Return formatted parameter strings suitable for logging.
 
         Returns

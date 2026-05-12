@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, cast
+from typing import Any, List, Optional, cast
 
 import numpy as np
 
-from .base_parser import BaseParser
+from wetting_angle_kit.parser.base_parser import BaseParser
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,9 @@ class DumpParser(BaseParser):
         )
         self.num_frames: int = int(self.pipeline.source.num_frames)
 
-    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
+    def parse(
+        self, frame_index: int, indices: Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Compute and return particle positions for a single frame,
         with optional filtering by particle indices.
 
@@ -157,7 +159,9 @@ class DumpWallParser(BaseParser):
         )
         return pipeline
 
-    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
+    def parse(
+        self, frame_index: int, indices: Optional[np.ndarray] = None
+    ) -> np.ndarray:
         """Return wall particle positions for a single frame.
 
         Parameters
