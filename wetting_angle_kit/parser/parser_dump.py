@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List
+from typing import Any, List, cast
 
 import numpy as np
 
@@ -30,12 +30,15 @@ class DumpParser(BaseParser):
                 "pip install wetting_angle_kit[ovito]"
             ) from e
 
+        # OVITO's type stubs return Optional[PipelineNode] and miss several
+        # runtime attributes (SimulationCell.matrix, etc.). Cast to Any so
+        # the type checker treats the pipeline as opaque.
         self.filepath = filepath
-        self.pipeline = import_file(self.filepath)
+        self.pipeline: Any = cast(Any, import_file(self.filepath))
         self.pipeline.modifiers.append(
             ComputePropertyModifier(expressions=["1"], output_property="Unity")
         )
-        self.num_frames = self.pipeline.source.num_frames
+        self.num_frames: int = int(self.pipeline.source.num_frames)
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Compute and return particle positions for a single frame,
@@ -100,7 +103,7 @@ class DumpParser(BaseParser):
         int
             Number of frames.
         """
-        return self.num_frames
+        return int(self.num_frames)
 
 
 class DumpWallParser(BaseParser):
@@ -125,7 +128,12 @@ class DumpWallParser(BaseParser):
         self.liquid_particle_types = liquid_particle_types
         self.pipeline = self.load_dump_ovito()
 
-    def load_dump_ovito(self):
+    def load_dump_ovito(self) -> Any:
+        """Build and return the OVITO pipeline for wall-only extraction.
+
+        Returns ``Any`` because OVITO's Python bindings ship without type
+        stubs; the pipeline is opaque from the type checker's perspective.
+        """
         try:
             from ovito.io import import_file
             from ovito.modifiers import (
@@ -196,16 +204,17 @@ class DumpWallParser(BaseParser):
         x_vector = data.cell.matrix[0, :3]
         return float(np.linalg.norm(x_vector))
 
-    def box_length_max(self, frame_index):  # legacy name kept
+    def box_length_max(self, frame_index: int) -> float:
+        """Return the maximum simulation cell dimension for a frame."""
         data = self.pipeline.compute(frame_index)
         y_vector = np.linalg.norm(data.cell.matrix[1, :3])
         x_vector = np.linalg.norm(data.cell.matrix[0, :3])
         z_vector = np.linalg.norm(data.cell.matrix[2, :3])
-        return np.max(np.array([y_vector, x_vector, z_vector]))
+        return float(np.max(np.array([y_vector, x_vector, z_vector])))
 
     def frame_count(self) -> int:
         """Return total number of frames."""
-        return self.pipeline.source.num_frames
+        return int(self.pipeline.source.num_frames)
 
 
 class DumpWaterMoleculeFinder:
@@ -227,8 +236,13 @@ class DumpWaterMoleculeFinder:
         self.oh_cutoff = oh_cutoff
         self.pipeline = self._setup_pipeline()
 
-    def _setup_pipeline(self):
-        """Setup OVITO pipeline for water molecule detection."""
+    def _setup_pipeline(self) -> Any:
+        """Setup OVITO pipeline for water molecule detection.
+
+        Returns ``Any`` because OVITO's stubs disagree with the runtime
+        API; treat the pipeline as opaque from the type checker's
+        perspective.
+        """
         try:
             from ovito.io import import_file
             from ovito.modifiers import (
@@ -240,7 +254,7 @@ class DumpWaterMoleculeFinder:
                 "OVITO required for water detection. Install: pip install "
                 "wetting_angle_kit[ovito]"
             ) from e
-        pipeline = import_file(self.filepath)
+        pipeline: Any = cast(Any, import_file(self.filepath))
         pipeline.modifiers.append(
             CoordinationAnalysisModifier(cutoff=self.oh_cutoff, number_of_bins=200)
         )
@@ -262,8 +276,25 @@ class DumpWaterMoleculeFinder:
             )
         mask = np.array(data.particles["IsWaterOxygen"].array) == 1
         oxygen_indices = np.where(mask)[0]
-        return data.particles["Particle Identifier"][oxygen_indices]
+        return np.asarray(data.particles["Particle Identifier"][oxygen_indices])
 
 
-Dump_WaterMoleculeFinder = DumpWaterMoleculeFinder
-DumpParse_wall = DumpWallParser
+_DEPRECATED_ALIASES = {
+    "Dump_WaterMoleculeFinder": DumpWaterMoleculeFinder,
+    "DumpParse_wall": DumpWallParser,
+}
+
+
+def __getattr__(name: str) -> type:
+    """Emit a DeprecationWarning when one of the legacy aliases is used."""
+    if name in _DEPRECATED_ALIASES:
+        import warnings
+
+        target = _DEPRECATED_ALIASES[name]
+        warnings.warn(
+            f"{name} is deprecated; use {target.__name__} instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return target
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

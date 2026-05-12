@@ -45,12 +45,13 @@ doc = [
     "myst-parser",
 ]
 viz = [
-    "plotly>=5.22.0",
     "ipython>=8.0.0",
 ]
 ase = ["ase>=3.23.0"]
 ovito = ["ovito"]
-all = ["ase>=3.23.0", "ovito"]
+# Convenience extra: installs both trajectory backends and the optional
+# visualization helpers. Use ``[all,dev,doc]`` for a full developer setup.
+all = ["ase>=3.23.0", "ovito", "ipython>=8.0.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/Matgenix/wetting_angle_kit"
@@ -94,7 +95,14 @@ disallow_incomplete_defs = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
-addopts = "--cov=wetting_angle_kit"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "--verbose --durations=10"
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests that require trajectory fixtures and run end-to-end",
+    "unit: marks unit tests (default; the marker is optional)",
+]
 
 [tool.ruff]
 line-length = 88

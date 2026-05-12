@@ -30,6 +30,7 @@ from .parser import (
 from .visualization_angles import (
     BaseTrajectoryAnalyzer,
     BinningTrajectoryAnalyzer,
+    ContactAngleAnimator,
     DropletSlicedPlotter,
     DropletSlicedPlotterPlotly,
     MethodComparison,
@@ -65,6 +66,7 @@ __all__ = [
     # Visualization & analysis
     "BaseTrajectoryAnalyzer",
     "BinningTrajectoryAnalyzer",
+    "ContactAngleAnimator",
     "MethodComparison",
     "DropletSlicedPlotter",
     "DropletSlicedPlotterPlotly",
