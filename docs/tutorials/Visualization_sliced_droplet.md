@@ -1,6 +1,6 @@
 # Visualization Tutorial — Droplet Surface and Contact Angle
 
-This tutorial demonstrates how to visualize a droplet and compute its contact angle using the **wetting_angle_kit** package. We'll use the `sliced` contact angle method and visualize the resulting droplet with the `Droplet_sliced_Plotter` class.
+This tutorial demonstrates how to visualize a droplet and compute its contact angle using the **wetting_angle_kit** package. We'll use the `sliced` contact angle method and visualize the resulting droplet with the `DropletSlicedPlotter` class.
 
 ---
 

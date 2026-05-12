@@ -1,5 +1,5 @@
 """
-Example: Using DumpParser and     DumpWaterMoleculeFinder
+Example: Using DumpParser and DumpWaterMoleculeFinder
 
 This example shows how to:
 1. Identify water molecules in a LAMMPS dump file.
@@ -7,8 +7,8 @@ This example shows how to:
 """
 
 from wetting_angle_kit.parser import (
-    ASE_Parser,
-    ASE_WaterMoleculeFinder,
+    AseParser,
+    AseWaterMoleculeFinder,
     DumpParser,
     DumpWaterMoleculeFinder,
     XYZParser,
@@ -33,6 +33,9 @@ print(f"Number of water molecules: {len(oxygen_indices)}")
 parser = DumpParser(filename)
 
 # --- Extract only oxygen coordinates for frame 0 ---
+# For DumpParser, `indices` are LAMMPS particle IDs (because LAMMPS may
+# reorder atoms between frames). For XYZParser/AseParser, `indices` are
+# 0-based positional indices.
 oxygen_positions = parser.parse(frame_index=0, indices=oxygen_indices)
 print("Extracted oxygen coordinates shape:", oxygen_positions.shape)
 
@@ -41,7 +44,7 @@ print("Extracted oxygen coordinates shape:", oxygen_positions.shape)
 # print("All atom positions shape:", all_positions.shape)
 
 """
-Example: Using ASE_Parser and ASE_WaterMoleculeFinder
+Example: Using AseParser and AseWaterMoleculeFinder
 
 This example demonstrates how to:
 1. Identify water oxygens in an ASE trajectory.
@@ -52,10 +55,11 @@ This example demonstrates how to:
 filename = "../../tests/trajectories/slice_10_mace_mlips_cylindrical_2_5.traj"
 
 # --- Initialize water molecule finder ---
-wat_find = ASE_WaterMoleculeFinder(
+wat_find = AseWaterMoleculeFinder(
     filename,
     particle_type_wall=["C"],  # element name for wall
-    oh_cutoff=0.4,  # O–H cutoff distance (Å)
+    oh_cutoff=1.2,  # O–H bond cutoff (Å); ASE NeighborList handles the
+    # per-atom splitting internally now.
 )
 
 # --- Get oxygen indices for frame 0 ---
@@ -63,7 +67,7 @@ oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 print(f"Number of water molecules: {len(oxygen_indices)}")
 
 # --- Initialize parser ---
-parser = ASE_Parser(filename)
+parser = AseParser(filename)
 
 # --- Extract oxygen coordinates only ---
 oxygen_positions = parser.parse(frame_index=0, indices=oxygen_indices)

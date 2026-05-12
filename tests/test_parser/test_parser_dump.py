@@ -68,8 +68,15 @@ def test_box_length_max(dump_parser):
     assert max_length > 0
 
 
-# --- Test frame_tot ---
-def test_frame_tot(dump_parser):
-    total_frames = dump_parser.frame_tot()
+# --- Test frame_count ---
+def test_frame_count(dump_parser):
+    total_frames = dump_parser.frame_count()
     assert isinstance(total_frames, int)
     assert total_frames > 0
+
+
+# --- frame_tot is a deprecated alias for frame_count ---
+def test_frame_tot_emits_deprecation_warning(dump_parser):
+    with pytest.warns(DeprecationWarning, match="frame_tot is deprecated"):
+        total = dump_parser.frame_tot()
+    assert total == dump_parser.frame_count()

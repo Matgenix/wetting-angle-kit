@@ -63,7 +63,7 @@ Example trajectory::
        output_dir="result_dump_spherical_sliced",
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",  # Geometry fitting model
-       delta_gamma=20,  # Smoothing parameter
+       delta_gamma=20,  # Azimuthal step (deg) for spherical slicing
    )
 
    # --- Step 6: Run the analysis ---
@@ -79,10 +79,26 @@ Example trajectory::
 
 After running the example, you'll see something like::
 
-   Number of water molecules: 423
-   Analysis results: {'frame': 1, 'contact_angle': 104.7, 'fit_quality': 0.96}
+   Number of water molecules: 1320
+   Analysis results: {
+       'mean_angle': 94.46,
+       'std_angle': 0.0,
+       'angles': {1: 94.46},
+       'frames_analyzed': [1],
+       'method_metadata': {'frames_per_angle': 1},
+   }
 
-If plotting is enabled, a visualization of the droplet profile and the fitted spherical interface is generated in ``result_dump_spherical_sliced/``.
+The ``analyze`` return dict has these keys:
+
+* ``mean_angle`` — mean contact angle (°) across the analyzed frames.
+* ``std_angle`` — standard deviation across frames.
+* ``angles`` — mapping ``frame_index -> mean angle for that frame``.
+* ``frames_analyzed`` — list of frame indices that were processed.
+* ``method_metadata`` — method-specific info (e.g. number of frames per
+  angle value).
+
+Per-frame raw outputs (alfas, surfaces, popt) are saved as ``.npy`` files
+inside the output directory.
 
 ----
 
@@ -90,7 +106,11 @@ If plotting is enabled, a visualization of the droplet profile and the fitted sp
 -------
 
 - Use ``droplet_geometry='spherical'`` for droplets and ``droplet_geometry='cylinder_y'`` for cylindrical droplet on the y axis or ``'cylinder_x'`` for cylinder on the x axis.
-- Adjust ``delta_gamma`` for smoother or sharper slicing (larger = smoother).
+- Adjust ``delta_gamma`` for the spherical mode (azimuthal step in
+  degrees between successive slices — smaller = more slices, more
+  detail, more cost). For very small droplets, also raise
+  ``points_per_angstrom`` (default 1.0) on the analyzer to densify the
+  per-ray sampling used by the interface fit.
 - To analyze multiple frames:
 
 .. code-block:: python
@@ -130,7 +150,7 @@ If plotting is enabled, a visualization of the droplet profile and the fitted sp
    print(f"Number of water molecules: {len(oxygen_indices)}")
 
    # --- Step 3: Initialize parser ---
-   parser = DumpParser(filename, particle_type_wall={3})
+   parser = DumpParser(filename)
 
    # --- Step 4: Create analyzer for the sliced method ---
    analyzer = contact_angle_analyzer(
@@ -139,7 +159,7 @@ If plotting is enabled, a visualization of the droplet profile and the fitted sp
        output_dir="result_dump_spherical_sliced",
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",  # Fitting model
-       delta_gamma=20,  # Smoothing parameter
+       delta_gamma=20,  # Azimuthal step (deg) for spherical slicing
    )
 
    # --- Step 5: Run analysis ---

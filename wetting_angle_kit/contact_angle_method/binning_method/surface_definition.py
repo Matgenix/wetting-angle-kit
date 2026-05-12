@@ -1,3 +1,34 @@
+"""Interface models used by the binning analyzer.
+
+Algorithm
+---------
+
+The implemented :class:`HyperbolicTangentModel` represents the
+liquid–vapor interface as a product of two sigmoids,
+
+::
+
+    rho(xi, zi) = g(r) * h(z),
+    g(r) = 0.5 * [(rho1 + rho2) - (rho1 - rho2) * tanh(2 (r - R_eq) / t1)],
+    h(z) = 0.5 * [1 + tanh(2 * (zi - zi_0) / t2)],
+    r    = sqrt(xi**2 + (zi - zi_c)**2),
+
+with seven free parameters fitted by non-linear least squares:
+
+* ``rho1`` — liquid-phase number density (particles · Å⁻³).
+* ``rho2`` — vapor-phase number density (particles · Å⁻³).
+* ``R_eq`` — equivalent spherical radius (Å).
+* ``zi_c`` — z-coordinate of the spherical center (Å).
+* ``zi_0`` — wall reference z-coordinate (Å).
+* ``t1``   — radial interface thickness (Å).
+* ``t2``   — vertical interface thickness (Å).
+
+Bounds keep densities and lengths in their physical ranges. Once the fit
+converges, the contact angle is the geometric tangent angle of the
+fitted sphere at the wall intersection. Lengths are in Å, angles in
+degrees.
+"""
+
 import warnings
 
 import numpy as np

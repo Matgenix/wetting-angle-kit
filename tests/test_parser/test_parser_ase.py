@@ -43,7 +43,7 @@ def test_parse_liquid_particles(ase_parser):
 
 
 # --- Test get_profile_coordinates ---
-def test_get_cylindrical_coordinates(ase_parser, caplog):
+def test_get_profile_coordinates(ase_parser, caplog):
     import logging
 
     caplog.set_level(logging.INFO, logger="wetting_angle_kit.parser.base_parser")
@@ -68,7 +68,7 @@ def test_get_cylindrical_coordinates(ase_parser, caplog):
 
 
 # --- Test box_size_x and box_size_y ---
-def test_box_size_x(ase_parser, capsys):
+def test_box_size_x(ase_parser):
     frame_index = 0
     box_size_x = ase_parser.box_size_x(frame_index)
     assert isinstance(box_size_x, float)
@@ -98,10 +98,12 @@ def test_frame_count(ase_parser):
 
 
 # --- Test droplet_geometry in get_profile_coordinates ---
-def test_get_cylindrical_coordinates_type_model(ase_parser):
+def test_get_profile_coordinates_spherical(ase_parser):
     frame_indices = [0]
     r_values, z_values, _ = ase_parser.get_profile_coordinates(
         frame_indices, droplet_geometry="spherical"
     )
     assert isinstance(r_values, np.ndarray)
     assert isinstance(z_values, np.ndarray)
+    # Spherical radial distance is non-negative.
+    assert (r_values >= 0).all()

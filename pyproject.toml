@@ -55,7 +55,7 @@ all = ["ase>=3.23.0", "ovito"]
 [project.urls]
 "Homepage" = "https://github.com/Matgenix/wetting_angle_kit"
 "Bug Tracker" = "https://github.com/Matgenix/wetting_angle_kit/issues"
-"Documentation" = "https://wetting_angle_kit.readthedocs.io/"
+"Documentation" = "https://matgenix.github.io/wetting-angle-kit"
 
 [build-system]
 requires = ["setuptools>=61.0", "versioningit ~= 1.0", "wheel"]

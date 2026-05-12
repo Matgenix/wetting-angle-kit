@@ -55,7 +55,7 @@ def test_parse_liquid_particles(xyz_parser):
 
 
 # --- Test get_profile_coordinates ---
-def test_get_cylindrical_coordinates(xyz_parser):
+def test_get_profile_coordinates(xyz_parser):
     frame_indices = [0, 1]
     r_values, z_values, n_frames = xyz_parser.get_profile_coordinates(frame_indices)
     assert isinstance(r_values, np.ndarray)

@@ -1,3 +1,27 @@
+"""Sliced-method interface estimator.
+
+Algorithm
+---------
+
+For a single droplet slice the interface is recovered in two steps:
+
+1. **Radial line scan.** A fan of rays is emitted from the droplet
+   geometric center in the slice plane, with one ray every
+   ``delta_angle`` degrees. Along each ray we evaluate a
+   3D-Gaussian-smoothed density at uniformly spaced sampling points
+   (``points_per_angstrom`` per Å, with a hard minimum of
+   ``MIN_POINTS_PER_RAY``). The Gaussian kernel width
+   ``density_sigma`` (Å) defaults to 3.0 Å, tuned for liquid water at
+   room temperature.
+2. **Interface fit.** A hyperbolic tangent profile
+   ``rho(s) = d * tanh(zd - s) + h`` is fitted to the density along
+   the ray, where ``s`` is the distance from the center (Å). The
+   fitted ``zd`` is the interface position; the corresponding (x, z)
+   point in the slice plane is returned.
+
+All lengths are expected in Ångströms; angles are in degrees.
+"""
+
 import numpy as np
 from scipy.optimize import curve_fit
 

@@ -4,7 +4,7 @@ This tutorial shows how to load different trajectory formats using the `wetting_
 
 The parser provides a unified interface to read atomic coordinates from:
 - LAMMPS dump files (`DumpParser`, `    DumpWaterMoleculeFinder`)
-- ASE `.traj` files (`ASE_Parser`, `ASE_WaterMoleculeFinder`)
+- ASE `.traj` files (`AseParser`, `AseWaterMoleculeFinder`)
 - XYZ files (`XYZParser`)
 
 Each parser can extract atomic positions for selected frames and atoms, allowing efficient and flexible analysis of molecular simulations.
@@ -56,16 +56,16 @@ print("Extracted positions for", len(oxygen_positions), "oxygen atoms.")
 
 ## 3. Example: ASE Trajectory File
 ```python
-from wetting_angle_kit.parser import ASE_Parser, ASE_WaterMoleculeFinder
+from wetting_angle_kit.parser import AseParser, AseWaterMoleculeFinder
 
 # --- Step 1: Define the trajectory file ---
 filename = "../../tests/trajectories/slice_10_mace_mlips_cylindrical_2_5.traj"
 
 # --- Step 2: Initialize the water molecule finder ---
-wat_find = ASE_WaterMoleculeFinder(
+wat_find = AseWaterMoleculeFinder(
     filename,
     particle_type_wall=["C"],  # Wall elements (e.g., carbon)
-    oh_cutoff=0.4,  # O–H bond cutoff distance
+    oh_cutoff=1.2,  # O–H bond cutoff (Å); ASE NeighborList uses half this per atom
 )
 
 # --- Step 3: Identify water oxygens for frame 0 ---
@@ -73,7 +73,7 @@ oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 print("Number of water molecules:", len(oxygen_indices))
 
 # --- Step 4: Initialize the parser ---
-parser = ASE_Parser(filename)
+parser = AseParser(filename)
 
 # --- Step 5: Extract oxygen atom positions only ---
 oxygen_positions = parser.parse(frame_index=0, indices=oxygen_indices)

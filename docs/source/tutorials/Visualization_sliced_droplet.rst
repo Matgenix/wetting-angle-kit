@@ -66,8 +66,10 @@ The visualization workflow involves the following steps:
    parser = DumpParser(filepath=filename)
    oxygen_position = parser.parse(frame_index=10, indices=oxygen_indices)
 
-   coord_wall = DumpWallParser(filename, particule_liquid_type={1, 2})
-   wall_coords = coord_wall.parse(frame_index=1)
+   # Wall parser: ``liquid_particle_types`` lists everything the parser
+   # should *exclude* (so that what remains are the wall atoms).
+   coord_wall = DumpWallParser(filename, liquid_particle_types=[1, 2])
+   wall_coords = coord_wall.parse(frame_index=10)
 
 ----
 

@@ -48,6 +48,7 @@ def binning_params():
 
 
 # --- Unit Test for BinningContactAngleAnalyzer ---
+@pytest.mark.integration
 def test_binning_contact_angle_analyzer_with_real_data(
     filename, oxygen_indices, binning_params, tmp_path
 ):
@@ -74,15 +75,20 @@ def test_binning_contact_angle_analyzer_with_real_data(
     assert "std_angle" in results
     assert "angles" in results
     assert len(results["angles"]) == 1
-    assert 0 <= results["mean_angle"] <= 180
+    # Cylindrical droplet on a graphene-like surface gives a contact angle
+    # around 90-100° here. Use a moderate band so the test catches gross
+    # regressions but tolerates the inherent noise of a single-frame fit.
+    assert 80.0 <= results["mean_angle"] <= 115.0
     assert np.isfinite(results["std_angle"])
 
 
-# --- Optional: Test for multiple frames ---
-def test_binning_contact_angle_analyzer_multiple_frames(
+# --- Multi-batch test: with split_factor=1 each frame produces its own
+# angle, so we should get one angle per frame, not a single collapsed value.
+@pytest.mark.integration
+def test_binning_contact_angle_analyzer_per_frame_with_split_factor(
     filename, oxygen_indices, binning_params, tmp_path
 ):
-    output_dir = tmp_path / "result_dump_masspain_noplot_multiple"
+    output_dir = tmp_path / "result_dump_per_frame"
 
     analyzer = contact_angle_analyzer(
         method="binning",
@@ -95,17 +101,12 @@ def test_binning_contact_angle_analyzer_multiple_frames(
         plot_graphs=False,
     )
 
-    # Run analysis for frames 1, 2, and 3
-    results = analyzer.analyze([1, 2, 3])
+    # split_factor=1 → one batch per frame → 3 batch-level angles.
+    results = analyzer.analyze([1, 2, 3], split_factor=1)
 
-    # Assert results
-    assert "mean_angle" in results
-    assert "std_angle" in results
-    assert "angles" in results
-    assert len(results["angles"]) == 1
-    # The hyperbolic tangent fit on this short 3-frame slice can converge
-    # to an unphysical solution (wall outside the fitted sphere); the
-    # analyzer signals this with a NaN angle rather than masking the
-    # failure. Accept either a finite angle in [0, 180] or NaN.
-    mean_angle = results["mean_angle"]
-    assert np.isnan(mean_angle) or (0 <= mean_angle <= 180)
+    assert results["method_metadata"] == {"frames_per_trajectory": 1}
+    assert results["angles"].shape == (3,)
+    # Each batch can either converge to a physically-plausible angle in
+    # [0, 180] or return NaN (signaling fit failure on a single frame).
+    for angle in results["angles"]:
+        assert np.isnan(angle) or (0.0 <= angle <= 180.0)

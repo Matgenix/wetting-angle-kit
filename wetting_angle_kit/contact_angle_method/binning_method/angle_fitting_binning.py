@@ -1,3 +1,29 @@
+"""Binning-method contact-angle analyzer.
+
+Algorithm
+---------
+
+The trajectory is aggregated into a 2D density field ``rho(xi, zi)`` on a
+regular bin grid, where ``xi`` is the in-plane radial coordinate produced
+by :func:`wetting_angle_kit.parser.base_parser.project_to_profile` and
+``zi`` is the lab-frame vertical coordinate. The histogram uses
+:func:`numpy.histogram2d` (left-edge inclusive, right-edge exclusive,
+last bin closed on both ends).
+
+Per-bin volume elements:
+
+* ``cylinder_x`` / ``cylinder_y``: ``dV = 2 * width_cylinder * dxi * dzi``.
+  The factor of 2 accounts for folding the symmetric distribution into
+  positive ``xi`` via ``|x_centered|``.
+* ``spherical``: ``dV = 2 * pi * xi_cc * dxi * dzi`` — the annular shell
+  volume of cylindrical coordinates.
+
+A :class:`HyperbolicTangentModel` is then fitted to the time-averaged
+density field and the implied contact angle is derived from the fitted
+sphere radius, center, and wall position. Lengths are in Å, densities in
+particles · Å⁻³, and the final contact angle is returned in degrees.
+"""
+
 import logging
 import os
 import warnings

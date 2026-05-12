@@ -9,7 +9,9 @@ Before installing wetting_angle_kit, ensure you have the following prerequisites
 1. **Python 3.9 or higher**: Make sure you have Python 3.9 or higher installed on your system.
 2. **Conda**: Ensure you have Conda installed. If not, you can install it from `here <https://docs.conda.io/en/latest/miniconda.html>`_.
 
-## Optional Dependencies Strategy
+Optional Dependencies Strategy
+------------------------------
+
 OVITO and ASE are only imported inside the respective parser classes. Installing the package
 without extras keeps dependencies minimal. Calling an OVITO/ASE parser without installing
 raises a clear ImportError with installation instructions.
@@ -18,7 +20,7 @@ Installation Options
 --------------------
 
 Core (only for xyz file analysis)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
