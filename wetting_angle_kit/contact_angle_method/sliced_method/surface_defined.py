@@ -25,6 +25,15 @@ class SurfaceDefinition:
         Factor applied multiplicatively to raw density contributions.
     """
 
+    #: Minimum number of sampling points along each ray. Below this the
+    #: tanh profile fit becomes numerically unreliable.
+    MIN_POINTS_PER_RAY = 20
+
+    #: Default Gaussian standard deviation (Å) for the density-along-ray
+    #: smoothing kernel. Tuned for water at room temperature; larger values
+    #: broaden contributions and smooth the interface.
+    DEFAULT_DENSITY_SIGMA = 3.0
+
     def __init__(
         self,
         atom_coords,
@@ -33,6 +42,8 @@ class SurfaceDefinition:
         center_geom,
         gamma,
         density_conversion=1.0,
+        points_per_angstrom: float = 1.0,
+        density_sigma: float = DEFAULT_DENSITY_SIGMA,
     ):
         self.atom_coords = atom_coords
         self.center_geom = center_geom
@@ -40,6 +51,8 @@ class SurfaceDefinition:
         self.gamma = gamma
         self.delta_angle = delta_angle
         self.max_dist = max_dist
+        self.points_per_angstrom = points_per_angstrom
+        self.density_sigma = density_sigma
 
     @staticmethod
     def density_contribution(positions, coords, sigma=2.0):
@@ -123,7 +136,7 @@ class SurfaceDefinition:
         beta = np.linspace(0, 360, int(360 / self.delta_angle), endpoint=False)
         list_rbeta = []
         list_xz = []
-        nn = self.max_dist  # one point per Å
+        nn = max(int(self.max_dist * self.points_per_angstrom), self.MIN_POINTS_PER_RAY)
         param_bounds = ([0, -10, -10], [self.max_dist, 10, 10])
         cos_beta = np.cos(np.deg2rad(beta))
         sin_beta = np.sin(np.deg2rad(beta))
@@ -140,11 +153,10 @@ class SurfaceDefinition:
                 int(nn),
             )
             distances = np.linspace(0.0, self.max_dist, int(nn))
-            sigma = 3.0  # tuned for water system at RT
             density = self.density_conversion * self.density_contribution(
                 positions,
                 self.atom_coords,
-                sigma=sigma,
+                sigma=self.density_sigma,
             )
             interface_re = self.fit_density_profile(distances, density, param_bounds)
             list_rbeta.append([interface_re, beta[i]])

@@ -1,8 +1,11 @@
+import logging
 import os
 from abc import ABC, abstractmethod
 
 import matplotlib.pyplot as plt
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 
 class BaseTrajectoryAnalyzer(ABC):
@@ -144,7 +147,7 @@ class BaseTrajectoryAnalyzer(ABC):
                     "Std Contact Angle: "
                     f"{np.std(self.get_contact_angles(directory)):.4f}\u00b0\n"
                 )
-            print(f"Analysis saved to: {output_path}")
+            logger.info("Analysis saved to: %s", output_path)
 
     def plot_mean_angle_vs_surface(self, labels=None, color=None, save_path=None):
         """
@@ -165,7 +168,7 @@ class BaseTrajectoryAnalyzer(ABC):
         for directory in self.directories:
             output_file = f"{directory}/output_stats.txt"
             if not os.path.exists(output_file):
-                print(f"No analysis found for {directory}. Running analysis...")
+                logger.info("No analysis found for %s. Running analysis...", directory)
                 self.analyze()  # Run analysis to generate output files
                 break  # Only need to run once
 

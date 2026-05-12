@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -81,7 +83,11 @@ class HyperbolicTangentModel(SurfaceModel):
     Parameters
     ----------
     initial_params : list[float], optional
-        Seven parameters ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]``:
+        Seven parameters ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]`` used as
+        the starting guess for the non-linear fit. Defaults to
+        :attr:`DEFAULT_INITIAL_PARAMS`, which is tuned for water at room
+        temperature in Å units; supply system-specific values if your
+        density or droplet size differs.
 
         - rho1 : Liquid-phase density.
         - rho2 : Vapor-phase density.
@@ -92,9 +98,12 @@ class HyperbolicTangentModel(SurfaceModel):
         - t2 : Interface thickness (vertical component).
     """
 
+    #: Default initial guess for the seven fit parameters (water at RT, Å units).
+    DEFAULT_INITIAL_PARAMS = [1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0]
+
     def __init__(self, initial_params=None):
         if initial_params is None:
-            initial_params = [1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0]
+            initial_params = list(self.DEFAULT_INITIAL_PARAMS)
         super().__init__(initial_params)
 
     def _fitting_function(self, x, rho1, rho2, R_eq, zi_c, zi_0, t1, t2):
@@ -132,6 +141,13 @@ class HyperbolicTangentModel(SurfaceModel):
         z = zi - zi_0
         return g(r) * h(z)
 
+    # Physical bounds on the seven parameters
+    # [rho1, rho2, R_eq, zi_c, zi_0, t1, t2].
+    # Densities are non-negative, radius and interface thicknesses are
+    # strictly positive. Center coordinates are unconstrained.
+    _PARAM_LOWER = np.array([0.0, 0.0, 1e-6, -np.inf, -np.inf, 1e-6, 1e-6])
+    _PARAM_UPPER = np.array([np.inf] * 7)
+
     def fit(self, x_data, density_data):
         """Fit the model parameters to provided density samples.
 
@@ -152,9 +168,35 @@ class HyperbolicTangentModel(SurfaceModel):
             x_data,
             density_data,
             p0=self.params,
+            bounds=(self._PARAM_LOWER, self._PARAM_UPPER),
             maxfev=1_000_000,
         )
+        self._warn_if_at_bounds()
         return self
+
+    def _warn_if_at_bounds(self) -> None:
+        """Emit a warning if any fitted parameter is pinned at a finite bound.
+
+        This usually indicates the hyperbolic tangent model is not a good
+        fit (e.g. too few frames, wrong geometry, or noisy density field).
+        """
+        param_names = ["rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2"]
+        tol = 1e-6
+        at_bound = []
+        for name, value, lo, hi in zip(
+            param_names, self.params, self._PARAM_LOWER, self._PARAM_UPPER
+        ):
+            if np.isfinite(lo) and abs(value - lo) < tol * max(1.0, abs(lo)):
+                at_bound.append(f"{name}={value:.3g} at lower bound {lo}")
+            elif np.isfinite(hi) and abs(value - hi) < tol * max(1.0, abs(hi)):
+                at_bound.append(f"{name}={value:.3g} at upper bound {hi}")
+        if at_bound:
+            warnings.warn(
+                "Hyperbolic tangent fit converged with parameter(s) at the "
+                "physical bound, suggesting a poor fit: " + "; ".join(at_bound),
+                RuntimeWarning,
+                stacklevel=3,
+            )
 
     def evaluate(self, x):
         """Evaluate the fitted hyperbolic tangent model at ``x``.
@@ -242,8 +284,6 @@ class HyperbolicTangentModel(SurfaceModel):
 
         discriminant = R_eq**2 - (zita_wall - zita_c) ** 2
         if discriminant < 0:
-            import warnings
-
             warnings.warn(
                 "Fitted wall is outside the fitted droplet sphere "
                 f"(R_eq={R_eq:.3f}, |zita_wall - zita_c|="

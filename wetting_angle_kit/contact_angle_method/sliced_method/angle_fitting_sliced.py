@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.optimize import curve_fit
 
+from wetting_angle_kit.io_utils import validate_droplet_geometry
+
 from .surface_defined import SurfaceDefinition
 
 
@@ -36,6 +38,10 @@ class ContactAngleSliced:
         Offset added to minimum droplet height for interface point filtering.
     """
 
+    #: Default azimuthal step (degrees) between radial sampling lines used
+    #: by :class:`SurfaceDefinition` when building the per-slice interface.
+    DEFAULT_DELTA_ANGLE = 8.0
+
     def __init__(
         self,
         liquid_coordinates,
@@ -46,7 +52,11 @@ class ContactAngleSliced:
         width_cylinder=None,
         delta_cylinder=None,
         surface_filter_offset: float = 2.0,
+        points_per_angstrom: float = 1.0,
+        density_sigma: float = SurfaceDefinition.DEFAULT_DENSITY_SIGMA,
+        delta_angle: float = DEFAULT_DELTA_ANGLE,
     ):
+        validate_droplet_geometry(droplet_geometry)
         self.liquid_coordinates = liquid_coordinates
         self.max_dist = max_dist
         # Store a copy: predict_contact_angle mutates this in-place per slice
@@ -57,18 +67,38 @@ class ContactAngleSliced:
         self.width_cylinder = width_cylinder
         self.delta_cylinder = delta_cylinder
         self.surface_filter_offset = surface_filter_offset
-        if self.droplet_geometry in ["cylinder_y", "cylinder_x"] and (
+        # Sampling density along each radial ray; raise this (e.g. 2.0 or
+        # higher) for small droplets where 1 sample per Å is insufficient
+        # to fit the interface tanh profile.
+        self.points_per_angstrom = points_per_angstrom
+        # Gaussian smoothing width (Å) for the density-along-ray kernel and
+        # azimuthal spacing (deg) between radial lines. Tuned for water at
+        # RT by default; adjust for other liquids.
+        self.density_sigma = density_sigma
+        self.delta_angle = delta_angle
+        if self.droplet_geometry in ("cylinder_y", "cylinder_x") and (
             width_cylinder is None or delta_cylinder is None
         ):
-            print(
-                "Warning: width_cylinder and delta_cylinder recommended for "
-                f"{self.droplet_geometry}"
+            import warnings
+
+            warnings.warn(
+                "width_cylinder and delta_cylinder recommended for "
+                f"{self.droplet_geometry}",
+                UserWarning,
+                stacklevel=2,
             )
         if self.droplet_geometry == "spherical" and delta_gamma is None:
             raise ValueError("delta_gamma must be provided for spherical analysis")
 
     def calculate_y_axis_list(self):
         """Return axis position list for the chosen droplet geometry.
+
+        For cylindrical droplets the slice positions sweep from 0 to
+        ``width_cylinder`` in steps of ``delta_cylinder``. This assumes the
+        simulation box origin is at 0 along the slicing axis (the LAMMPS
+        convention). If your box uses a non-zero origin, supply
+        ``liquid_geom_center`` already shifted into a 0-based frame, or
+        pre-translate the trajectory before analysis.
 
         Returns
         -------
@@ -115,13 +145,14 @@ class ContactAngleSliced:
         tuple(ndarray, ndarray)
             (surf_xz, radial_info); surf_xz (M,2), radial_info (M,2).
         """
-        delta_angle = 8  # degrees between radial lines
         surface_def = SurfaceDefinition(
             self.liquid_coordinates,
-            delta_angle,
+            self.delta_angle,
             self.max_dist,
             self.liquid_geom_center,
             v_gamma,
+            points_per_angstrom=self.points_per_angstrom,
+            density_sigma=self.density_sigma,
         )
         list_rr, list_xz = surface_def.analyze_lines()
         return np.array(list_xz), np.array(list_rr)
@@ -166,6 +197,9 @@ class ContactAngleSliced:
             np.zeros_like(X_data),
             p0=initial_guess,
         )
+        # The residual sqrt((x-xc)^2 + (z-zc)^2) - R is symmetric in the sign
+        # of R, so curve_fit may converge to a negative radius. Normalize.
+        popt[2] = float(abs(popt[2]))
         return popt
 
     def find_intersection(self, popt, y_line):

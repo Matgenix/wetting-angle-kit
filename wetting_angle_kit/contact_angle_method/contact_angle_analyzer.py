@@ -37,11 +37,30 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
     It is used to analyze the contact angle of a liquid on a solid surface.
     """
 
-    def __init__(self, parser, output_repo: str, **kwargs):
+    def __init__(
+        self,
+        parser,
+        output_dir: str = None,
+        output_repo: str = None,
+        **kwargs,
+    ):
+        if output_repo is not None:
+            import warnings
+
+            warnings.warn(
+                "SlicedContactAngleAnalyzer 'output_repo' is deprecated; "
+                "use 'output_dir' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if output_dir is None:
+                output_dir = output_repo
+        if output_dir is None:
+            raise TypeError("SlicedContactAngleAnalyzer: 'output_dir' is required.")
         self.parser = parser
-        self.output_repo = output_repo
+        self.output_dir = output_dir
         self._processor = ContactAngleSlicedParallel(
-            filename=parser.filepath, output_repo=output_repo, **kwargs
+            filename=parser.filepath, output_dir=output_dir, **kwargs
         )
 
     def analyze(

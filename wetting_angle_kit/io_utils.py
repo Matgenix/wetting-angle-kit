@@ -2,6 +2,20 @@ import os
 
 import numpy as np
 
+#: Droplet geometry strings accepted across analyzers and parsers.
+VALID_DROPLET_GEOMETRIES = ("spherical", "cylinder_x", "cylinder_y")
+
+
+def validate_droplet_geometry(droplet_geometry: str) -> None:
+    """Raise ``ValueError`` if ``droplet_geometry`` is not one of the
+    supported values: ``"spherical"``, ``"cylinder_x"``, ``"cylinder_y"``.
+    """
+    if droplet_geometry not in VALID_DROPLET_GEOMETRIES:
+        raise ValueError(
+            f"Unknown droplet_geometry {droplet_geometry!r}. "
+            f"Expected one of {VALID_DROPLET_GEOMETRIES}."
+        )
+
 
 def load_dump_ovito(filepath):
     try:

@@ -1,22 +1,46 @@
 import logging
 import math
-import multiprocessing
+import multiprocessing as mp
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Dict, List, Optional, Tuple, Type
+from typing import Dict, List, NamedTuple, Optional, Type
 
 import numpy as np
 
 from wetting_angle_kit.parser import BaseParser
 
-multiprocessing.set_start_method("spawn", force=True)
+# "spawn" is required because parser instances may hold un-picklable handles
+# (OVITO pipelines, ASE Atoms with C extensions). Using a scoped context
+# rather than mutating the global start method keeps this side-effect-free
+# when the package is imported.
+_MP_CONTEXT = mp.get_context("spawn")
 
-# Set up logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-)
 logger = logging.getLogger(__name__)
+
+
+class SlicedFrameResult(NamedTuple):
+    """Per-frame output from the sliced parallel worker.
+
+    Attributes
+    ----------
+    frame_num : int
+        Frame index this result refers to.
+    mean_alpha : float | None
+        Mean contact angle across successful slices, or ``None`` if no
+        slice produced an angle.
+    alfas : list[float]
+        Per-slice contact angles. Same length as ``surfaces`` and ``popts``.
+    surfaces : list[ndarray]
+        Per-slice surface point arrays of shape (M, 2).
+    popts : list[ndarray]
+        Per-slice fitted circle parameters with the baseline appended.
+    """
+
+    frame_num: int
+    mean_alpha: Optional[float]
+    alfas: list
+    surfaces: list
+    popts: list
 
 
 class ContactAngleSlicedParallel:
@@ -30,7 +54,7 @@ class ContactAngleSlicedParallel:
     ----------
     filename : str
         Path to trajectory file.
-    output_repo : str
+    output_dir : str
         Directory to write per-frame results.
     droplet_geometry : str, default "spherical"
         Geometric model identifier (e.g. "cylinder_x", "cylinder_y", "spherical").
@@ -40,24 +64,56 @@ class ContactAngleSlicedParallel:
         Additional gamma constraint / filtering distance if used by sliced method.
     delta_cylinder : float, optional
         Y (or X) half-width of selection cylinder in cylindrical modes.
+    points_per_angstrom : float, default 1.0
+        Sampling density along each radial ray for the surface fit.
+    output_repo : str, optional
+        Deprecated alias for ``output_dir``; emits a DeprecationWarning.
     """
 
     def __init__(
         self,
         filename: str,
-        output_repo: str,
+        output_dir: Optional[str] = None,
         droplet_geometry: str = "spherical",
         atom_indices: Optional[np.ndarray] = None,
         delta_gamma: float = None,
         delta_cylinder: float = None,
+        points_per_angstrom: float = 1.0,
+        output_repo: Optional[str] = None,
     ):
+        if output_repo is not None:
+            import warnings
+
+            warnings.warn(
+                "The 'output_repo' parameter is deprecated; use 'output_dir' instead.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            if output_dir is None:
+                output_dir = output_repo
+        if output_dir is None:
+            raise TypeError("ContactAngleSlicedParallel: 'output_dir' is required.")
         self.filename = filename
-        self.output_repo = output_repo
+        self.output_dir = output_dir
         self.delta_gamma = delta_gamma
         self.delta_cylinder = delta_cylinder
         self.droplet_geometry = droplet_geometry
+        self.points_per_angstrom = points_per_angstrom
         self.atom_indices = atom_indices if atom_indices is not None else np.array([])
-        os.makedirs(self.output_repo, exist_ok=True)
+        os.makedirs(self.output_dir, exist_ok=True)
+
+    @property
+    def output_repo(self) -> str:
+        """Deprecated alias for :attr:`output_dir`."""
+        import warnings
+
+        warnings.warn(
+            "ContactAngleSlicedParallel.output_repo is deprecated; "
+            "use output_dir instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.output_dir
 
     def process_frames_parallel(
         self,
@@ -89,7 +145,9 @@ class ContactAngleSlicedParallel:
             f"with {max_workers} workers"
         )
         results: Dict[int, float] = {}
-        with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        with ProcessPoolExecutor(
+            max_workers=max_workers, mp_context=_MP_CONTEXT
+        ) as executor:
             future_to_batch = {
                 executor.submit(self._process_batch_worker, batch_frames): batch_frames
                 for batch_frames in batches
@@ -124,19 +182,19 @@ class ContactAngleSlicedParallel:
 
         alfas_with_frames = [(f, all_alfas[f]) for f in sorted_frames]
         np.save(
-            f"{self.output_repo}/all_alfas.npy",
+            f"{self.output_dir}/all_alfas.npy",
             np.array(alfas_with_frames, dtype=object),
         )
 
         surfaces_with_frames = [(f, all_surfaces[f]) for f in sorted_frames]
         np.save(
-            f"{self.output_repo}/all_surfaces.npy",
+            f"{self.output_dir}/all_surfaces.npy",
             np.array(surfaces_with_frames, dtype=object),
         )
 
         popts_with_frames = [(f, all_popts[f]) for f in sorted_frames]
         np.save(
-            f"{self.output_repo}/all_popts.npy",
+            f"{self.output_dir}/all_popts.npy",
             np.array(popts_with_frames, dtype=object),
         )
         logger.info(
@@ -152,9 +210,7 @@ class ContactAngleSlicedParallel:
         batch_size = math.ceil(len(frames) / num_batches)
         return [frames[i : i + batch_size] for i in range(0, len(frames), batch_size)]
 
-    def _process_batch_worker(
-        self, batch_frames: List[int]
-    ) -> List[Tuple[int, Optional[float]]]:
+    def _process_batch_worker(self, batch_frames: List[int]) -> List[SlicedFrameResult]:
         """Worker routine executed in child process for a batch."""
         try:
             from wetting_angle_kit.io_utils import detect_parser_type
@@ -164,7 +220,9 @@ class ContactAngleSlicedParallel:
             from wetting_angle_kit.parser.parser_xyz import XYZParser
         except ImportError as e:  # pragma: no cover
             logger.error(f"Failed to import required classes: {e}")
-            return [(frame, None) for frame in batch_frames]
+            return [
+                SlicedFrameResult(frame, None, [], [], []) for frame in batch_frames
+            ]
         try:
             parser_type = detect_parser_type(self.filename)
             logger.info(f"Detected parser type: {parser_type}")
@@ -180,8 +238,10 @@ class ContactAngleSlicedParallel:
             parser = parser_class(filepath=self.filename)
         except Exception as e:  # pragma: no cover
             logger.error(f"Error initializing parser: {e}")
-            return [(frame, None) for frame in batch_frames]
-        batch_results: List[Tuple[int, Optional[float]]] = []
+            return [
+                SlicedFrameResult(frame, None, [], [], []) for frame in batch_frames
+            ]
+        batch_results: List[SlicedFrameResult] = []
         for frame_num in batch_frames:
             try:
                 result = self._process_single_frame_with_parsers(
@@ -190,19 +250,13 @@ class ContactAngleSlicedParallel:
                 batch_results.append(result)
             except Exception as e:  # pragma: no cover
                 logger.error(f"Error processing frame {frame_num}: {e}")
-                batch_results.append((frame_num, None, [], [], []))
+                batch_results.append(SlicedFrameResult(frame_num, None, [], [], []))
         return batch_results
 
     def _process_single_frame_with_parsers(
         self, frame_num: int, atom_indices: np.ndarray, parser: BaseParser
-    ) -> Tuple[int, Optional[float]]:
-        """Process a single frame and compute mean contact angle.
-
-        Returns
-        -------
-        tuple[int, float|None]
-            Frame number and mean angle; ``None`` if processing failed.
-        """
+    ) -> SlicedFrameResult:
+        """Process a single frame and compute mean contact angle."""
         try:
             from .angle_fitting_sliced import (
                 ContactAngleSliced,
@@ -210,7 +264,7 @@ class ContactAngleSlicedParallel:
 
         except ImportError as e:  # pragma: no cover
             logger.error(f"Missing sliced predictor dependency: {e}")
-            return frame_num, None, [], [], []
+            return SlicedFrameResult(frame_num, None, [], [], [])
         logger.info(f"START processing frame {frame_num}")
         try:
             liquid_positions = parser.parse(
@@ -249,6 +303,7 @@ class ContactAngleSlicedParallel:
                 delta_gamma=self.delta_gamma,
                 width_cylinder=box_dimensions,
                 delta_cylinder=self.delta_cylinder,
+                points_per_angstrom=self.points_per_angstrom,
             )
             list_alfas, list_surfaces, list_popt = predictor.predict_contact_angle()
             if len(list_alfas) == 0:
@@ -258,7 +313,9 @@ class ContactAngleSlicedParallel:
                 mean_alpha = float(np.mean(list_alfas))
             if mean_alpha is not None:
                 logger.info(f"Frame {frame_num} - mean angle: {mean_alpha:.2f}°")
-            return frame_num, mean_alpha, list_alfas, list_surfaces, list_popt
+            return SlicedFrameResult(
+                frame_num, mean_alpha, list_alfas, list_surfaces, list_popt
+            )
         except Exception as e:  # pragma: no cover
             logger.error(f"Error processing frame {frame_num}: {e}")
-            return frame_num, None, [], [], []
+            return SlicedFrameResult(frame_num, None, [], [], [])

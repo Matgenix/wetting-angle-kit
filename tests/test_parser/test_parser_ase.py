@@ -43,7 +43,10 @@ def test_parse_liquid_particles(ase_parser):
 
 
 # --- Test get_profile_coordinates ---
-def test_get_cylindrical_coordinates(ase_parser, capsys):
+def test_get_cylindrical_coordinates(ase_parser, caplog):
+    import logging
+
+    caplog.set_level(logging.INFO, logger="wetting_angle_kit.parser.base_parser")
     frame_indices = [0, 1]
     r_values, z_values, n_frames = ase_parser.get_profile_coordinates(frame_indices)
     assert isinstance(r_values, np.ndarray)
@@ -59,10 +62,9 @@ def test_get_cylindrical_coordinates(ase_parser, capsys):
     assert r_values.size > 0
     assert z_values.size > 0
 
-    # Check print output
-    captured = capsys.readouterr()
-    assert "r range:" in captured.out
-    assert "z range:" in captured.out
+    # The base implementation logs the r and z ranges via the module logger.
+    assert any("r range" in rec.getMessage() for rec in caplog.records)
+    assert any("z range" in rec.getMessage() for rec in caplog.records)
 
 
 # --- Test box_size_x and box_size_y ---

@@ -1,12 +1,27 @@
-import copy
+import logging
 import os
 import warnings
 
 import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 
-from .surface_definition import (
+logger = logging.getLogger(__name__)
+
+# Force a non-interactive backend before pyplot is imported so figure
+# generation works in headless environments (CI, OVITO subprocesses).
+# Only switch if no backend is already attached to an open figure.
+if matplotlib.get_backend().lower() != "agg":
+    try:
+        matplotlib.use("Agg", force=False)
+    except (ImportError, ValueError):
+        # Backend is already locked in by another import; keep it.
+        pass
+
+import matplotlib.pyplot as plt  # noqa: E402
+
+from wetting_angle_kit.io_utils import validate_droplet_geometry  # noqa: E402
+
+from .surface_definition import (  # noqa: E402
     HyperbolicTangentModel,
 )
 
@@ -29,6 +44,7 @@ class ContactAngleBinning:
         output_dir="output_analysis/",
         plot_graphs=True,
     ):
+        validate_droplet_geometry(droplet_geometry)
         self.parser = parser
         self.atom_indices = atom_indices
         self.droplet_geometry = droplet_geometry
@@ -75,7 +91,6 @@ class ContactAngleBinning:
                 elif self.droplet_geometry == "cylinder_y":
                     self.width_cylinder = self.parser.box_size_y(frame_index=0)
         os.makedirs(self.output_dir, exist_ok=True)
-        matplotlib.use("Agg")
 
     def _initialize_grid(self):
         """Initialize bin edges, centers and cell sizes from parameters."""
@@ -97,6 +112,12 @@ class ContactAngleBinning:
     def binning(self, xi_par, zi_par, len_frames):
         """Return 2D density field by binning particle coordinates.
 
+        Uses :func:`numpy.histogram2d`, which is vectorized (O(N) in the
+        particle count) and correctly handles particles on bin edges
+        (inclusive on the left/lower edge, inclusive on the right/upper
+        edge of the last bin only). This makes the legacy ``+0.01`` shift
+        on the radial coordinate unnecessary.
+
         Parameters
         ----------
         xi_par : ndarray
@@ -105,40 +126,21 @@ class ContactAngleBinning:
             Vertical coordinate values for particles over frames.
         len_frames : int
             Number of frames aggregated.
-        droplet_geometry : str, optional
-            Override instance model type.
-        width_cylinder : float, optional
-            Override cylinder width.
 
         Returns
         -------
         ndarray, shape (nbins_xi-1, nbins_zi-1)
             Averaged density field on cell centers.
         """
-        print(f"Binning with model: {self.droplet_geometry} ...")
-        rho_cc = np.zeros((len(self.xi_cc), len(self.zi_cc)))
-        xi_par_0, zi_par_0 = copy.deepcopy(xi_par), copy.deepcopy(zi_par)
-        for i in range(len(self.xi_cc)):
-            if i % 10 == 0:
-                print(f"Advancement: {100 * i / (len(self.xi_cc) - 1):.2f}%")
-            if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
-                dV = 2 * self.width_cylinder * self.dxi * self.dzi
-            elif self.droplet_geometry == "spherical":
-                dV = 2 * np.pi * (self.xi_cc[i]) * self.dxi * self.dzi
-            else:
-                raise ValueError("Unknown model type: {}".format(self.droplet_geometry))
-            for j in range(len(self.zi_cc)):
-                where = (
-                    (xi_par_0 > self.xi[i])
-                    * (xi_par_0 < self.xi[i + 1])
-                    * (zi_par_0 > self.zi[j])
-                    * (zi_par_0 < self.zi[j + 1])
-                )
-                count_i = where.sum()
-                rho_cc[i, j] = count_i / dV
-                in_this_bin_indx = np.nonzero(where)
-                xi_par_0 = np.delete(xi_par_0, in_this_bin_indx)
-                zi_par_0 = np.delete(zi_par_0, in_this_bin_indx)
+        counts, _, _ = np.histogram2d(
+            xi_par, zi_par, bins=(self.xi, self.zi)
+        )  # shape (nbins_xi-1, nbins_zi-1)
+        if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
+            dV = 2.0 * self.width_cylinder * self.dxi * self.dzi
+            rho_cc = counts / dV
+        else:  # spherical — annular shell volume depends on radius
+            dV_per_row = 2.0 * np.pi * self.xi_cc * self.dxi * self.dzi
+            rho_cc = counts / dV_per_row[:, np.newaxis]
         if len_frames > 0:
             rho_cc /= len_frames
         return rho_cc
@@ -265,10 +267,11 @@ class ContactAngleBinning:
             atom_indices=self.atom_indices,
         )
         particles_number = len(xi_par) / max(len_frames, 1)
-        print(
-            f"\nNumber of fluid particles in batch"
-            f"{(' ' + str(batch_index)) if batch_index is not None else ''}:"
-            f"\t{particles_number}\n"
+        batch_label = f" {batch_index}" if batch_index is not None else ""
+        logger.info(
+            "Number of fluid particles in batch%s: %.2f",
+            batch_label,
+            particles_number,
         )
         rho_cc = self.binning(xi_par, zi_par, len_frames)
         if model is None:
@@ -284,30 +287,38 @@ class ContactAngleBinning:
         x_data = (msh_xi_cc, msh_zi_cc)
         model.fit(x_data, msh_rho_cc)
         param_strings = model.get_parameter_strings()
-        print(
-            "\nFitted parameters for batch{}:".format(
-                f" {batch_index}" if batch_index is not None else ""
-            )
+        logger.info(
+            "Fitted parameters for batch%s:\n%s",
+            batch_label,
+            "".join(param_strings),
         )
-        print("".join(param_strings))
         contact_angle = model.compute_contact_angle()
-        print(
-            f"Contact angle for batch"
-            f"{(' ' + str(batch_index)) if batch_index is not None else ''}:\t"
-            f"{contact_angle}"
-        )
-        circle_xi, circle_zi, wall_line_xi, wall_line_zi = model.compute_isoline()
+        logger.info("Contact angle for batch%s: %s", batch_label, contact_angle)
         if self.plot_graphs:
-            self.plot_density_with_isoline(
-                self.xi_cc,
-                self.zi_cc,
-                rho_cc,
-                circle_xi,
-                circle_zi,
-                wall_line_xi,
-                wall_line_zi,
-                batch_index,
-            )
+            try:
+                (
+                    circle_xi,
+                    circle_zi,
+                    wall_line_xi,
+                    wall_line_zi,
+                ) = model.compute_isoline()
+            except ValueError as exc:
+                warnings.warn(
+                    f"Skipping isoline plot for batch {batch_index}: {exc}",
+                    RuntimeWarning,
+                    stacklevel=2,
+                )
+            else:
+                self.plot_density_with_isoline(
+                    self.xi_cc,
+                    self.zi_cc,
+                    rho_cc,
+                    circle_xi,
+                    circle_zi,
+                    wall_line_xi,
+                    wall_line_zi,
+                    batch_index,
+                )
         self.save_logfile(
             particles_number,
             param_strings,
@@ -335,7 +346,7 @@ class ContactAngleBinning:
             Contact angles per processed batch.
         """
         frames_tot = self.parser.frame_count()
-        print(f"Total frames: {frames_tot}")
+        logger.info("Total frames: %d", frames_tot)
         angles: list[float] = []
         for batch_index, start_frame in enumerate(range(0, frames_tot, batch_size)):
             frame_list = list(
@@ -350,5 +361,5 @@ class ContactAngleBinning:
                 ),
                 np.array(angles),
             )
-        print("List of contact angles by batch:", angles)
+        logger.info("List of contact angles by batch: %s", angles)
         return angles

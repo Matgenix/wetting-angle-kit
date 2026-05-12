@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import List, Optional, Sequence, Tuple
+from typing import List
 
 import numpy as np
 
@@ -61,66 +61,6 @@ class DumpParser(BaseParser):
             x_par = x_par[mask]
         return x_par
 
-    def get_profile_coordinates(
-        self,
-        frame_indices: Sequence[int],
-        droplet_geometry: str = "cylinder_y",
-        atom_indices: Optional[Sequence[int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, int]:
-        """
-        Compute 2D projection coordinates (r, z) for contact angle analysis.
-
-        Projects 3D atomic positions onto a 2D plane based on the assumed
-        droplet geometry and simulation box boundaries.
-
-        Parameters
-        ----------
-        frame_indices : Sequence[int]
-            List of frames to process.
-        droplet_geometry : str, default 'cylinder_y'
-            The physical shape of the water droplet in the simulation box:
-            * 'cylinder_y': A hemi-cylindrical droplet aligned along the Y-axis.
-               (Returns x as the radial coordinate).
-            * 'cylinder_x': A hemi-cylindrical droplet aligned along the X-axis.
-               (Returns y as the radial coordinate).
-            * 'spherical': A spherical cap droplet.
-               (Returns sqrt(x^2 + y^2) as the radial coordinate).
-        atom_indices : Sequence[int], optional
-            Subset of atom indices to include (e.g., only liquid atoms).
-
-        Returns
-        -------
-        r_values : np.ndarray
-            The lateral/radial distances from the droplet center/axis.
-        z_values : np.ndarray
-            The vertical coordinates (height) of the atoms.
-        n_frames : int
-            Number of frames processed.
-        """
-        r_values = np.array([])
-        z_values = np.array([])
-        for frame_idx in frame_indices:
-            x_par = self.parse(frame_idx, atom_indices)
-            # dim = x_par.shape[1]
-            x_cm = np.mean(x_par, axis=0)
-            x_0 = x_par - x_cm
-            x_0[:, 2] = x_par[:, 2]
-            if droplet_geometry == "cylinder_y":
-                r_frame = np.abs(x_0[:, 0] + 0.01)
-            elif droplet_geometry == "cylinder_x":
-                r_frame = np.abs(x_0[:, 1] + 0.01)
-            else:  # spherical
-                r_frame = np.sqrt(x_0[:, 0] ** 2 + x_0[:, 1] ** 2)
-            z_frame = x_0[:, 2]
-            r_values = np.concatenate((r_values, r_frame))
-            z_values = np.concatenate((z_values, z_frame))
-            if frame_idx % 10 == 0:
-                print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        if r_values.size > 0:
-            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
-        return r_values, z_values, len(frame_indices)
-
     def box_size_y(self, frame_index: int) -> float:
         """Return y-dimension of simulation box."""
         data = self.pipeline.compute(frame_index)
@@ -163,8 +103,14 @@ class DumpParser(BaseParser):
         return self.num_frames
 
 
-class DumpWallParser:
+class DumpWallParser(BaseParser):
     """LAMMPS dump file parser for extracting wall particle coordinates.
+
+    Wall particles are everything *not* in ``liquid_particle_types``;
+    filtering is done inside the OVITO pipeline. The ``indices`` argument
+    of :meth:`parse` is therefore typically ignored, but it is accepted
+    (as LAMMPS particle IDs, like :class:`DumpParser`) to satisfy the
+    :class:`BaseParser` contract.
 
     Parameters
     ----------
@@ -203,21 +149,24 @@ class DumpWallParser:
         )
         return pipeline
 
-    def parse(self, frame_index):
-        """Compute and return wall particle positions for a single frame.
+    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
+        """Return wall particle positions for a single frame.
 
         Parameters
         ----------
         frame_index : int
             Frame index.
-
-        Returns
-        -------
-        np.ndarray
-            Array of wall particle positions.
+        indices : ndarray, optional
+            LAMMPS particle IDs to further restrict the wall particles. If
+            None, all wall particles are returned.
         """
         data = self.pipeline.compute(frame_index)
-        return np.asarray(data.particles["Position"])
+        x_par = np.asarray(data.particles["Position"])
+        if indices is not None:
+            particle_ids = np.asarray(data.particles["Particle Identifier"])
+            mask = np.isin(particle_ids, indices)
+            x_par = x_par[mask]
+        return x_par
 
     def find_highest_wall_particle(self, frame_index: int) -> float:
         """Return the maximum z-coordinate among wall particles for a frame.
@@ -232,85 +181,20 @@ class DumpWallParser:
         float
             Maximum z-coordinate.
         """
-        data = self.pipeline.compute(frame_index)
-        x_wall = np.asarray(data.particles["Position"])
+        x_wall = self.parse(frame_index)
         return float(np.max(x_wall[:, 2]))
-
-    def get_profile_coordinates(
-        self,
-        frame_indices: Sequence[int],
-        droplet_geometry: str = "cylinder_y",
-        atom_indices: Optional[Sequence[int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, int]:
-        """
-        Compute 2D projection coordinates (r, z) for contact angle analysis.
-
-        Projects 3D atomic positions onto a 2D plane based on the assumed
-        droplet geometry and simulation box boundaries.
-
-        Parameters
-        ----------
-        frame_indices : Sequence[int]
-            List of frames to process.
-        droplet_geometry : str, default 'cylinder_y'
-            The physical shape of the water droplet in the simulation box:
-            * 'cylinder_y': A hemi-cylindrical droplet aligned along the Y-axis.
-               (Returns x as the radial coordinate).
-            * 'cylinder_x': A hemi-cylindrical droplet aligned along the X-axis.
-               (Returns y as the radial coordinate).
-            * 'spherical': A spherical cap droplet.
-               (Returns sqrt(x^2 + y^2) as the radial coordinate).
-        atom_indices : Sequence[int], optional
-            Subset of atom indices to include (e.g., only liquid atoms).
-
-        Returns
-        -------
-        r_values : np.ndarray
-            The lateral/radial distances from the droplet center/axis.
-        z_values : np.ndarray
-            The vertical coordinates (height) of the atoms.
-        n_frames : int
-            Number of frames processed.
-        """
-        r_values = np.array([])
-        z_values = np.array([])
-        for frame_idx in frame_indices:
-            data = self.pipeline.compute(frame_idx)
-            x_par = np.asarray(data.particles["Position"])
-            if atom_indices is not None:
-                # In DumpWallParser, we use Particle Identifier to filter
-                # if indices are provided
-                # But DumpWallParser seems to be designed to
-                # exclude liquid types already.
-                # However, for consistency with the interface:
-                particle_ids = np.asarray(data.particles["Particle Identifier"])
-                mask = np.isin(particle_ids, atom_indices)
-                x_par = x_par[mask]
-
-            x_cm = np.mean(x_par, axis=0)
-            x_0 = x_par - x_cm
-            x_0[:, 2] = x_par[:, 2]
-            if droplet_geometry == "cylinder_y":
-                r_frame = np.abs(x_0[:, 0] + 0.01)
-            elif droplet_geometry == "cylinder_x":
-                r_frame = np.abs(x_0[:, 1] + 0.01)
-            else:  # spherical
-                r_frame = np.sqrt(x_0[:, 0] ** 2 + x_0[:, 1] ** 2)
-            z_frame = x_0[:, 2]
-            r_values = np.concatenate((r_values, r_frame))
-            z_values = np.concatenate((z_values, z_frame))
-            if frame_idx % 10 == 0:
-                print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        if r_values.size > 0:
-            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
-        return r_values, z_values, len(frame_indices)
 
     def box_size_y(self, frame_index: int) -> float:
         """Return the y-dimension of the simulation box."""
         data = self.pipeline.compute(frame_index)
         y_vector = data.cell.matrix[1, :3]
         return float(np.linalg.norm(y_vector))
+
+    def box_size_x(self, frame_index: int) -> float:
+        """Return the x-dimension of the simulation box."""
+        data = self.pipeline.compute(frame_index)
+        x_vector = data.cell.matrix[0, :3]
+        return float(np.linalg.norm(x_vector))
 
     def box_length_max(self, frame_index):  # legacy name kept
         data = self.pipeline.compute(frame_index)

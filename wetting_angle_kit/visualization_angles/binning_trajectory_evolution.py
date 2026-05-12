@@ -1,4 +1,5 @@
 import glob
+import logging
 import os
 import re
 
@@ -6,6 +7,8 @@ import numpy as np
 
 # Ensure this matches your actual import structure
 from .base_trajectory_analyzer import BaseTrajectoryAnalyzer
+
+logger = logging.getLogger(__name__)
 
 
 class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
@@ -92,7 +95,9 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             self.data[directory]["zi_0"] = []
             self.data[directory]["contact_angles"] = []
             self.data[directory]["surface_areas"] = []
-            print(self.data[directory]["log_files"])
+            logger.debug(
+                "Log files for %s: %s", directory, self.data[directory]["log_files"]
+            )
             # Read all batch log files for this directory
             for log_file in self.data[directory]["log_files"]:
                 with open(log_file, "r") as f:

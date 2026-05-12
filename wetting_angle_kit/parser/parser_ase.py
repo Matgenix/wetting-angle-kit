@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import List, Optional, Sequence, Tuple
+from typing import List
 
 import numpy as np
 
@@ -71,69 +71,6 @@ class AseParser(BaseParser):
         frame = self.trajectory[frame_index]
         mask = np.isin(frame.symbols, liquid_particle_types)
         return frame.positions[mask]
-
-    def get_profile_coordinates(
-        self,
-        frame_indices: Sequence[int],
-        droplet_geometry: str = "cylinder_y",
-        atom_indices: Optional[Sequence[int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, int]:
-        """
-        Compute 2D projection coordinates (r, z) for contact angle analysis.
-
-        Projects 3D atomic positions onto a 2D plane based on the assumed
-        droplet geometry and simulation box boundaries.
-
-        Parameters
-        ----------
-        frame_indices : Sequence[int]
-            List of frames to process.
-        droplet_geometry : str, default 'cylinder_y'
-            The physical shape of the water droplet in the simulation box:
-            * 'cylinder_y': A hemi-cylindrical droplet aligned along the Y-axis.
-               (Returns x as the radial coordinate).
-            * 'cylinder_x': A hemi-cylindrical droplet aligned along the X-axis.
-               (Returns y as the radial coordinate).
-            * 'spherical': A spherical cap droplet.
-               (Returns sqrt(x^2 + y^2) as the radial coordinate).
-        atom_indices : Sequence[int], optional
-            Subset of atom indices to include (e.g., only liquid atoms).
-
-        Returns
-        -------
-        r_values : np.ndarray
-            The lateral/radial distances from the droplet center/axis.
-        z_values : np.ndarray
-            The vertical coordinates (height) of the atoms.
-        n_frames : int
-            Number of frames processed.
-        """
-        r_values = np.array([])
-        z_values = np.array([])
-        for frame_idx in frame_indices:
-            frame = self.trajectory[frame_idx]
-            x_par = frame.positions
-            if atom_indices is not None:
-                atom_indices_arr = np.array(atom_indices)
-                x_par = x_par[atom_indices_arr]
-            x_cm = np.mean(x_par, axis=0)
-            x_0 = x_par - x_cm
-            x_0[:, 2] = x_par[:, 2]
-            if droplet_geometry == "cylinder_y":
-                r_frame = np.abs(x_0[:, 0] + 0.01)
-            elif droplet_geometry == "cylinder_x":
-                r_frame = np.abs(x_0[:, 1] + 0.01)
-            else:
-                r_frame = np.sqrt(x_0[:, 0] ** 2 + x_0[:, 1] ** 2)
-            z_frame = x_0[:, 2]
-            r_values = np.concatenate((r_values, r_frame))
-            z_values = np.concatenate((z_values, z_frame))
-            if frame_idx % 10 == 0:
-                print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        if r_values.size > 0:
-            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
-        return r_values, z_values, len(frame_indices)
 
     def box_size_y(self, frame_index: int) -> float:
         """Return y-dimension (a2y) of simulation cell for frame."""
@@ -248,8 +185,13 @@ class AseWaterMoleculeFinder:
         return frame.positions[indices]
 
 
-class AseWallParser:
+class AseWallParser(BaseParser):
     """Parser extracting wall particle coordinates (excluding liquid types).
+
+    Wall particles are everything *not* in ``liquid_particle_types``. The
+    ``indices`` argument of :meth:`parse` is treated as 0-based positional
+    indices into the wall-only positions for compatibility with the
+    :class:`BaseParser` contract.
 
     Parameters
     ----------
@@ -271,22 +213,23 @@ class AseWallParser:
         self.liquid_particle_types = liquid_particle_types
         self.trajectory = read(self.filepath, index=":")
 
-    def parse(self, frame_index: int) -> np.ndarray:
+    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Return wall coordinates for the supplied frame index.
 
         Parameters
         ----------
         frame_index : int
             Frame index.
-
-        Returns
-        -------
-        ndarray
-            Wall particle coordinates.
+        indices : ndarray, optional
+            0-based positional indices into the wall-only positions; if
+            None, all wall particles are returned.
         """
         frame = self.trajectory[frame_index]
         mask = ~np.isin(frame.get_chemical_symbols(), self.liquid_particle_types)
-        return frame.positions[mask]
+        x_par = frame.positions[mask]
+        if indices is not None:
+            x_par = x_par[np.asarray(indices, dtype=int)]
+        return x_par
 
     def find_highest_wall_particle(self, frame_index: int) -> float:
         """Return the maximum z-coordinate among wall particles for a frame.
@@ -314,73 +257,15 @@ class AseWallParser:
         )
         return self.find_highest_wall_particle(*args, **kwargs)
 
-    def get_profile_coordinates(
-        self,
-        frame_indices: Sequence[int],
-        droplet_geometry: str = "cylinder_y",
-        atom_indices: Optional[Sequence[int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, int]:
-        """
-        Compute 2D projection coordinates (r, z) for contact angle analysis.
-
-        Projects 3D atomic positions onto a 2D plane based on the assumed
-        droplet geometry and simulation box boundaries.
-
-        Parameters
-        ----------
-        frame_indices : Sequence[int]
-            List of frames to process.
-        droplet_geometry : str, default 'cylinder_y'
-            The physical shape of the water droplet in the simulation box:
-            * 'cylinder_y': A hemi-cylindrical droplet aligned along the Y-axis.
-               (Returns x as the radial coordinate).
-            * 'cylinder_x': A hemi-cylindrical droplet aligned along the X-axis.
-               (Returns y as the radial coordinate).
-            * 'spherical': A spherical cap droplet.
-               (Returns sqrt(x^2 + y^2) as the radial coordinate).
-        atom_indices : Sequence[int], optional
-            Subset of atom indices to include (e.g., only liquid atoms).
-
-        Returns
-        -------
-        r_values : np.ndarray
-            The lateral/radial distances from the droplet center/axis.
-        z_values : np.ndarray
-            The vertical coordinates (height) of the atoms.
-        n_frames : int
-            Number of frames processed.
-        """
-        r_values = np.array([])
-        z_values = np.array([])
-        for frame_idx in frame_indices:
-            frame = self.trajectory[frame_idx]
-            x_par = frame.positions
-            if atom_indices is not None:
-                atom_indices_arr = np.array(atom_indices)
-                x_par = x_par[atom_indices_arr]
-            x_cm = np.mean(x_par, axis=0)
-            x_0 = x_par - x_cm
-            x_0[:, 2] = x_par[:, 2]
-            if droplet_geometry == "cylinder_y":
-                r_frame = np.abs(x_0[:, 0] + 0.01)
-            elif droplet_geometry == "cylinder_x":
-                r_frame = np.abs(x_0[:, 1] + 0.01)
-            else:
-                r_frame = np.sqrt(x_0[:, 0] ** 2 + x_0[:, 1] ** 2)
-            z_frame = x_0[:, 2]
-            r_values = np.concatenate((r_values, r_frame))
-            z_values = np.concatenate((z_values, z_frame))
-            if frame_idx % 10 == 0:
-                print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        if r_values.size > 0:
-            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
-        return r_values, z_values, len(frame_indices)
-
     def box_size_y(self, frame_index: int) -> float:
         """Return y-dimension (a2y) of simulation cell for frame."""
         frame = self.trajectory[frame_index]
         return float(frame.cell[1, 1])
+
+    def box_size_x(self, frame_index: int) -> float:
+        """Return x-dimension (a1x) of simulation cell for frame."""
+        frame = self.trajectory[frame_index]
+        return float(frame.cell[0, 0])
 
     def box_length_max(self, frame_index: int) -> float:
         """Return maximum lattice vector length for frame."""
@@ -390,12 +275,3 @@ class AseWallParser:
     def frame_count(self) -> int:
         """Return total number of frames in trajectory."""
         return len(self.trajectory)
-
-    def frame_tot(self) -> int:
-        """Deprecated alias for frame_count."""
-        warnings.warn(
-            "frame_tot is deprecated, use frame_count instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.frame_count()

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
@@ -98,69 +98,6 @@ class XYZParser(BaseParser):
         frame = self.frames[frame_index]
         mask = np.isin(frame["symbols"], liquid_particle_types)
         return frame["positions"][mask]
-
-    def get_profile_coordinates(
-        self,
-        frame_indices: Sequence[int],
-        droplet_geometry: str = "cylinder_y",
-        atom_indices: Optional[Sequence[int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, int]:
-        """
-        Compute 2D projection coordinates (r, z) for contact angle analysis.
-
-        Projects 3D atomic positions onto a 2D plane based on the assumed
-        droplet geometry and simulation box boundaries.
-
-        Parameters
-        ----------
-        frame_indices : Sequence[int]
-            List of frames to process.
-        droplet_geometry : str, default 'cylinder_y'
-            The physical shape of the water droplet in the simulation box:
-            * 'cylinder_y': A hemi-cylindrical droplet aligned along the Y-axis.
-               (Returns x as the radial coordinate).
-            * 'cylinder_x': A hemi-cylindrical droplet aligned along the X-axis.
-               (Returns y as the radial coordinate).
-            * 'spherical': A spherical cap droplet.
-               (Returns sqrt(x^2 + y^2) as the radial coordinate).
-        atom_indices : Sequence[int], optional
-            Subset of atom indices to include (e.g., only liquid atoms).
-
-        Returns
-        -------
-        r_values : np.ndarray
-            The lateral/radial distances from the droplet center/axis.
-        z_values : np.ndarray
-            The vertical coordinates (height) of the atoms.
-        n_frames : int
-            Number of frames processed.
-        """
-        r_values = np.array([])
-        z_values = np.array([])
-        for frame_idx in frame_indices:
-            frame = self.frames[frame_idx]
-            x_par = frame["positions"]
-            if atom_indices is not None:
-                atom_indices_arr = np.array(atom_indices)
-                x_par = x_par[atom_indices_arr]
-            x_cm = np.mean(x_par, axis=0)
-            x_0 = x_par - x_cm
-            x_0[:, 2] = x_par[:, 2]
-            if droplet_geometry == "cylinder_y":
-                r_frame = np.abs(x_0[:, 0] + 0.01)
-            elif droplet_geometry == "cylinder_x":
-                r_frame = np.abs(x_0[:, 1] + 0.01)
-            else:  # spherical
-                r_frame = np.sqrt(x_0[:, 0] ** 2 + x_0[:, 1] ** 2)
-            z_frame = x_0[:, 2]
-            r_values = np.concatenate((r_values, r_frame))
-            z_values = np.concatenate((z_values, z_frame))
-            if frame_idx % 10 == 0:
-                print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        if r_values.size > 0:
-            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
-        return r_values, z_values, len(frame_indices)
 
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.
@@ -303,69 +240,6 @@ class XYZWaterMoleculeFinder:
         frame = self.frames[frame_index]
         mask = np.isin(frame["symbols"], liquid_particle_types)
         return frame["positions"][mask]
-
-    def get_profile_coordinates(
-        self,
-        frame_indices: Sequence[int],
-        droplet_geometry: str = "cylinder_y",
-        atom_indices: Optional[Sequence[int]] = None,
-    ) -> Tuple[np.ndarray, np.ndarray, int]:
-        """
-        Compute 2D projection coordinates (r, z) for contact angle analysis.
-
-        Projects 3D atomic positions onto a 2D plane based on the assumed
-        droplet geometry and simulation box boundaries.
-
-        Parameters
-        ----------
-        frame_indices : Sequence[int]
-            List of frames to process.
-        droplet_geometry : str, default 'cylinder_y'
-            The physical shape of the water droplet in the simulation box:
-            * 'cylinder_y': A hemi-cylindrical droplet aligned along the Y-axis.
-               (Returns x as the radial coordinate).
-            * 'cylinder_x': A hemi-cylindrical droplet aligned along the X-axis.
-               (Returns y as the radial coordinate).
-            * 'spherical': A spherical cap droplet.
-               (Returns sqrt(x^2 + y^2) as the radial coordinate).
-        atom_indices : Sequence[int], optional
-            Subset of atom indices to include (e.g., only liquid atoms).
-
-        Returns
-        -------
-        r_values : np.ndarray
-            The lateral/radial distances from the droplet center/axis.
-        z_values : np.ndarray
-            The vertical coordinates (height) of the atoms.
-        n_frames : int
-            Number of frames processed.
-        """
-        r_values = np.array([])
-        z_values = np.array([])
-        for frame_idx in frame_indices:
-            frame = self.frames[frame_idx]
-            x_par = frame["positions"]
-            if atom_indices is not None:
-                atom_indices_arr = np.array(atom_indices)
-                x_par = x_par[atom_indices_arr]
-            x_cm = np.mean(x_par, axis=0)
-            x_0 = x_par - x_cm
-            x_0[:, 2] = x_par[:, 2]
-            if droplet_geometry == "cylinder_y":
-                r_frame = np.abs(x_0[:, 0] + 0.01)
-            elif droplet_geometry == "cylinder_x":
-                r_frame = np.abs(x_0[:, 1] + 0.01)
-            else:
-                r_frame = np.sqrt(x_0[:, 0] ** 2 + x_0[:, 1] ** 2)
-            z_frame = x_0[:, 2]
-            r_values = np.concatenate((r_values, r_frame))
-            z_values = np.concatenate((z_values, z_frame))
-            if frame_idx % 10 == 0:
-                print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        if r_values.size > 0:
-            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
-        return r_values, z_values, len(frame_indices)
 
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.

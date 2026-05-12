@@ -10,7 +10,7 @@ def contact_angle_analyzer(
 ) -> BaseContactAngleAnalyzer:
     if method == "sliced":
         return SlicedContactAngleAnalyzer(
-            parser=parser, output_repo=output_dir, **kwargs
+            parser=parser, output_dir=output_dir, **kwargs
         )
     elif method == "binning":
         return BinningContactAngleAnalyzer(
