@@ -49,7 +49,9 @@ class ContactAngleSliced:
     ):
         self.liquid_coordinates = liquid_coordinates
         self.max_dist = max_dist
-        self.liquid_geom_center = liquid_geom_center
+        # Store a copy: predict_contact_angle mutates this in-place per slice
+        # and we must not modify the caller's array.
+        self.liquid_geom_center = np.array(liquid_geom_center, copy=True)
         self.droplet_geometry = droplet_geometry
         self.delta_gamma = delta_gamma
         self.width_cylinder = width_cylinder
@@ -214,6 +216,13 @@ class ContactAngleSliced:
     def predict_contact_angle(self):
         """Run slicing loop and return per-slice contact angles and geometry.
 
+        Only slices for which the full pipeline (surface detection, circle
+        fit, and baseline intersection) succeeds contribute to the returned
+        lists. The three lists are kept in lockstep: ``angles[i]``,
+        ``surfaces[i]``, and ``popt_arrays[i]`` always describe the same
+        slice, so consumers can use a single index (e.g. the median index)
+        across all three.
+
         Returns
         -------
         tuple(list[float], list[ndarray], list[ndarray])
@@ -228,12 +237,9 @@ class ContactAngleSliced:
         list_alfas: list[float] = []
         array_surfaces: list[np.ndarray] = []
         array_popt: list[np.ndarray] = []
-        counter = 0
-        for value_gamma in gammas:
+        for counter, value_gamma in enumerate(gammas):
             self.liquid_geom_center[1] = y_axis_list[counter]
-            counter += 1
             surf, list_rr = self.surface_definition(value_gamma)
-            array_surfaces.append(surf)
             if surf.size == 0:
                 continue
             min_drop = float(np.min(surf[:, 1]))
@@ -256,7 +262,9 @@ class ContactAngleSliced:
             except Exception:  # pragma: no cover - rare convergence failures
                 continue
             angle = self.find_intersection(popt, min_drop)
+            if angle is None:
+                continue
+            list_alfas.append(angle)
+            array_surfaces.append(surf)
             array_popt.append(np.append(popt, limit_med))
-            if angle is not None:
-                list_alfas.append(angle)
         return list_alfas, array_surfaces, array_popt

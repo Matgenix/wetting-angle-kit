@@ -157,8 +157,9 @@ class XYZParser(BaseParser):
             z_values = np.concatenate((z_values, z_frame))
             if frame_idx % 10 == 0:
                 print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-        print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
+        if r_values.size > 0:
+            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
+            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
         return r_values, z_values, len(frame_indices)
 
     def box_length_max(self, frame_index: int) -> float:
@@ -214,8 +215,12 @@ class XYZParser(BaseParser):
         return len(self.frames)
 
 
-class XYZWaterMoleculeFinder(BaseParser):
-    """Parser specialized for identifying water oxygen atoms in XYZ trajectories.
+class XYZWaterMoleculeFinder:
+    """Helper for identifying water oxygen atoms in XYZ trajectories.
+
+    This is a standalone helper (not a :class:`BaseParser`) because its
+    ``parse`` signature filters by atomic symbol rather than frame index,
+    which is incompatible with the parser ABC contract.
 
     Parameters
     ----------
@@ -247,7 +252,7 @@ class XYZWaterMoleculeFinder(BaseParser):
         self.frames = self.load_xyz_file()
 
     def load_xyz_file(self):
-        """Load frames (without lattice) for water oxygen analysis."""
+        """Load frames including the lattice matrix for box-size queries."""
         frames = []
         with open(self.filepath, "r") as file:
             lines = file.readlines()
@@ -255,7 +260,15 @@ class XYZWaterMoleculeFinder(BaseParser):
         while frame_start < len(lines):
             num_atoms = int(lines[frame_start].strip())
             frame_start += 1
-            frame_start += 1  # skip comment
+            comment_line = lines[frame_start].strip()
+            lattice_matrix: Optional[np.ndarray]
+            if 'Lattice="' in comment_line:
+                lattice_info = comment_line.split('Lattice="')[1].split('"')[0]
+                lattice_vectors = np.array(lattice_info.split(), dtype=float)
+                lattice_matrix = lattice_vectors.reshape(3, 3)
+            else:
+                lattice_matrix = None
+            frame_start += 1
             symbols = []
             positions = []
             for i in range(num_atoms):
@@ -263,7 +276,11 @@ class XYZWaterMoleculeFinder(BaseParser):
                 symbols.append(parts[0])
                 positions.append([float(coord) for coord in parts[1:4]])
             frames.append(
-                {"symbols": np.array(symbols), "positions": np.array(positions)}
+                {
+                    "symbols": np.array(symbols),
+                    "positions": np.array(positions),
+                    "lattice_matrix": lattice_matrix,
+                }
             )
             frame_start += num_atoms
         return frames
@@ -345,8 +362,9 @@ class XYZWaterMoleculeFinder(BaseParser):
             z_values = np.concatenate((z_values, z_frame))
             if frame_idx % 10 == 0:
                 print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-        print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
+        if r_values.size > 0:
+            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
+            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
         return r_values, z_values, len(frame_indices)
 
     def box_length_max(self, frame_index: int) -> float:
@@ -362,7 +380,12 @@ class XYZWaterMoleculeFinder(BaseParser):
         float
             Max ``|a_i|`` over lattice vectors.
         """
-        lattice_matrix = self.frames[frame_index]["lattice_matrix"]
+        lattice_matrix = self.frames[frame_index].get("lattice_matrix")
+        if lattice_matrix is None:
+            raise ValueError(
+                "No Lattice= entry in the XYZ comment line for frame "
+                f"{frame_index}; box length cannot be determined."
+            )
         return float(np.max(np.linalg.norm(lattice_matrix, axis=1)))
 
     def get_water_oxygen_indices(self, frame_index):

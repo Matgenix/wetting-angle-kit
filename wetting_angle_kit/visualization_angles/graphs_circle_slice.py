@@ -195,10 +195,9 @@ class DropletSlicedPlotter:
             alpha_rad = np.radians(alpha)
 
             # --- Determine the contact point from the surface bottom ---
-            z_line = min([np.min(surf[:, 1]) for surf in surface_data])
-            Xc, Zc, R, _ = popt
-
-            delta_z = z_line - Zc
+            z_baseline = min(np.min(surf[:, 1]) for surf in surface_data)
+            # Use the (possibly z-shifted) circle parameters set above.
+            delta_z = z_baseline - Zc
             discriminant = R**2 - delta_z**2
             if discriminant <= 0:
                 return
@@ -210,7 +209,7 @@ class DropletSlicedPlotter:
                 x_contact = Xc + dx
             else:
                 x_contact = Xc - dx
-            z_contact = z_line
+            z_contact = z_baseline
 
             # --- Tangent slope at the intersection point ---
             m_tangent = -(x_contact - Xc) / (z_contact - Zc)
@@ -221,13 +220,13 @@ class DropletSlicedPlotter:
                 x_top = x_contact + (z_top - z_contact) / m_tangent
             else:
                 x_top = x_contact
-            x_line = np.linspace(x_contact, x_top, 100)
-            z_line = m_tangent * (x_line - x_contact) + z_contact
+            x_tangent = np.linspace(x_contact, x_top, 100)
+            z_tangent = m_tangent * (x_tangent - x_contact) + z_contact
 
             # Draw tangent line
             ax.plot(
-                x_line,
-                z_line,
+                x_tangent,
+                z_tangent,
                 color=self.tangent_color,
                 lw=2.0,
                 ls="-",
@@ -235,39 +234,7 @@ class DropletSlicedPlotter:
                 zorder=5,
             )
 
-            # --- Parameters from the circle fit ---
-            Xc, Zc, R = popt[:3]
-
-            # --- Determine intersection (right side only) ---
-            z_line = min([np.min(surf[:, 1]) for surf in surface_data])
-            delta_z = z_line - Zc
-            discriminant = R**2 - delta_z**2
-            if discriminant <= 0:
-                return
-
-            x_contact = Xc + np.sqrt(discriminant)  # right-side intersection
-            z_contact = z_line
-
-            # --- Tangent slope at contact point ---
-            m_tangent = -(x_contact - Xc) / (z_contact - Zc)
-
-            # --- Draw tangent line up to top of circle ---
-            z_top = Zc + R * 1.1
-            x_top = x_contact + (z_top - z_contact) / m_tangent
-            x_line = np.linspace(x_contact, x_top, 100)
-            z_line_tan = m_tangent * (x_line - x_contact) + z_contact
-
-            ax.plot(
-                x_line,
-                z_line_tan,
-                color="tab:orange",
-                lw=2.0,
-                label=f"Tangent (α={alpha:.1f}°)",
-                zorder=5,
-            )
-
-            # --- Draw arc centered at contact point (right side) ---
-            alpha_rad = np.radians(alpha)
+            # --- Draw arc centered at contact point ---
             arc_radius = R * 0.25
             theta = np.linspace(
                 np.pi - alpha_rad, np.pi, 100
@@ -555,7 +522,7 @@ class ContactAngleAnimator:
         particle_type_wall: set,
         oxygen_type: int,
         hydrogen_type: int,
-        particule_liquid_type: set,
+        liquid_particle_types: set,
         n_frames: int = 10,
         droplet_geometry: str = "cylinder_y",
         delta_cylinder: int = 5,
@@ -566,7 +533,7 @@ class ContactAngleAnimator:
         self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type
         self.hydrogen_type = hydrogen_type
-        self.particule_liquid_type = particule_liquid_type
+        self.liquid_particle_types = liquid_particle_types
         self.n_frames = n_frames
         self.droplet_geometry = droplet_geometry
         self.delta_cylinder = delta_cylinder
@@ -582,9 +549,9 @@ class ContactAngleAnimator:
         )
         self.oxygen_indices = self.wat_find.get_water_oxygen_ids(frame_index=0)
         self.coord_wall = DumpWallParser(
-            self.filename, particule_liquid_type=self.particule_liquid_type
+            self.filename, liquid_particle_types=list(self.liquid_particle_types)
         )
-        self.wall_coords = self.coord_wall.parse(frame_index=1)
+        self.wall_coords = self.coord_wall.parse(frame_index=0)
         self.parser = DumpParser(filepath=self.filename)
         self.plotter = DropletSlicedPlotterPlotly(center=True)
 
@@ -725,7 +692,7 @@ class ContactAngleAnimator:
 #        particle_type_wall={3},
 #        oxygen_type=1,
 #        hydrogen_type=2,
-#        particule_liquid_type={2, 1},
+#        liquid_particle_types={2, 1},
 #        n_frames=10,
 #    )
 #    animator.generate_animation()

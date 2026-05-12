@@ -1,5 +1,6 @@
 import copy
 import os
+import warnings
 
 import matplotlib
 import matplotlib.pyplot as plt
@@ -39,8 +40,8 @@ class ContactAngleBinning:
                 np.max(
                     np.array(
                         [
-                            parser.box_size_y(frame_index=1),
-                            parser.box_size_x(frame_index=1),
+                            parser.box_size_y(frame_index=0),
+                            parser.box_size_x(frame_index=0),
                         ]
                     )
                 )
@@ -54,15 +55,25 @@ class ContactAngleBinning:
                 "zi_f": max_dist,
                 "nbins_zi": 50,
             }
+            warnings.warn(
+                "binning_params was not supplied; using a heuristic default "
+                f"(xi_0=0, xi_f={max_dist}, zi_0=0, zi_f={max_dist}, "
+                "50x50 bins) derived from one third of the largest in-plane "
+                "box dimension. For accurate density fields, supply "
+                "system-specific binning_params matching your droplet size "
+                "and per-frame sampling.",
+                UserWarning,
+                stacklevel=2,
+            )
         else:
             self.binning_params = binning_params
         self._initialize_grid()
         if self.width_cylinder is None:
             if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
                 if self.droplet_geometry == "cylinder_x":
-                    self.width_cylinder = self.parser.box_size_x(frame_index=1)
+                    self.width_cylinder = self.parser.box_size_x(frame_index=0)
                 elif self.droplet_geometry == "cylinder_y":
-                    self.width_cylinder = self.parser.box_size_y(frame_index=1)
+                    self.width_cylinder = self.parser.box_size_y(frame_index=0)
         os.makedirs(self.output_dir, exist_ok=True)
         matplotlib.use("Agg")
 
@@ -323,7 +334,7 @@ class ContactAngleBinning:
         list[float]
             Contact angles per processed batch.
         """
-        frames_tot = self.parser.frame_tot()
+        frames_tot = self.parser.frame_count()
         print(f"Total frames: {frames_tot}")
         angles: list[float] = []
         for batch_index, start_frame in enumerate(range(0, frames_tot, batch_size)):

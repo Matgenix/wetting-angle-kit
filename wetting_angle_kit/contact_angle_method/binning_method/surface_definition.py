@@ -202,7 +202,15 @@ class HyperbolicTangentModel(SurfaceModel):
         Zcenter = self.params[3]  # zi_c
         Zwall = self.params[4]  # zi_0
 
-        xi_wall = np.sqrt(R**2 - (Zwall - Zcenter) ** 2)
+        discriminant = R**2 - (Zwall - Zcenter) ** 2
+        if discriminant < 0:
+            raise ValueError(
+                "Fitted wall is outside the fitted droplet radius "
+                f"(R={R:.3f}, |Zwall - Zcenter|={abs(Zwall - Zcenter):.3f}); "
+                "isoline cannot be computed. The hyperbolic tangent fit "
+                "likely did not converge to a physical solution."
+            )
+        xi_wall = np.sqrt(discriminant)
         alpha_inf = np.arctan((Zwall - Zcenter) / xi_wall)
         alpha = np.linspace(alpha_inf, np.pi / 2, 100)
 
@@ -221,7 +229,9 @@ class HyperbolicTangentModel(SurfaceModel):
         Returns
         -------
         float
-            Contact angle in degrees.
+            Contact angle in degrees. Returns ``nan`` if the fitted wall
+            position lies outside the fitted droplet sphere (no
+            intersection), which indicates a poor fit.
         """
         if self.params is None:
             raise ValueError("Model must be fitted before computing contact angle")
@@ -230,7 +240,19 @@ class HyperbolicTangentModel(SurfaceModel):
         zita_c = self.params[3]
         zita_wall = self.params[4]
 
-        xi_cross = np.sqrt(R_eq**2 - (zita_wall - zita_c) ** 2)
+        discriminant = R_eq**2 - (zita_wall - zita_c) ** 2
+        if discriminant < 0:
+            import warnings
+
+            warnings.warn(
+                "Fitted wall is outside the fitted droplet sphere "
+                f"(R_eq={R_eq:.3f}, |zita_wall - zita_c|="
+                f"{abs(zita_wall - zita_c):.3f}); contact angle is undefined.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return float("nan")
+        xi_cross = np.sqrt(discriminant)
         theta = (np.pi / 2 - np.arctan((zita_wall - zita_c) / xi_cross)) * 180 / np.pi
         return theta
 

@@ -130,8 +130,9 @@ class AseParser(BaseParser):
             z_values = np.concatenate((z_values, z_frame))
             if frame_idx % 10 == 0:
                 print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-        print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
+        if r_values.size > 0:
+            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
+            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
         return r_values, z_values, len(frame_indices)
 
     def box_size_y(self, frame_index: int) -> float:
@@ -214,15 +215,18 @@ class AseWaterMoleculeFinder:
         frame = self.trajectory[frame_index]
         symbols = np.array(frame.get_chemical_symbols())
         oxygen_indices = np.where(symbols == self.oxygen_type)[0]
-        hydrogen_indices = np.where(symbols == self.hydrogen_type)[0]
-        cutoffs = [self.oh_cutoff] * len(frame)
+        hydrogen_set = set(np.where(symbols == self.hydrogen_type)[0].tolist())
+        # ASE's NeighborList uses pairwise cutoff = cutoffs[i] + cutoffs[j].
+        # Use half the bond cutoff per atom so the effective pair cutoff
+        # equals self.oh_cutoff.
+        cutoffs = [self.oh_cutoff / 2.0] * len(frame)
         nl = self._NeighborList(cutoffs, self_interaction=False, bothways=True)
         nl.update(frame)
         water_oxygens = []
         for o_idx in oxygen_indices:
             indices, _offsets = nl.get_neighbors(o_idx)
-            h_neighbors = [i for i in indices if i in hydrogen_indices]
-            if len(h_neighbors) == 2:
+            h_count = sum(1 for i in indices if int(i) in hydrogen_set)
+            if h_count == 2:
                 water_oxygens.append(o_idx)
         return np.array(water_oxygens, dtype=int)
 
@@ -368,8 +372,9 @@ class AseWallParser:
             z_values = np.concatenate((z_values, z_frame))
             if frame_idx % 10 == 0:
                 print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-        print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
+        if r_values.size > 0:
+            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
+            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
         return r_values, z_values, len(frame_indices)
 
     def box_size_y(self, frame_index: int) -> float:

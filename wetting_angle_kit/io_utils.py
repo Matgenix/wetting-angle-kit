@@ -26,10 +26,10 @@ def geometric_center(list_xyz_point):
 
 def detect_parser_type(filename: str) -> str:
     ext = os.path.splitext(filename)[1].lower()
-    if ext in [".dump", ".lammpstrj"]:
+    if ext == ".lammpstrj":
         return "dump"
-    if ext in [".traj"]:
+    if ext in (".traj", ".ase"):
         return "ase"
-    if ext in [".xyz"]:
+    if ext == ".xyz":
         return "xyz"
     raise ValueError(f"Unsupported trajectory file format: {ext}")

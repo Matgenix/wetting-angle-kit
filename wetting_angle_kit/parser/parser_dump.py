@@ -116,8 +116,9 @@ class DumpParser(BaseParser):
             z_values = np.concatenate((z_values, z_frame))
             if frame_idx % 10 == 0:
                 print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-        print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
+        if r_values.size > 0:
+            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
+            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
         return r_values, z_values, len(frame_indices)
 
     def box_size_y(self, frame_index: int) -> float:
@@ -300,8 +301,9 @@ class DumpWallParser:
             z_values = np.concatenate((z_values, z_frame))
             if frame_idx % 10 == 0:
                 print(f"Frame: {frame_idx}\nCenter of Mass: {x_cm}")
-        print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
-        print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
+        if r_values.size > 0:
+            print(f"\nr range:\t({np.min(r_values)},{np.max(r_values)})")
+            print(f"z range:\t({np.min(z_values)},{np.max(z_values)})")
         return r_values, z_values, len(frame_indices)
 
     def box_size_y(self, frame_index: int) -> float:
@@ -367,12 +369,16 @@ class DumpWaterMoleculeFinder:
     def get_water_oxygen_ids(self, frame_index: int) -> np.ndarray:
         """Return IDs of oxygen atoms belonging to water molecules."""
         data = self.pipeline.compute(frame_index)
-        if "IsWaterOxygen" in data.particles:
-            mask = np.array(data.particles["IsWaterOxygen"].array) == 1
-            oxygen_indices = np.where(mask)[0]
-            oxygen_ids = data.particles["Particle Identifier"][oxygen_indices]
-            return oxygen_ids
-        return self._manual_identification(data)
+        if "IsWaterOxygen" not in data.particles:
+            raise RuntimeError(
+                "OVITO pipeline did not produce the 'IsWaterOxygen' property. "
+                "Check that the CoordinationAnalysisModifier and "
+                "ComputePropertyModifier ran successfully and that the "
+                "oxygen_type/hydrogen_type values match the trajectory."
+            )
+        mask = np.array(data.particles["IsWaterOxygen"].array) == 1
+        oxygen_indices = np.where(mask)[0]
+        return data.particles["Particle Identifier"][oxygen_indices]
 
 
 Dump_WaterMoleculeFinder = DumpWaterMoleculeFinder

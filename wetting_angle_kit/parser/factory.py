@@ -9,19 +9,25 @@ def get_water_parser(filename, particle_type_wall, oxygen_type, hydrogen_type):
     """Factory to select the correct water oxygen parser based on file extension."""
     ext = os.path.splitext(filename)[-1].lower()
 
-    if ext == ".dump":
+    if ext == ".lammpstrj":
         return DumpWaterMoleculeFinder(
             filename, particle_type_wall, oxygen_type, hydrogen_type
         )
-    elif ext in [".traj", ".ase"]:
+    elif ext in (".traj", ".ase"):
         return AseWaterMoleculeFinder(
-            filename, particle_type_wall, oxygen_type="O", hydrogen_type="H"
+            filename,
+            particle_type_wall,
+            oxygen_type=oxygen_type,
+            hydrogen_type=hydrogen_type,
         )
     elif ext == ".xyz":
         return XYZWaterMoleculeFinder(
-            filename, particle_type_wall, oxygen_type="O", hydrogen_type="H"
+            filename,
+            particle_type_wall,
+            oxygen_type=oxygen_type,
+            hydrogen_type=hydrogen_type,
         )
     else:
         raise ValueError(
-            f"Unsupported file format: {ext}. Supported: .dump, .traj/.ase, .xyz"
+            f"Unsupported file format: {ext}. Supported: .lammpstrj, .traj/.ase, .xyz"
         )
