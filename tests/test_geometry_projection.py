@@ -9,8 +9,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
-from wetting_angle_kit.parser.base_parser import project_to_profile
+from wetting_angle_kit.parsers.base import project_to_profile
 
 
 def _grid_points(n=20):

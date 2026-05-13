@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from wetting_angle_kit.parser.base_parser import BaseParser
+from wetting_angle_kit.parsers.base import BaseParser
 
 
 class AseParser(BaseParser):
@@ -92,7 +92,7 @@ class AseParser(BaseParser):
         return len(self.trajectory)
 
 
-class AseWaterMoleculeFinder:
+class AseWaterFinder:
     """Identify water oxygen atoms by counting hydrogen neighbors.
 
     Uses ASE neighbor list to find oxygens with exactly two hydrogens.
@@ -125,7 +125,7 @@ class AseWaterMoleculeFinder:
             from ase.neighborlist import NeighborList
         except ImportError as e:  # pragma: no cover
             raise ImportError(
-                "The 'ase' package is required to use AseWaterMoleculeFinder. "
+                "The 'ase' package is required to use AseWaterFinder. "
                 "Install it with: pip install ase"
             ) from e
         self._ase_read = read

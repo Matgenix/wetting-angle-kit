@@ -22,7 +22,7 @@ Ensure you have the required classes imported:
 
 .. code-block:: python
 
-   from wetting_angle_kit.visualization_angles import (
+   from wetting_angle_kit.visualization import (
        BinningTrajectoryAnalyzer,
        MethodComparison,
        SlicedTrajectoryAnalyzer,

@@ -74,9 +74,9 @@ class BaseParser(ABC):
             ``indices`` differs by parser because the underlying file formats
             do not all preserve atom ordering across frames:
 
-            * :class:`DumpParser` (LAMMPS) — ``indices`` are LAMMPS particle
-              identifiers. LAMMPS may reorder atoms between frames, so a
-              persistent ID is needed to track the same atom.
+            * :class:`LammpsDumpParser` (LAMMPS) — ``indices`` are LAMMPS
+              particle identifiers. LAMMPS may reorder atoms between frames,
+              so a persistent ID is needed to track the same atom.
             * :class:`XYZParser`, :class:`AseParser` — ``indices`` are 0-based
               positional indices into the per-frame coordinate array. These
               formats keep atom ordering stable across frames.

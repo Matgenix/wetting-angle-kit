@@ -49,11 +49,11 @@ def _synthetic_droplet(seed=0):
 
 
 def test_droplet_sliced_plotter_writes_png(tmp_path):
-    from wetting_angle_kit.visualization_angles import DropletSlicedPlotter
+    from wetting_angle_kit.visualization import DropletSlicePlotter
 
     oxygen, wall, surface_data, popt = _synthetic_droplet()
     output = tmp_path / "droplet.png"
-    plotter = DropletSlicedPlotter(center=False, show_wall=True, molecule_view=False)
+    plotter = DropletSlicePlotter(center=False, show_wall=True, molecule_view=False)
     plotter.plot_surface_points(
         oxygen_position=oxygen,
         surface_data=surface_data,
@@ -71,11 +71,10 @@ def test_droplet_sliced_plotter_writes_png(tmp_path):
 def test_droplet_sliced_plotter_plotly_returns_figure():
     """The Plotly version should build a figure with the requested layers."""
     import plotly.graph_objects as go
-
-    from wetting_angle_kit.visualization_angles import DropletSlicedPlotterPlotly
+    from wetting_angle_kit.visualization import DropletSlicePlotlyPlotter
 
     oxygen, wall, surface_data, popt = _synthetic_droplet()
-    plotter = DropletSlicedPlotterPlotly(center=False)
+    plotter = DropletSlicePlotlyPlotter(center=False)
     fig = plotter.plot_surface_points(
         oxygen_position=oxygen,
         surface_data=surface_data,
@@ -89,7 +88,7 @@ def test_droplet_sliced_plotter_plotly_returns_figure():
 
 
 def test_plot_liquid_particles_returns_axes():
-    from wetting_angle_kit.visualization_angles import plot_liquid_particles
+    from wetting_angle_kit.visualization import plot_liquid_particles
 
     rng = np.random.default_rng(1)
     positions = rng.normal(size=(50, 3))
@@ -102,7 +101,7 @@ def test_plot_liquid_particles_returns_axes():
 
 
 def test_read_surface_file_handles_two_and_three_columns(tmp_path):
-    from wetting_angle_kit.visualization_angles import read_surface_file
+    from wetting_angle_kit.visualization import read_surface_file
 
     two_col = tmp_path / "two.txt"
     two_col.write_text("1.0 2.0\n3.0 4.0\n")
@@ -122,7 +121,7 @@ def test_read_surface_file_handles_two_and_three_columns(tmp_path):
 
 def test_hyperbolic_tangent_compute_isoline_well_formed():
     """Wall inside the fitted sphere should yield finite isoline arrays."""
-    from wetting_angle_kit.contact_angle_method.binning_method.surface_definition import (  # noqa: E501
+    from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
         HyperbolicTangentModel,
     )
 

@@ -5,7 +5,7 @@ Algorithm
 
 The trajectory is aggregated into a 2D density field ``rho(xi, zi)`` on a
 regular bin grid, where ``xi`` is the in-plane radial coordinate produced
-by :func:`wetting_angle_kit.parser.base_parser.project_to_profile` and
+by :func:`wetting_angle_kit.parsers.base.project_to_profile` and
 ``zi`` is the lab-frame vertical coordinate. The histogram uses
 :func:`numpy.histogram2d` (left-edge inclusive, right-edge exclusive,
 last bin closed on both ends).
@@ -46,7 +46,7 @@ if matplotlib.get_backend().lower() != "agg":
 
 import matplotlib.pyplot as plt  # noqa: E402
 
-from wetting_angle_kit.contact_angle_method.binning_method.surface_definition import (  # noqa: E402
+from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (  # noqa: E402
     HyperbolicTangentModel,
 )
 from wetting_angle_kit.io_utils import validate_droplet_geometry  # noqa: E402

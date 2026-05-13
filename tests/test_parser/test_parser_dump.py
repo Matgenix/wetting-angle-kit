@@ -3,8 +3,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-
-from wetting_angle_kit.parser.parser_dump import DumpParser
+from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser
 
 # Path to the test trajectory file (LAMMPS dump format)
 TRAJECTORY_PATH = os.path.join(
@@ -12,24 +11,24 @@ TRAJECTORY_PATH = os.path.join(
 )
 
 
-# --- Fixture for DumpParser ---
+# --- Fixture for LammpsDumpParser ---
 @pytest.fixture
 def dump_parser():
-    return DumpParser(TRAJECTORY_PATH)
+    return LammpsDumpParser(TRAJECTORY_PATH)
 
 
 # --- Test ImportError ---
 @patch(
     "ovito.io.import_file",
     side_effect=ImportError(
-        "The 'ovito' package is required for DumpParser. Install with: "
+        "The 'ovito' package is required for LammpsDumpParser. Install with: "
         "pip install wetting_angle_kit[ovito]"
     ),
 )
 def test_dump_parser_no_ovito(mock_import_file):
     with pytest.raises(ImportError) as excinfo:
-        DumpParser(TRAJECTORY_PATH)
-    assert "The 'ovito' package is required for DumpParser" in str(excinfo.value)
+        LammpsDumpParser(TRAJECTORY_PATH)
+    assert "The 'ovito' package is required for LammpsDumpParser" in str(excinfo.value)
 
 
 # --- Test parse ---

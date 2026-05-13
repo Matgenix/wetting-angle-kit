@@ -2,8 +2,7 @@ import os
 
 import numpy as np
 import pytest
-
-from wetting_angle_kit.parser.parser_xyz import XYZParser
+from wetting_angle_kit.parsers.xyz import XYZParser
 
 # Path to the test trajectory file
 TRAJECTORY_PATH = os.path.join(

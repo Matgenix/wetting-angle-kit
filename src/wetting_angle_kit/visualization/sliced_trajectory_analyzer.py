@@ -3,7 +3,7 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from wetting_angle_kit.visualization_angles.base_trajectory_analyzer import (
+from wetting_angle_kit.visualization.base_trajectory_analyzer import (
     BaseTrajectoryAnalyzer,
 )
 

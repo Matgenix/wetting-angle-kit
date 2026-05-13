@@ -4,7 +4,7 @@ from typing import Any
 
 import numpy as np
 
-from wetting_angle_kit.parser.base_parser import BaseParser
+from wetting_angle_kit.parsers.base import BaseParser
 
 
 class XYZParser(BaseParser):
@@ -152,7 +152,7 @@ class XYZParser(BaseParser):
         return len(self.frames)
 
 
-class XYZWaterMoleculeFinder:
+class XYZWaterFinder:
     """Helper for identifying water oxygen atoms in XYZ trajectories.
 
     This is a standalone helper (not a :class:`BaseParser`) because its

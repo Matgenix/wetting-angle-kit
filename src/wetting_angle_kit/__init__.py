@@ -1,11 +1,12 @@
-# IO utilities
 # Contact angle analyzers
-from wetting_angle_kit.contact_angle_method import (
+from wetting_angle_kit.contact_angle_methods import (
     BaseContactAngleAnalyzer,
     BinningContactAngleAnalyzer,
     SlicedContactAngleAnalyzer,
     contact_angle_analyzer,
 )
+
+# IO utilities
 from wetting_angle_kit.io_utils import (
     detect_parser_type,
     geometric_center,
@@ -14,25 +15,25 @@ from wetting_angle_kit.io_utils import (
 )
 
 # Parsers
-from wetting_angle_kit.parser import (
+from wetting_angle_kit.parsers import (
     AseParser,
     AseWallParser,
-    AseWaterMoleculeFinder,
+    AseWaterFinder,
     BaseParser,
-    DumpParser,
-    DumpWallParser,
-    DumpWaterMoleculeFinder,
+    LammpsDumpParser,
+    LammpsDumpWallParser,
+    LammpsDumpWaterFinder,
     XYZParser,
-    XYZWaterMoleculeFinder,
+    XYZWaterFinder,
 )
 
 # Visualization utilities
-from wetting_angle_kit.visualization_angles import (
+from wetting_angle_kit.visualization import (
     BaseTrajectoryAnalyzer,
     BinningTrajectoryAnalyzer,
     ContactAngleAnimator,
-    DropletSlicedPlotter,
-    DropletSlicedPlotterPlotly,
+    DropletSlicePlotlyPlotter,
+    DropletSlicePlotter,
     MethodComparison,
     SlicedTrajectoryAnalyzer,
     plot_liquid_particles,
@@ -57,19 +58,19 @@ __all__ = [
     "BaseParser",
     "AseParser",
     "AseWallParser",
-    "AseWaterMoleculeFinder",
-    "DumpWaterMoleculeFinder",
-    "DumpWallParser",
-    "DumpParser",
+    "AseWaterFinder",
+    "LammpsDumpParser",
+    "LammpsDumpWallParser",
+    "LammpsDumpWaterFinder",
     "XYZParser",
-    "XYZWaterMoleculeFinder",
+    "XYZWaterFinder",
     # Visualization & analysis
     "BaseTrajectoryAnalyzer",
     "BinningTrajectoryAnalyzer",
     "ContactAngleAnimator",
     "MethodComparison",
-    "DropletSlicedPlotter",
-    "DropletSlicedPlotterPlotly",
+    "DropletSlicePlotter",
+    "DropletSlicePlotlyPlotter",
     "SlicedTrajectoryAnalyzer",
     "plot_slice",
     "plot_surface_file",

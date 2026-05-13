@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
-from wetting_angle_kit.contact_angle_method.binning_method.surface_definition import (
+from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
     HyperbolicTangentModel,
 )
-from wetting_angle_kit.contact_angle_method.sliced_method.angle_fitting_sliced import (
+from wetting_angle_kit.contact_angle_methods.sliced.angle_fitting import (
     ContactAngleSliced,
 )
 
@@ -123,7 +122,7 @@ def test_hyperbolic_tangent_compute_isoline_raises_for_unphysical_fit():
 
 
 def test_contact_angle_analyzer_factory_rejects_unknown_method(tmp_path):
-    from wetting_angle_kit.contact_angle_method import contact_angle_analyzer
+    from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
 
     with pytest.raises(ValueError, match="Unknown method"):
         contact_angle_analyzer(
@@ -139,7 +138,7 @@ def test_contact_angle_analyzer_factory_rejects_unknown_method(tmp_path):
 def test_base_parser_empty_frame_list_does_not_crash(tmp_path):
     """get_profile_coordinates with no frames must return empty arrays."""
     # Build a minimal stub parser.
-    from wetting_angle_kit.parser.base_parser import BaseParser
+    from wetting_angle_kit.parsers.base import BaseParser
 
     class _StubParser(BaseParser):
         def parse(self, frame_index, indices=None):

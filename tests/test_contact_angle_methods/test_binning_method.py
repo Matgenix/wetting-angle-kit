@@ -2,9 +2,8 @@ import pathlib
 
 import numpy as np
 import pytest
-
-from wetting_angle_kit.contact_angle_method import contact_angle_analyzer
-from wetting_angle_kit.parser import DumpParser, DumpWaterMoleculeFinder
+from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 
 # --- Fixtures ---
@@ -20,7 +19,7 @@ def filename():
 
 @pytest.fixture
 def wat_find(filename):
-    return DumpWaterMoleculeFinder(
+    return LammpsDumpWaterFinder(
         filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2
     )
 
@@ -32,7 +31,7 @@ def oxygen_indices(wat_find):
 
 @pytest.fixture
 def parser(filename):
-    return DumpParser(filename)
+    return LammpsDumpParser(filename)
 
 
 @pytest.fixture
@@ -58,7 +57,7 @@ def test_binning_contact_angle_analyzer_with_real_data(
     # Create the analyzer
     analyzer = contact_angle_analyzer(
         method="binning",
-        parser=DumpParser(filename),
+        parser=LammpsDumpParser(filename),
         output_dir=output_dir,
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
@@ -92,7 +91,7 @@ def test_binning_contact_angle_analyzer_per_frame_with_split_factor(
 
     analyzer = contact_angle_analyzer(
         method="binning",
-        parser=DumpParser(filename),
+        parser=LammpsDumpParser(filename),
         output_dir=output_dir,
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",

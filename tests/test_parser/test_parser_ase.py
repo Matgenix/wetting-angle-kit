@@ -2,8 +2,7 @@ import os
 
 import numpy as np
 import pytest
-
-from wetting_angle_kit.parser.parser_ase import AseParser
+from wetting_angle_kit.parsers.ase import AseParser
 
 # Path to the test trajectory file (ASE format)
 TRAJECTORY_PATH = os.path.join(
@@ -46,7 +45,7 @@ def test_parse_liquid_particles(ase_parser):
 def test_get_profile_coordinates(ase_parser, caplog):
     import logging
 
-    caplog.set_level(logging.INFO, logger="wetting_angle_kit.parser.base_parser")
+    caplog.set_level(logging.INFO, logger="wetting_angle_kit.parsers.base")
     frame_indices = [0, 1]
     r_values, z_values, n_frames = ase_parser.get_profile_coordinates(frame_indices)
     assert isinstance(r_values, np.ndarray)

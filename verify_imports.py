@@ -1,4 +1,4 @@
-from wetting_angle_kit.parser.parser_ase import AseParser
+from wetting_angle_kit.parsers.ase import AseParser
 
 print("Imports successful!")
 

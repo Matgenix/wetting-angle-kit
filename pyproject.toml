@@ -64,7 +64,7 @@ requires = ["setuptools>=77", "versioningit ~= 1.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["wetting_angle_kit*"]
 
 [tool.versioningit]
@@ -75,7 +75,7 @@ method = "git"
 default-tag = "0.1.2"
 
 [tool.versioningit.write]
-file = "wetting_angle_kit/_version.py"
+file = "src/wetting_angle_kit/_version.py"
 
 [tool.black]
 line-length = 88
@@ -105,9 +105,9 @@ disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
 # ASE's ase.io.read() is typed as Union[Atom, Atoms]; all call-sites in
-# parser_ase.py receive Atoms in practice, so suppress only the union-attr
+# parsers/ase.py receive Atoms in practice, so suppress only the union-attr
 # cascade rather than silencing the entire file.
-module = ["ase.*", "wetting_angle_kit.parser.parser_ase"]
+module = ["ase.*", "wetting_angle_kit.parsers.ase"]
 disable_error_code = ["union-attr"]
 
 [tool.pytest.ini_options]

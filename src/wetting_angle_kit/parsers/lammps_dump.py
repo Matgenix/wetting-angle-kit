@@ -5,12 +5,12 @@ from typing import Any, cast
 
 import numpy as np
 
-from wetting_angle_kit.parser.base_parser import BaseParser
+from wetting_angle_kit.parsers.base import BaseParser
 
 logger = logging.getLogger(__name__)
 
 
-class DumpParser(BaseParser):
+class LammpsDumpParser(BaseParser):
     """LAMMPS dump trajectory parser.
 
     Parameters
@@ -26,7 +26,7 @@ class DumpParser(BaseParser):
             from ovito.modifiers import ComputePropertyModifier
         except ImportError as e:
             raise ImportError(
-                "The 'ovito' package is required for DumpParser. Install with: "
+                "The 'ovito' package is required for LammpsDumpParser. Install with: "
                 "pip install wetting_angle_kit[ovito]"
             ) from e
 
@@ -106,13 +106,13 @@ class DumpParser(BaseParser):
         return int(self.num_frames)
 
 
-class DumpWallParser(BaseParser):
+class LammpsDumpWallParser(BaseParser):
     """LAMMPS dump file parser for extracting wall particle coordinates.
 
     Wall particles are everything *not* in ``liquid_particle_types``;
     filtering is done inside the OVITO pipeline. The ``indices`` argument
     of :meth:`parse` is therefore typically ignored, but it is accepted
-    (as LAMMPS particle IDs, like :class:`DumpParser`) to satisfy the
+    (as LAMMPS particle IDs, like :class:`LammpsDumpParser`) to satisfy the
     :class:`BaseParser` contract.
 
     Parameters
@@ -217,7 +217,7 @@ class DumpWallParser(BaseParser):
         return int(self.pipeline.source.num_frames)
 
 
-class DumpWaterMoleculeFinder:
+class LammpsDumpWaterFinder:
     """Identify water oxygen atoms in a parsed LAMMPS trajectory."""
 
     def __init__(
@@ -277,24 +277,3 @@ class DumpWaterMoleculeFinder:
         mask = np.array(data.particles["IsWaterOxygen"].array) == 1
         oxygen_indices = np.where(mask)[0]
         return np.asarray(data.particles["Particle Identifier"][oxygen_indices])
-
-
-_DEPRECATED_ALIASES = {
-    "Dump_WaterMoleculeFinder": DumpWaterMoleculeFinder,
-    "DumpParse_wall": DumpWallParser,
-}
-
-
-def __getattr__(name: str) -> type:
-    """Emit a DeprecationWarning when one of the legacy aliases is used."""
-    if name in _DEPRECATED_ALIASES:
-        import warnings
-
-        target = _DEPRECATED_ALIASES[name]
-        warnings.warn(
-            f"{name} is deprecated; use {target.__name__} instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return target
-    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

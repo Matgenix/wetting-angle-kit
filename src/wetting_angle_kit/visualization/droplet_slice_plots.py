@@ -6,17 +6,17 @@ import numpy as np
 import plotly.graph_objects as go
 from matplotlib.ticker import AutoMinorLocator
 
-from wetting_angle_kit.contact_angle_method.sliced_method import ContactAngleSliced
-from wetting_angle_kit.parser import (
-    DumpParser,
-    DumpWallParser,
-    DumpWaterMoleculeFinder,
+from wetting_angle_kit.contact_angle_methods.sliced import ContactAngleSliced
+from wetting_angle_kit.parsers import (
+    LammpsDumpParser,
+    LammpsDumpWallParser,
+    LammpsDumpWaterFinder,
 )
 
 plt.style.use("seaborn-v0_8-whitegrid")
 
 
-class DropletSlicedPlotter:
+class DropletSlicePlotter:
     """Plot droplet slice: surface contours, fitted circle and tangent line.
 
     Parameters
@@ -299,7 +299,7 @@ class DropletSlicedPlotter:
         plt.close()
 
 
-class DropletSlicedPlotterPlotly:
+class DropletSlicePlotlyPlotter:
     """Interactive Plotly slice visualization with toggleable layers."""
 
     def __init__(self, center: bool = True):
@@ -544,19 +544,19 @@ class ContactAngleAnimator:
         self.width_cylinder = width_cylinder
 
         # Initialize objects
-        self.wat_find = DumpWaterMoleculeFinder(
+        self.wat_find = LammpsDumpWaterFinder(
             self.filename,
             particle_type_wall=self.particle_type_wall,
             oxygen_type=self.oxygen_type,
             hydrogen_type=self.hydrogen_type,
         )
         self.oxygen_indices = self.wat_find.get_water_oxygen_ids(frame_index=0)
-        self.coord_wall = DumpWallParser(
+        self.coord_wall = LammpsDumpWallParser(
             self.filename, liquid_particle_types=list(self.liquid_particle_types)
         )
         self.wall_coords = self.coord_wall.parse(frame_index=0)
-        self.parser = DumpParser(filepath=self.filename)
-        self.plotter = DropletSlicedPlotterPlotly(center=True)
+        self.parser = LammpsDumpParser(filepath=self.filename)
+        self.plotter = DropletSlicePlotlyPlotter(center=True)
 
     def generate_animation(
         self, output_filename: str = "ContactAngle_Median_PerFrame_Slider.html"

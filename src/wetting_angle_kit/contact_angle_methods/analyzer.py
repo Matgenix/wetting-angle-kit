@@ -3,10 +3,10 @@ from typing import Any
 
 import numpy as np
 
-from wetting_angle_kit.contact_angle_method.binning_method.angle_fitting_binning import (  # noqa: E501
+from wetting_angle_kit.contact_angle_methods.binning.angle_fitting import (
     ContactAngleBinning,
 )
-from wetting_angle_kit.contact_angle_method.sliced_method.multi_processing import (
+from wetting_angle_kit.contact_angle_methods.sliced.parallel import (
     ContactAngleSlicedParallel,
 )
 

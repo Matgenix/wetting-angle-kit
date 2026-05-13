@@ -7,7 +7,7 @@ from typing import NamedTuple
 
 import numpy as np
 
-from wetting_angle_kit.parser import BaseParser
+from wetting_angle_kit.parsers import BaseParser
 
 # "spawn" is required because parser instances may hold un-picklable handles
 # (OVITO pipelines, ASE Atoms with C extensions). Using a scoped context
@@ -186,10 +186,10 @@ class ContactAngleSlicedParallel:
         """Worker routine executed in child process for a batch."""
         try:
             from wetting_angle_kit.io_utils import detect_parser_type
-            from wetting_angle_kit.parser.base_parser import BaseParser
-            from wetting_angle_kit.parser.parser_ase import AseParser
-            from wetting_angle_kit.parser.parser_dump import DumpParser
-            from wetting_angle_kit.parser.parser_xyz import XYZParser
+            from wetting_angle_kit.parsers.ase import AseParser
+            from wetting_angle_kit.parsers.base import BaseParser
+            from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser
+            from wetting_angle_kit.parsers.xyz import XYZParser
         except ImportError as e:  # pragma: no cover
             logger.error(f"Failed to import required classes: {e}")
             return [
@@ -200,7 +200,7 @@ class ContactAngleSlicedParallel:
             logger.info(f"Detected parser type: {parser_type}")
             parser: BaseParser
             if parser_type == "dump":
-                parser = DumpParser(filepath=self.filename)
+                parser = LammpsDumpParser(filepath=self.filename)
             elif parser_type == "ase":
                 parser = AseParser(filepath=self.filename)
             elif parser_type == "xyz":
@@ -229,7 +229,7 @@ class ContactAngleSlicedParallel:
     ) -> SlicedFrameResult:
         """Process a single frame and compute mean contact angle."""
         try:
-            from .angle_fitting_sliced import (
+            from wetting_angle_kit.contact_angle_methods.sliced.angle_fitting import (
                 ContactAngleSliced,
             )
 

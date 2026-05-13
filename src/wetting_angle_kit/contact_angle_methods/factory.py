@@ -1,6 +1,6 @@
 from typing import Any
 
-from wetting_angle_kit.contact_angle_method.contact_angle_analyzer import (
+from wetting_angle_kit.contact_angle_methods.analyzer import (
     BaseContactAngleAnalyzer,
     BinningContactAngleAnalyzer,
     SlicedContactAngleAnalyzer,

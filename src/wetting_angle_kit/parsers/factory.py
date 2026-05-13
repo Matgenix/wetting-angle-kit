@@ -1,33 +1,33 @@
 import os
 from typing import Any
 
-from wetting_angle_kit.parser.parser_ase import AseWaterMoleculeFinder
-from wetting_angle_kit.parser.parser_dump import DumpWaterMoleculeFinder
-from wetting_angle_kit.parser.parser_xyz import XYZWaterMoleculeFinder
+from wetting_angle_kit.parsers.ase import AseWaterFinder
+from wetting_angle_kit.parsers.lammps_dump import LammpsDumpWaterFinder
+from wetting_angle_kit.parsers.xyz import XYZWaterFinder
 
 
-def get_water_parser(
+def get_water_finder(
     filename: str,
     particle_type_wall: Any,
     oxygen_type: Any,
     hydrogen_type: Any,
 ) -> Any:
-    """Factory to select the correct water oxygen parser based on file extension."""
+    """Factory to select the correct water oxygen finder based on file extension."""
     ext = os.path.splitext(filename)[-1].lower()
 
     if ext == ".lammpstrj":
-        return DumpWaterMoleculeFinder(
+        return LammpsDumpWaterFinder(
             filename, particle_type_wall, oxygen_type, hydrogen_type
         )
     elif ext in (".traj", ".ase"):
-        return AseWaterMoleculeFinder(
+        return AseWaterFinder(
             filename,
             particle_type_wall,
             oxygen_type=oxygen_type,
             hydrogen_type=hydrogen_type,
         )
     elif ext == ".xyz":
-        return XYZWaterMoleculeFinder(
+        return XYZWaterFinder(
             filename,
             particle_type_wall,
             oxygen_type=oxygen_type,
