@@ -49,10 +49,10 @@ viz = [
     "ipython>=8.0.0",
 ]
 ase = ["ase>=3.23.0"]
-ovito = ["ovito>=3.12.0"]
+ovito = ["ovito~=3.11.3"]
 # Convenience extra: installs both trajectory backends and the optional
 # visualization helpers. Use ``[all,dev,doc]`` for a full developer setup.
-all = ["ase>=3.23.0", "ovito>=3.12.0", "ipython>=8.0.0"]
+all = ["ase>=3.23.0", "ovito~=3.11.3", "ipython>=8.0.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/Matgenix/wetting_angle_kit"
