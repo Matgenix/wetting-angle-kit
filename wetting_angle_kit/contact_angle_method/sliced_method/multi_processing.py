@@ -3,7 +3,7 @@ import math
 import multiprocessing as mp
 import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Dict, List, NamedTuple, Optional
+from typing import NamedTuple
 
 import numpy as np
 
@@ -37,7 +37,7 @@ class SlicedFrameResult(NamedTuple):
     """
 
     frame_num: int
-    mean_alpha: Optional[float]
+    mean_alpha: float | None
     alfas: list
     surfaces: list
     popts: list
@@ -66,33 +66,18 @@ class ContactAngleSlicedParallel:
         Y (or X) half-width of selection cylinder in cylindrical modes.
     points_per_angstrom : float, default 1.0
         Sampling density along each radial ray for the surface fit.
-    output_repo : str, optional
-        Deprecated alias for ``output_dir``; emits a DeprecationWarning.
     """
 
     def __init__(
         self,
         filename: str,
-        output_dir: Optional[str] = None,
+        output_dir: str,
         droplet_geometry: str = "spherical",
-        atom_indices: Optional[np.ndarray] = None,
-        delta_gamma: Optional[float] = None,
-        delta_cylinder: Optional[float] = None,
+        atom_indices: np.ndarray | None = None,
+        delta_gamma: float | None = None,
+        delta_cylinder: float | None = None,
         points_per_angstrom: float = 1.0,
-        output_repo: Optional[str] = None,
     ):
-        if output_repo is not None:
-            import warnings
-
-            warnings.warn(
-                "The 'output_repo' parameter is deprecated; use 'output_dir' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if output_dir is None:
-                output_dir = output_repo
-        if output_dir is None:
-            raise TypeError("ContactAngleSlicedParallel: 'output_dir' is required.")
         self.filename = filename
         self.output_dir = output_dir
         self.delta_gamma = delta_gamma
@@ -102,25 +87,12 @@ class ContactAngleSlicedParallel:
         self.atom_indices = atom_indices if atom_indices is not None else np.array([])
         os.makedirs(self.output_dir, exist_ok=True)
 
-    @property
-    def output_repo(self) -> str:
-        """Deprecated alias for :attr:`output_dir`."""
-        import warnings
-
-        warnings.warn(
-            "ContactAngleSlicedParallel.output_repo is deprecated; "
-            "use output_dir instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.output_dir
-
     def process_frames_parallel(
         self,
-        frames_to_process: List[int],
+        frames_to_process: list[int],
         num_batches: int = 4,
-        max_workers: Optional[int] = None,
-    ) -> Dict[int, float]:
+        max_workers: int | None = None,
+    ) -> dict[int, float]:
         """Process many frames in parallel batches.
 
         Parameters
@@ -144,7 +116,7 @@ class ContactAngleSlicedParallel:
             f"Processing {len(frames_to_process)} frames in {len(batches)} batches "
             f"with {max_workers} workers"
         )
-        results: Dict[int, float] = {}
+        results: dict[int, float] = {}
         with ProcessPoolExecutor(
             max_workers=max_workers, mp_context=_MP_CONTEXT
         ) as executor:
@@ -203,14 +175,14 @@ class ContactAngleSlicedParallel:
 
         return results
 
-    def _create_batches(self, frames: List[int], num_batches: int) -> List[List[int]]:
+    def _create_batches(self, frames: list[int], num_batches: int) -> list[list[int]]:
         """Return frame batches of near-equal size."""
         if num_batches >= len(frames):
             return [[frame] for frame in frames]
         batch_size = math.ceil(len(frames) / num_batches)
         return [frames[i : i + batch_size] for i in range(0, len(frames), batch_size)]
 
-    def _process_batch_worker(self, batch_frames: List[int]) -> List[SlicedFrameResult]:
+    def _process_batch_worker(self, batch_frames: list[int]) -> list[SlicedFrameResult]:
         """Worker routine executed in child process for a batch."""
         try:
             from wetting_angle_kit.io_utils import detect_parser_type
@@ -240,7 +212,7 @@ class ContactAngleSlicedParallel:
             return [
                 SlicedFrameResult(frame, None, [], [], []) for frame in batch_frames
             ]
-        batch_results: List[SlicedFrameResult] = []
+        batch_results: list[SlicedFrameResult] = []
         for frame_num in batch_frames:
             try:
                 result = self._process_single_frame_with_parsers(

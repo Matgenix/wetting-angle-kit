@@ -55,7 +55,7 @@ from wetting_angle_kit import (
 trajectory_file = "trajectory.xyz"
 parser = XYZParser(trajectory_file)
 
-sliced = SlicedContactAngleAnalyzer(parser, output_repo="out_sliced", atom_indices=oxygen_ids, droplet_geometry="spherical", delta_gamma=5)
+sliced = SlicedContactAngleAnalyzer(parser, output_dir="out_sliced", atom_indices=oxygen_ids, droplet_geometry="spherical", delta_gamma=5)
 results = sliced.analyze(frame_range=range(0, 50))
 print(results["mean_angle"], results["std_angle"])
 

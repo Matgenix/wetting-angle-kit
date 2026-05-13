@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -16,8 +16,8 @@ class BaseContactAngleAnalyzer(ABC):
 
     @abstractmethod
     def analyze(
-        self, frame_range: Optional[List[int]] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, frame_range: list[int] | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         """Run the analysis and return statistics."""
         pass
 
@@ -25,7 +25,7 @@ class BaseContactAngleAnalyzer(ABC):
     def get_method_name(self) -> str:
         pass
 
-    def summary(self) -> Dict[str, float]:
+    def summary(self) -> dict[str, float]:
         """Return quick summary statistics."""
         results = self.analyze()
         return {
@@ -44,23 +44,9 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
     def __init__(
         self,
         parser: Any,
-        output_dir: Optional[str] = None,
-        output_repo: Optional[str] = None,
+        output_dir: str,
         **kwargs: Any,
     ):
-        if output_repo is not None:
-            import warnings
-
-            warnings.warn(
-                "SlicedContactAngleAnalyzer 'output_repo' is deprecated; "
-                "use 'output_dir' instead.",
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            if output_dir is None:
-                output_dir = output_repo
-        if output_dir is None:
-            raise TypeError("SlicedContactAngleAnalyzer: 'output_dir' is required.")
         self.parser = parser
         self.output_dir = output_dir
         self._processor = ContactAngleSlicedParallel(
@@ -68,8 +54,8 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
         )
 
     def analyze(
-        self, frame_range: Optional[List[int]] = None, **kwargs: Any
-    ) -> Dict[str, Any]:
+        self, frame_range: list[int] | None = None, **kwargs: Any
+    ) -> dict[str, Any]:
         if frame_range is None:
             frame_range = list(range(self.parser.frame_count()))
 
@@ -105,10 +91,10 @@ class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):
 
     def analyze(
         self,
-        frame_range: Optional[List[int]] = None,
-        split_factor: Optional[int] = None,
+        frame_range: list[int] | None = None,
+        split_factor: int | None = None,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         if frame_range is None:
             frame_range = list(range(self.parser.frame_count()))
         if split_factor is None:
@@ -116,7 +102,7 @@ class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):
             angles = np.array([angle])
             method_metadata = {"frames_per_angle": len(frame_range)}
         else:
-            angles_list: List[float] = []
+            angles_list: list[float] = []
             for batch_idx, start in enumerate(range(0, len(frame_range), split_factor)):
                 end = min(start + split_factor, len(frame_range))
                 angle, _ = self._analyzer.process_batch(

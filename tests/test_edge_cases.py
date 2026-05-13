@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import os
-
 import numpy as np
 import pytest
 
@@ -156,24 +154,3 @@ def test_base_parser_empty_frame_list_does_not_crash(tmp_path):
     assert r.shape == (0,)
     assert z.shape == (0,)
     assert n == 0
-
-
-# --- output_repo emits DeprecationWarning ---
-
-
-def test_sliced_analyzer_output_repo_deprecation(tmp_path):
-    """Passing 'output_repo' to SlicedContactAngleAnalyzer is deprecated."""
-    from wetting_angle_kit.contact_angle_method.contact_angle_analyzer import (
-        SlicedContactAngleAnalyzer,
-    )
-
-    # Provide a stub parser that satisfies the wrapper constructor only.
-    class _StubParser:
-        filepath = str(tmp_path / "dummy.lammpstrj")
-
-    os.makedirs(tmp_path / "out_repo", exist_ok=True)
-    with pytest.warns(DeprecationWarning, match="output_repo"):
-        SlicedContactAngleAnalyzer(
-            parser=_StubParser(),
-            output_repo=str(tmp_path / "out_repo"),
-        )
