@@ -161,18 +161,16 @@ class BaseParser(ABC):
                     np.mean(positions, axis=0) if positions.size else np.full(3, np.nan)
                 )
                 logger.info(
-                    "Frame %d: %d particles, center of mass %s",
-                    frame_idx,
-                    len(positions),
-                    np.array2string(x_cm, precision=3),
+                    f"Frame {frame_idx}: {len(positions)} particles, "
+                    f"center of mass {np.array2string(x_cm, precision=3)}"
                 )
         r_values = np.concatenate(r_chunks) if r_chunks else np.empty(0)
         z_values = np.concatenate(z_chunks) if z_chunks else np.empty(0)
         if r_values.size > 0:
             logger.info(
-                "r range: (%.3f, %.3f)", float(r_values.min()), float(r_values.max())
+                f"r range: ({float(r_values.min()):.3f}, {float(r_values.max()):.3f})"
             )
             logger.info(
-                "z range: (%.3f, %.3f)", float(z_values.min()), float(z_values.max())
+                f"z range: ({float(z_values.min()):.3f}, {float(z_values.max()):.3f})"
             )
         return r_values, z_values, len(frame_indices)

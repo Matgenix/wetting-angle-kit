@@ -43,7 +43,7 @@ def _synthetic_droplet(seed=0):
     )
     surface_data = [surface]
 
-    # Circle parameters [Xc, Zc, R, baseline_z]
+    # Circle parameters [x_center, z_center, radius, baseline_z]
     popt = np.array([50.0, 10.0, 14.0, 0.0])
     return oxygen, wall, surface_data, popt
 

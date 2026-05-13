@@ -31,8 +31,6 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         self.time_steps = time_steps if time_steps else {d: 1.0 for d in directories}
         self.time_unit = time_unit
         super().__init__(directories, time_unit=time_unit)
-        for directory in directories:
-            self.data[directory] = {}
 
     def _initialize_data_structure(self) -> None:
         """Initialize data structure for sliced analysis."""
@@ -40,12 +38,12 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             self.data[directory] = {
                 "surfaces_files": [],
                 "popts_files": [],
-                "alfas_files": [],
+                "angles_files": [],
                 "mean_surface_areas": [],
-                "all_alfas": [],
-                "median_alfas": [],
-                "mean_alfas": [],
-                "std_alfas": [],
+                "all_angles": [],
+                "median_angles": [],
+                "mean_angles": [],
+                "std_angles": [],
                 "time_step": self.time_steps.get(directory, 1.0),
             }
 
@@ -57,8 +55,8 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         """Load the combined .npy files for all
         directories and calculate mean surface areas per frame."""
         for directory in self.directories:
-            all_alfas = np.load(
-                os.path.join(directory, "all_alfas.npy"), allow_pickle=True
+            all_angles = np.load(
+                os.path.join(directory, "all_angles.npy"), allow_pickle=True
             )
             all_surfaces = np.load(
                 os.path.join(directory, "all_surfaces.npy"), allow_pickle=True
@@ -78,14 +76,14 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 mean_surface_areas.append(mean_area)
 
             self.data[directory] = {
-                "all_alfas": all_alfas,
+                "all_angles": all_angles,
                 "all_surfaces": all_surfaces,
                 "all_popts": all_popts,
-                "frame_numbers": [item[0] for item in all_alfas],
+                "frame_numbers": [item[0] for item in all_angles],
                 "mean_surface_areas": mean_surface_areas,
-                "median_alfas": [(item[0], np.median(item[1])) for item in all_alfas],
-                "mean_alfas": [(item[0], np.mean(item[1])) for item in all_alfas],
-                "std_alfas": [(item[0], np.std(item[1])) for item in all_alfas],
+                "median_angles": [(item[0], np.median(item[1])) for item in all_angles],
+                "mean_angles": [(item[0], np.mean(item[1])) for item in all_angles],
+                "std_angles": [(item[0], np.std(item[1])) for item in all_angles],
                 "time_step": self.time_steps.get(directory, 1.0),
             }
 
@@ -131,23 +129,23 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         return np.array(self.data[directory]["mean_surface_areas"])
 
     def get_contact_angles(self, directory: str) -> np.ndarray:
-        """Get contact angles (median alfas) for a directory."""
-        data = np.array(self.data[directory]["median_alfas"])
+        """Get contact angles (median angles) for a directory."""
+        data = np.array(self.data[directory]["median_angles"])
         if data.ndim == 2 and data.shape[1] >= 2:
             return data[:, 1]
         return data
 
-    def plot_median_alfas_evolution(
+    def plot_median_angles_evolution(
         self,
         save_path: str,
         labels: dict[str, str] | None = None,
         plot_std: bool = True,
     ) -> None:
-        """Plot evolution of median angle (Alfas) with standard deviation.
+        """Plot evolution of median contact angle with standard deviation.
 
         Align trajectories by truncating to shortest.
         """
-        if not self.data[self.directories[0]]["median_alfas"]:
+        if not self.data[self.directories[0]]["median_angles"]:
             self.load_data()
 
         # Use provided labels or fall back to directory basename
@@ -155,16 +153,15 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             labels if labels else {d: os.path.basename(d) for d in self.directories}
         )
 
-        # Find the minimum number of frames across all directories
         plt.figure(figsize=(10, 6))
         colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))  # type: ignore[attr-defined]
 
         for i, directory in enumerate(self.directories):
-            median_alfas = self.data[directory]["median_alfas"]
-            std_alfas = self.data[directory]["std_alfas"]
-            frame_numbers = [item[0] for item in median_alfas]
-            median_values = [item[1] for item in median_alfas]
-            std_values = [item[1] for item in std_alfas]
+            median_angles = self.data[directory]["median_angles"]
+            std_angles = self.data[directory]["std_angles"]
+            frame_numbers = [item[0] for item in median_angles]
+            median_values = [item[1] for item in median_angles]
+            std_values = [item[1] for item in std_angles]
             time_step = self.data[directory]["time_step"]
             time_values = np.array(frame_numbers) * time_step
             label = plot_labels.get(directory, os.path.basename(directory))
@@ -194,12 +191,12 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         plt.savefig(save_path, dpi=400, bbox_inches="tight")
         plt.close()
 
-    def plot_mean_alfas_evolution(
+    def plot_mean_angles_evolution(
         self,
         save_path: str,
         labels: dict[str, str] | None = None,
     ) -> None:
-        """Plot evolution of mean angle (Alfas) with standard deviation."""
+        """Plot evolution of mean contact angle with standard deviation."""
         plot_labels = (
             labels if labels else {d: os.path.basename(d) for d in self.directories}
         )
@@ -207,11 +204,11 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))  # type: ignore[attr-defined]
 
         for i, directory in enumerate(self.directories):
-            mean_alfas = self.data[directory]["mean_alfas"]
-            std_alfas = self.data[directory]["std_alfas"]
-            frame_numbers = [item[0] for item in mean_alfas]
-            mean_values = [item[1] for item in mean_alfas]
-            std_values = [item[1] for item in std_alfas]
+            mean_angles = self.data[directory]["mean_angles"]
+            std_angles = self.data[directory]["std_angles"]
+            frame_numbers = [item[0] for item in mean_angles]
+            mean_values = [item[1] for item in mean_angles]
+            std_values = [item[1] for item in std_angles]
             time_step = self.data[directory]["time_step"]
             time_values = np.array(frame_numbers) * time_step
             label = plot_labels.get(directory, os.path.basename(directory))
@@ -227,7 +224,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 alpha=0.2,
             )
 
-        plt.title("Evolution of the Mean Angle (Alfas) with Standard Deviation")
+        plt.title("Evolution of the Mean Angle with Standard Deviation")
         plt.xlabel(f"Time ({self.time_unit})")
         plt.ylabel("Angle (°)")
         plt.legend(bbox_to_anchor=(1.05, 1), loc="upper left")

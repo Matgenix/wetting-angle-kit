@@ -158,15 +158,14 @@ class SurfaceDefinition:
 
         Returns
         -------
-        list_rbeta : list[list[float]]
-            Fitted interface distance and its azimuth angle
-             ``[interface_re, beta_deg]``.
-        list_xz : list[list[float]]
+        rr : list[list[float]]
+            Fitted interface distances and azimuth angles ``[interface_re, beta_deg]``.
+        xz : list[list[float]]
             Projected interface coordinates ``[x_proj, z_proj]`` in XZ plane.
         """
         beta = np.linspace(0, 360, int(360 / self.delta_angle), endpoint=False)
-        list_rbeta = []
-        list_xz = []
+        rr = []
+        xz = []
         nn = max(int(self.max_dist * self.points_per_angstrom), self.MIN_POINTS_PER_RAY)
         param_bounds = ([0.0, -10.0, -10.0], [self.max_dist, 10.0, 10.0])
         cos_beta = np.cos(np.deg2rad(beta))
@@ -190,11 +189,11 @@ class SurfaceDefinition:
                 sigma=self.density_sigma,
             )
             interface_re = self.fit_density_profile(distances, density, param_bounds)
-            list_rbeta.append([interface_re, beta[i]])
-            list_xz.append(
+            rr.append([interface_re, beta[i]])
+            xz.append(
                 [
                     cos_beta[i] * interface_re + self.center_geom[0],
                     sin_beta[i] * interface_re + self.center_geom[2],
                 ]
             )
-        return list_rbeta, list_xz
+        return rr, xz

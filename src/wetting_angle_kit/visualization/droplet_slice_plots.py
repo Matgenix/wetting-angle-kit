@@ -64,7 +64,8 @@ class DropletSlicePlotter:
         surface_data : list[array]
             List of arrays with surface line coordinates (x, z) for each slice.
         popt : sequence
-            Fitted circle parameters (Xc, Zc, R, extra) for chosen slice.
+            Fitted circle parameters (x_center, z_center, radius, extra)
+            for chosen slice.
         wall_coords : ndarray (M, 3)
             Wall particle coordinates.
         output_filename : str or Path
@@ -124,10 +125,10 @@ class DropletSlicePlotter:
                 np.column_stack([surf[:, 0], surf[:, 1] - z_shift])
                 for surf in surface_data
             ]
-            Xc, Zc, R, limit_med = popt
-            Zc -= z_shift
+            x_center, z_center, radius, limit_med = popt
+            z_center -= z_shift
         else:
-            Xc, Zc, R, limit_med = popt
+            x_center, z_center, radius, limit_med = popt
 
         # --- Plot setup ---
         fig, ax = plt.subplots(figsize=(4.0, 3.0), dpi=300)
@@ -182,15 +183,21 @@ class DropletSlicePlotter:
 
         # --- Surface line ---
         for surf in surface_data:
-            X_data, Z_data = surf[:, 0], surf[:, 1]
-            if not np.allclose([X_data[0], Z_data[0]], [X_data[-1], Z_data[-1]]):
-                X_data = np.append(X_data, X_data[0])
-                Z_data = np.append(Z_data, Z_data[0])
-            ax.plot(X_data, Z_data, color=self.surface_color, lw=1.5, zorder=3)
+            x_data, z_data = surf[:, 0], surf[:, 1]
+            if not np.allclose([x_data[0], z_data[0]], [x_data[-1], z_data[-1]]):
+                x_data = np.append(x_data, x_data[0])
+                z_data = np.append(z_data, z_data[0])
+            ax.plot(x_data, z_data, color=self.surface_color, lw=1.5, zorder=3)
 
         # --- Fitted circle ---
         circle = plt.Circle(
-            (Xc, Zc), R, color=self.circle_color, fill=False, ls="--", lw=2.5, zorder=4
+            (x_center, z_center),
+            radius,
+            color=self.circle_color,
+            fill=False,
+            ls="--",
+            lw=2.5,
+            zorder=4,
         )
         ax.add_artist(circle)
         # --- Tangent line (based on circle–surface intersection) ---
@@ -200,25 +207,26 @@ class DropletSlicePlotter:
             # --- Determine the contact point from the surface bottom ---
             z_baseline = min(np.min(surf[:, 1]) for surf in surface_data)
             # Use the (possibly z-shifted) circle parameters set above.
-            delta_z = z_baseline - Zc
-            discriminant = R**2 - delta_z**2
+            delta_z = z_baseline - z_center
+            discriminant = radius**2 - delta_z**2
             if discriminant <= 0:
+                plt.close(fig)
                 return
 
             dx = np.sqrt(discriminant)
 
             # Choose correct side (right if α > 90°, left if α < 90°)
             if alpha > 90:
-                x_contact = Xc + dx
+                x_contact = x_center + dx
             else:
-                x_contact = Xc - dx
+                x_contact = x_center - dx
             z_contact = z_baseline
 
             # --- Tangent slope at the intersection point ---
-            m_tangent = -(x_contact - Xc) / (z_contact - Zc)
+            m_tangent = -(x_contact - x_center) / (z_contact - z_center)
 
             # --- Extend tangent line upwards to top of circle ---
-            z_top = Zc + R * 1.1  # extend slightly above for visibility
+            z_top = z_center + radius * 1.1  # extend slightly above for visibility
             if abs(m_tangent) > 1e-6:
                 x_top = x_contact + (z_top - z_contact) / m_tangent
             else:
@@ -238,7 +246,7 @@ class DropletSlicePlotter:
             )
 
             # --- Draw arc centered at contact point ---
-            arc_radius = R * 0.25
+            arc_radius = radius * 0.25
             theta = np.linspace(
                 np.pi - alpha_rad, np.pi, 100
             )  # from horizontal (0) to tangent (α)
@@ -336,7 +344,7 @@ class DropletSlicePlotlyPlotter:
         surface_data : list[array]
             List of surface contours for selected slice.
         popt : sequence
-            Fitted circle parameters (Xc, Zc, R, extra).
+            Fitted circle parameters (x_center, z_center, radius, extra).
         wall_coords : ndarray (M, 3)
             Wall particle coordinates.
         alpha : float, optional
@@ -372,10 +380,10 @@ class DropletSlicePlotlyPlotter:
                 np.column_stack([surf[:, 0], surf[:, 1] - z_shift])
                 for surf in surface_data
             ]
-            Xc, Zc, R, _ = popt
-            Zc -= z_shift
+            x_center, z_center, radius, _ = popt
+            z_center -= z_shift
         else:
-            Xc, Zc, R, _ = popt
+            x_center, z_center, radius, _ = popt
         fig = go.Figure()
         # --- Wall ---
         if show_wall:
@@ -424,8 +432,8 @@ class DropletSlicePlotlyPlotter:
         # --- Fitted circle ---
         if show_circle:
             theta = np.linspace(0, 2 * np.pi, 200)
-            circle_x = Xc + R * np.cos(theta)
-            circle_z = Zc + R * np.sin(theta)
+            circle_x = x_center + radius * np.cos(theta)
+            circle_z = z_center + radius * np.sin(theta)
             fig.add_trace(
                 go.Scatter(
                     x=circle_x,
@@ -442,14 +450,14 @@ class DropletSlicePlotlyPlotter:
         # --- Tangent + α arc ---
         if show_tangent and alpha is not None:
             z_line = min([np.min(surf[:, 1]) for surf in surface_data])
-            delta_z = z_line - Zc
-            discriminant = R**2 - delta_z**2
+            delta_z = z_line - z_center
+            discriminant = radius**2 - delta_z**2
             if discriminant > 0:
-                x_contact = Xc + np.sqrt(discriminant)  # Right side
+                x_contact = x_center + np.sqrt(discriminant)  # Right side
                 z_contact = z_line
-                m_tangent = -(x_contact - Xc) / (z_contact - Zc)
+                m_tangent = -(x_contact - x_center) / (z_contact - z_center)
                 # Tangent line
-                z_top = Zc + R * 1.1
+                z_top = z_center + radius * 1.1
                 x_top = x_contact + (z_top - z_contact) / m_tangent
                 x_line = np.linspace(x_contact, x_top, 100)
                 z_line_tan = m_tangent * (x_line - x_contact) + z_contact
@@ -466,7 +474,7 @@ class DropletSlicePlotlyPlotter:
                 )
                 # α arc (left side)
                 alpha_rad = np.radians(alpha)
-                arc_radius = R * 0.25
+                arc_radius = radius * 0.25
                 theta_arc = np.linspace(np.pi - alpha_rad, np.pi, 100)
                 arc_x = x_contact + arc_radius * np.cos(theta_arc)
                 arc_z = z_contact + arc_radius * np.sin(theta_arc)
@@ -587,11 +595,11 @@ class ContactAngleAnimator:
                 max_dist=self.max_dist,
                 width_cylinder=self.width_cylinder,
             )
-            list_alfas, array_surfaces, array_popt = processor.predict_contact_angle()
-            median_idx = np.argsort(list_alfas)[len(list_alfas) // 2]
-            alpha = list_alfas[median_idx]
-            popt = array_popt[median_idx]
-            surface = [array_surfaces[median_idx]]
+            angles, surfaces, popt_arrays = processor.predict_contact_angle()
+            median_idx = np.argsort(angles)[len(angles) // 2]
+            alpha = angles[median_idx]
+            popt = popt_arrays[median_idx]
+            surface = [surfaces[median_idx]]
             median_angles.append(alpha)
             fig_frame = self.plotter.plot_surface_points(
                 oxygen_position=oxygen_position,
@@ -626,8 +634,8 @@ class ContactAngleAnimator:
             width=800,
             height=600,
             margin=dict(l=80, r=200, t=80, b=100),
-            xaxis_title="x (\u03c3)",
-            yaxis_title="z (\u03c3)",
+            xaxis_title="x (\u00c5)",
+            yaxis_title="z (\u00c5)",
             template="simple_white",
             showlegend=True,
             legend=dict(

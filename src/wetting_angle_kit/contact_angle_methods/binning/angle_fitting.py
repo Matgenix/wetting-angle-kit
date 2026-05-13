@@ -227,7 +227,7 @@ class ContactAngleBinning:
 
     def save_logfile(
         self,
-        particles_number: float,
+        n_particles: float,
         param_strings: list[str],
         theta: float,
         xi_cc: np.ndarray,
@@ -239,7 +239,7 @@ class ContactAngleBinning:
 
         Parameters
         ----------
-        particles_number : float
+        n_particles : float
             Average number of particles per frame in batch.
         param_strings : list[str]
             Formatted parameter lines from model.
@@ -255,7 +255,7 @@ class ContactAngleBinning:
         batch_str = f"_batch_{batch_index}" if batch_index is not None else ""
         with open(os.path.join(self.output_dir, f"log_data{batch_str}.txt"), "w") as f:
             f.write("Simulation parameters:\n")
-            f.write(f"reduced_particles_number:{particles_number}\n")
+            f.write(f"reduced_particles_number:{n_particles}\n")
             f.write(f"model_type:{self.droplet_geometry}\n")
             if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
                 f.write(f"width_cylinder:{self.width_cylinder}\n")
@@ -267,10 +267,10 @@ class ContactAngleBinning:
         msh_zi_cc = msh_zi_cc_grid.reshape((len(xi_cc) * len(zi_cc)), order="F")
         msh_xi_cc = msh_xi_cc_grid.reshape((len(xi_cc) * len(zi_cc)), order="F")
         msh_rho_cc = rho_cc.reshape((len(xi_cc) * len(zi_cc)), order="F")
-        CSV = np.c_[msh_xi_cc, msh_zi_cc, msh_rho_cc]
+        csv_data = np.c_[msh_xi_cc, msh_zi_cc, msh_rho_cc]
         np.savetxt(
             os.path.join(self.output_dir, f"rho_field{batch_str}.csv"),
-            CSV,
+            csv_data,
             delimiter=",",
             header=(f"x_{len(xi_cc)},y_{len(zi_cc)}," f"rho_{len(xi_cc) * len(zi_cc)}"),
         )
@@ -302,12 +302,10 @@ class ContactAngleBinning:
             droplet_geometry=self.droplet_geometry,
             atom_indices=self.atom_indices,
         )
-        particles_number = len(xi_par) / max(len_frames, 1)
+        n_particles = len(xi_par) / max(len_frames, 1)
         batch_label = f" {batch_index}" if batch_index is not None else ""
         logger.info(
-            "Number of fluid particles in batch%s: %.2f",
-            batch_label,
-            particles_number,
+            f"Number of fluid particles in batch{batch_label}: {n_particles:.2f}"
         )
         rho_cc = self.binning(xi_par, zi_par, len_frames)
         if model is None:
@@ -324,12 +322,10 @@ class ContactAngleBinning:
         model.fit(x_data, msh_rho_cc)
         param_strings = model.get_parameter_strings()
         logger.info(
-            "Fitted parameters for batch%s:\n%s",
-            batch_label,
-            "".join(param_strings),
+            f"Fitted parameters for batch{batch_label}:\n{''.join(param_strings)}"
         )
         contact_angle = model.compute_contact_angle()
-        logger.info("Contact angle for batch%s: %s", batch_label, contact_angle)
+        logger.info(f"Contact angle for batch{batch_label}: {contact_angle}")
         if self.plot_graphs:
             try:
                 (
@@ -356,7 +352,7 @@ class ContactAngleBinning:
                     batch_index,
                 )
         self.save_logfile(
-            particles_number,
+            n_particles,
             param_strings,
             contact_angle,
             self.xi_cc,
@@ -384,7 +380,7 @@ class ContactAngleBinning:
             Contact angles per processed batch.
         """
         frames_tot = self.parser.frame_count()
-        logger.info("Total frames: %d", frames_tot)
+        logger.info(f"Total frames: {frames_tot}")
         angles: list[float] = []
         for batch_index, start_frame in enumerate(range(0, frames_tot, batch_size)):
             frame_list = list(
@@ -399,5 +395,5 @@ class ContactAngleBinning:
                 ),
                 np.array(angles),
             )
-        logger.info("List of contact angles by batch: %s", angles)
+        logger.info(f"List of contact angles by batch: {angles}")
         return angles

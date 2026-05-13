@@ -25,10 +25,10 @@ class SlicedFrameResult(NamedTuple):
     ----------
     frame_num : int
         Frame index this result refers to.
-    mean_alpha : float | None
+    mean_angle : float | None
         Mean contact angle across successful slices, or ``None`` if no
         slice produced an angle.
-    alfas : list[float]
+    angles : list[float]
         Per-slice contact angles. Same length as ``surfaces`` and ``popts``.
     surfaces : list[ndarray]
         Per-slice surface point arrays of shape (M, 2).
@@ -37,8 +37,8 @@ class SlicedFrameResult(NamedTuple):
     """
 
     frame_num: int
-    mean_alpha: float | None
-    alfas: list
+    mean_angle: float | None
+    angles: list
     surfaces: list
     popts: list
 
@@ -125,17 +125,17 @@ class ContactAngleSlicedParallel:
                 for batch_frames in batches
             }
             completed_batches = 0
-            all_alfas = {}
-            all_surfaces = {}
-            all_popts = {}
+            all_angles: dict[int, list] = {}
+            all_surfaces: dict[int, list] = {}
+            all_popts: dict[int, list] = {}
             for future in as_completed(future_to_batch):
                 batch_frames = future_to_batch[future]
                 try:
                     batch_results = future.result()
-                    for frame_num, mean_alpha, alfas, surfaces, popts in batch_results:
-                        if mean_alpha is not None:
-                            results[frame_num] = mean_alpha
-                            all_alfas[frame_num] = alfas
+                    for frame_num, mean_angle, angles, surfaces, popts in batch_results:
+                        if mean_angle is not None:
+                            results[frame_num] = mean_angle
+                            all_angles[frame_num] = angles
                             all_surfaces[frame_num] = surfaces
                             all_popts[frame_num] = popts
                     completed_batches += 1
@@ -148,14 +148,12 @@ class ContactAngleSlicedParallel:
                         f"Error in batch for frames {batch_frames}: {e}",
                         exc_info=True,
                     )
-        sorted_frames = sorted(all_alfas.keys())
+        sorted_frames = sorted(all_angles.keys())
 
-        # Create a list of (frame_num, alfas), (frame_num, surface), (frame_num, popts)
-
-        alfas_with_frames = [(f, all_alfas[f]) for f in sorted_frames]
+        angles_with_frames = [(f, all_angles[f]) for f in sorted_frames]
         np.save(
-            f"{self.output_dir}/all_alfas.npy",
-            np.array(alfas_with_frames, dtype=object),
+            f"{self.output_dir}/all_angles.npy",
+            np.array(angles_with_frames, dtype=object),
         )
 
         surfaces_with_frames = [(f, all_surfaces[f]) for f in sorted_frames]
@@ -259,7 +257,6 @@ class ContactAngleSlicedParallel:
             )
             if self.droplet_geometry == "cylinder_x":
                 liquid_positions = liquid_positions[:, [1, 0, 2]]
-            if self.droplet_geometry == "cylinder_x":
                 box_dimensions = parser.box_size_x(frame_index=frame_num)
             elif self.droplet_geometry == "cylinder_y":
                 box_dimensions = parser.box_size_y(frame_index=frame_num)
@@ -276,17 +273,17 @@ class ContactAngleSlicedParallel:
                 delta_cylinder=self.delta_cylinder,
                 points_per_angstrom=self.points_per_angstrom,
             )
-            list_alfas, list_surfaces, list_popt = predictor.predict_contact_angle()
-            if len(list_alfas) == 0:
+            angles, surfaces, popt_arrays = predictor.predict_contact_angle()
+            if len(angles) == 0:
                 logger.warning(f"Frame {frame_num}: No angles computed (empty list).")
-                mean_alpha = None
+                mean_angle = None
             else:
-                mean_alpha = float(np.mean(list_alfas))
-            if mean_alpha is not None:
-                logger.info(f"Frame {frame_num} - mean angle: {mean_alpha:.2f}°")
+                mean_angle = float(np.mean(angles))
+            if mean_angle is not None:
+                logger.info(f"Frame {frame_num} - mean angle: {mean_angle:.2f}°")
             return SlicedFrameResult(
-                frame_num, mean_alpha, list_alfas, list_surfaces, list_popt
+                frame_num, mean_angle, angles, surfaces, popt_arrays
             )
         except Exception as e:  # pragma: no cover
-            logger.error(f"Error processing frame {frame_num}: {e}")
+            logger.error(f"Error processing frame {frame_num}: {e}", exc_info=True)
             return SlicedFrameResult(frame_num, None, [], [], [])

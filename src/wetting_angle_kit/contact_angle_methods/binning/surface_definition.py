@@ -287,28 +287,28 @@ class HyperbolicTangentModel(SurfaceModel):
         if self.params is None:
             raise ValueError("Model must be fitted before computing isoline")
 
-        R = scale_factor * self.params[2]  # R_eq
-        Zcenter = self.params[3]  # zi_c
-        Zwall = self.params[4]  # zi_0
+        r = scale_factor * self.params[2]  # R_eq
+        z_center = self.params[3]  # zi_c
+        z_wall = self.params[4]  # zi_0
 
-        discriminant = R**2 - (Zwall - Zcenter) ** 2
+        discriminant = r**2 - (z_wall - z_center) ** 2
         if discriminant < 0:
             raise ValueError(
                 "Fitted wall is outside the fitted droplet radius "
-                f"(R={R:.3f}, |Zwall - Zcenter|={abs(Zwall - Zcenter):.3f}); "
+                f"(r={r:.3f}, |z_wall - z_center|={abs(z_wall - z_center):.3f}); "
                 "isoline cannot be computed. The hyperbolic tangent fit "
                 "likely did not converge to a physical solution."
             )
         xi_wall = np.sqrt(discriminant)
-        alpha_inf = np.arctan((Zwall - Zcenter) / xi_wall)
+        alpha_inf = np.arctan((z_wall - z_center) / xi_wall)
         alpha = np.linspace(alpha_inf, np.pi / 2, 100)
 
-        Xicenter = 1.0
-        circle_xi = Xicenter + R * np.cos(alpha)
-        circle_zi = Zcenter + R * np.sin(alpha)
+        xi_center = 0.0
+        circle_xi = xi_center + r * np.cos(alpha)
+        circle_zi = z_center + r * np.sin(alpha)
 
-        wall_line_xi = np.linspace(Xicenter, xi_wall, 100)
-        wall_line_zi = np.ones(len(wall_line_xi)) * Zwall
+        wall_line_xi = np.linspace(xi_center, xi_wall, 100)
+        wall_line_zi = np.ones(len(wall_line_xi)) * z_wall
 
         return circle_xi, circle_zi, wall_line_xi, wall_line_zi
 

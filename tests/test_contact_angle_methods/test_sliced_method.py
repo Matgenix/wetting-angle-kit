@@ -64,11 +64,11 @@ def test_contact_angle_sliced_with_real_data(parser, oxygen_indices):
     )
 
     # Test predict_contact_angle
-    list_alfas, array_surfaces, array_popt = predictor.predict_contact_angle()
-    assert isinstance(list_alfas, list)
-    assert isinstance(array_surfaces, list)
-    assert isinstance(array_popt, list)
-    assert len(list_alfas) > 0
+    angles, surfaces, popt_arrays = predictor.predict_contact_angle()
+    assert isinstance(angles, list)
+    assert isinstance(surfaces, list)
+    assert isinstance(popt_arrays, list)
+    assert len(angles) > 0
 
 
 # --- Integration Test for SlicedContactAngleAnalyzer ---

@@ -32,7 +32,7 @@ def test_contact_angle_sliced_rejects_invalid_geometry():
 def test_predict_contact_angle_returns_aligned_lists():
     """Even if some slices fail, the three returned lists must have the same
     length. This guards against the historical bug where median_idx into
-    list_alfas would address a different slice in array_popt/surfaces."""
+    angles would address a different slice in popt_arrays/surfaces."""
     coords = np.array([[0.0, 0.0, 10.0]])  # single atom = no tanh interface
     predictor = ContactAngleSliced(
         liquid_coordinates=coords,

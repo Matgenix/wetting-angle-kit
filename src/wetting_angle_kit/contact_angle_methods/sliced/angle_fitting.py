@@ -1,3 +1,4 @@
+import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -82,8 +83,6 @@ class ContactAngleSliced:
         if self.droplet_geometry in ("cylinder_y", "cylinder_x") and (
             width_cylinder is None or delta_cylinder is None
         ):
-            import warnings
-
             warnings.warn(
                 "width_cylinder and delta_cylinder recommended for "
                 f"{self.droplet_geometry}",
@@ -161,8 +160,8 @@ class ContactAngleSliced:
             points_per_angstrom=self.points_per_angstrom,
             density_sigma=self.density_sigma,
         )
-        list_rr, list_xz = surface_def.analyze_lines()
-        return np.array(list_xz), np.array(list_rr)
+        rr, xz = surface_def.analyze_lines()
+        return np.array(xz), np.array(rr)
 
     def separate_surface_data(self, surf: np.ndarray, limit_med: float) -> np.ndarray:
         """Filter surface points above reference height.
@@ -183,17 +182,17 @@ class ContactAngleSliced:
 
     def fit_circle(
         self,
-        X_data: np.ndarray,
-        Y_data: np.ndarray,
+        x_data: np.ndarray,
+        y_data: np.ndarray,
         initial_guess: Sequence[float],
     ) -> np.ndarray:
         """Perform non-linear least squares circle fit.
 
         Parameters
         ----------
-        X_data : ndarray
+        x_data : ndarray
             X coordinates.
-        Y_data : ndarray
+        y_data : ndarray
             Z coordinates.
         initial_guess : sequence
             Initial parameters [x_center, z_center, radius].
@@ -205,8 +204,8 @@ class ContactAngleSliced:
         """
         popt, _ = curve_fit(
             self.circle_equation,
-            (X_data, Y_data),
-            np.zeros_like(X_data),
+            (x_data, y_data),
+            np.zeros_like(x_data),
             p0=initial_guess,
         )
         # The residual sqrt((x-xc)^2 + (z-zc)^2) - R is symmetric in the sign
@@ -229,12 +228,12 @@ class ContactAngleSliced:
         float | None
             Contact angle (deg) or None if circle does not intersect baseline.
         """
-        Xs, Ys, R = popt
-        delta_y = y_line - Ys
-        discriminant = R**2 - delta_y**2
+        _, z_center, radius = popt
+        delta_z = y_line - z_center
+        discriminant = radius**2 - delta_z**2
         if discriminant < 0:
             return None
-        theta = np.arccos(delta_y / R)
+        theta = np.arccos(delta_z / radius)
         return float(np.degrees(theta))
 
     def circle_equation(
@@ -249,7 +248,7 @@ class ContactAngleSliced:
         Parameters
         ----------
         xy_data : tuple(ndarray, ndarray)
-            (X_data, Y_data) coordinate arrays.
+            (x_data, y_data) coordinate arrays.
         x_center : float
             Circle center x.
         z_center : float
@@ -262,8 +261,8 @@ class ContactAngleSliced:
         ndarray
             Residuals sqrt((x-xc)^2+(z-zc)^2) - R.
         """
-        X_data, Y_data = xy_data
-        return np.sqrt((X_data - x_center) ** 2 + (Y_data - z_center) ** 2) - radius
+        x_data, y_data = xy_data
+        return np.sqrt((x_data - x_center) ** 2 + (y_data - z_center) ** 2) - radius
 
     def predict_contact_angle(
         self,
@@ -288,12 +287,12 @@ class ContactAngleSliced:
         """
         gammas = self.calculate_gammas_list()
         y_axis_list = self.calculate_y_axis_list()
-        list_alfas: list[float] = []
-        array_surfaces: list[np.ndarray] = []
-        array_popt: list[np.ndarray] = []
+        angles: list[float] = []
+        surfaces: list[np.ndarray] = []
+        popt_arrays: list[np.ndarray] = []
         for counter, value_gamma in enumerate(gammas):
             self.liquid_geom_center[1] = y_axis_list[counter]
-            surf, list_rr = self.surface_definition(value_gamma)
+            surf, rr = self.surface_definition(value_gamma)
             if surf.size == 0:
                 continue
             min_drop = float(np.min(surf[:, 1]))
@@ -301,24 +300,22 @@ class ContactAngleSliced:
             surf_line = self.separate_surface_data(surf, limit_med)
             if len(surf_line) < 3:  # need at least 3 points to fit a circle
                 continue
-            X_data = surf_line[:, 0]
-            Y_data = surf_line[:, 1]
-            mean_rr = (
-                float(np.mean(list_rr[:, 0])) if list_rr.size else self.max_dist / 2
-            )
+            x_data = surf_line[:, 0]
+            y_data = surf_line[:, 1]
+            mean_rr = float(np.mean(rr[:, 0])) if rr.size else self.max_dist / 2
             initial_guess = [
                 self.liquid_geom_center[0],
                 self.liquid_geom_center[2],
                 mean_rr,
             ]
             try:
-                popt = self.fit_circle(X_data, Y_data, initial_guess)
+                popt = self.fit_circle(x_data, y_data, initial_guess)
             except Exception:  # pragma: no cover - rare convergence failures
                 continue
             angle = self.find_intersection(popt, min_drop)
             if angle is None:
                 continue
-            list_alfas.append(angle)
-            array_surfaces.append(surf)
-            array_popt.append(np.append(popt, limit_med))
-        return list_alfas, array_surfaces, array_popt
+            angles.append(angle)
+            surfaces.append(surf)
+            popt_arrays.append(np.append(popt, limit_med))
+        return angles, surfaces, popt_arrays
