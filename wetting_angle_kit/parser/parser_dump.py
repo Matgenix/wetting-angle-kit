@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, List, Optional, cast
+from typing import Any, cast
 
 import numpy as np
 
@@ -40,9 +40,7 @@ class DumpParser(BaseParser):
         )
         self.num_frames: int = int(self.pipeline.source.num_frames)
 
-    def parse(
-        self, frame_index: int, indices: Optional[np.ndarray] = None
-    ) -> np.ndarray:
+    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Compute and return particle positions for a single frame,
         with optional filtering by particle indices.
 
@@ -125,7 +123,7 @@ class DumpWallParser(BaseParser):
         Type IDs of particles to exclude as liquid.
     """
 
-    def __init__(self, filepath: str, liquid_particle_types: List[int]):
+    def __init__(self, filepath: str, liquid_particle_types: list[int]):
         self.filepath = filepath
         self.liquid_particle_types = liquid_particle_types
         self.pipeline = self.load_dump_ovito()
@@ -159,9 +157,7 @@ class DumpWallParser(BaseParser):
         )
         return pipeline
 
-    def parse(
-        self, frame_index: int, indices: Optional[np.ndarray] = None
-    ) -> np.ndarray:
+    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Return wall particle positions for a single frame.
 
         Parameters

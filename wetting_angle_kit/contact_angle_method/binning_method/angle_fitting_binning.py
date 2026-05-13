@@ -27,7 +27,7 @@ particles · Å⁻³, and the final contact angle is returned in degrees.
 import logging
 import os
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import matplotlib
 import numpy as np
@@ -65,8 +65,8 @@ class ContactAngleBinning:
         parser: Any,
         atom_indices: Any,
         droplet_geometry: str = "spherical",
-        width_cylinder: Optional[float] = None,
-        binning_params: Optional[Dict[str, Any]] = None,
+        width_cylinder: float | None = None,
+        binning_params: dict[str, Any] | None = None,
         output_dir: str = "output_analysis/",
         plot_graphs: bool = True,
     ) -> None:
@@ -185,7 +185,7 @@ class ContactAngleBinning:
         circle_zi: np.ndarray,
         wall_line_xi: np.ndarray,
         wall_line_zi: np.ndarray,
-        batch_index: Optional[int] = None,
+        batch_index: int | None = None,
         clevels: int = 20,
         scale: float = 0.75,
         close: bool = True,
@@ -228,12 +228,12 @@ class ContactAngleBinning:
     def save_logfile(
         self,
         particles_number: float,
-        param_strings: List[str],
+        param_strings: list[str],
         theta: float,
         xi_cc: np.ndarray,
         zi_cc: np.ndarray,
         rho_cc: np.ndarray,
-        batch_index: Optional[int] = None,
+        batch_index: int | None = None,
     ) -> None:
         """Write fitted parameters and density field CSV for a batch.
 
@@ -277,10 +277,10 @@ class ContactAngleBinning:
 
     def process_batch(
         self,
-        frame_list: List[int],
-        model: Optional[Any] = None,
-        batch_index: Optional[int] = None,
-    ) -> Tuple[float, Any]:
+        frame_list: list[int],
+        model: Any | None = None,
+        batch_index: int | None = None,
+    ) -> tuple[float, Any]:
         """Process a batch of frames and compute contact angle.
 
         Parameters
@@ -368,7 +368,7 @@ class ContactAngleBinning:
 
     def process_all_batches(
         self, batch_size: int = 100, save_angles: bool = True
-    ) -> List[float]:
+    ) -> list[float]:
         """Process all frames in batches returning list of contact angles.
 
         Parameters

@@ -1,5 +1,4 @@
 import os
-from typing import Dict, List, Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,8 +11,8 @@ from wetting_angle_kit.visualization_angles.base_trajectory_analyzer import (
 class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
     def __init__(
         self,
-        directories: List[str],
-        time_steps: Optional[Dict[str, float]] = None,
+        directories: list[str],
+        time_steps: dict[str, float] | None = None,
         time_unit: str = "ps",
     ) -> None:
         """
@@ -110,7 +109,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         area = 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
         return area
 
-    def mean_surface_frame(self, surfaces: List[np.ndarray]) -> float:
+    def mean_surface_frame(self, surfaces: list[np.ndarray]) -> float:
         """
         Calculate the mean surface area for a given surfaces file.
 
@@ -141,7 +140,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
     def plot_median_alfas_evolution(
         self,
         save_path: str,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
         plot_std: bool = True,
     ) -> None:
         """Plot evolution of median angle (Alfas) with standard deviation.
@@ -198,7 +197,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
     def plot_mean_alfas_evolution(
         self,
         save_path: str,
-        labels: Optional[Dict[str, str]] = None,
+        labels: dict[str, str] | None = None,
     ) -> None:
         """Plot evolution of mean angle (Alfas) with standard deviation."""
         plot_labels = (

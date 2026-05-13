@@ -30,7 +30,7 @@ degrees.
 """
 
 import warnings
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -47,7 +47,7 @@ class SurfaceModel:
         Initial guess for model parameters. Interpretation is left to subclasses.
     """
 
-    def __init__(self, initial_params: Optional[List[float]] = None) -> None:
+    def __init__(self, initial_params: list[float] | None = None) -> None:
         """Store initial parameters and prepare covariance placeholder."""
         self.params = initial_params
         self.covariance = None
@@ -135,7 +135,7 @@ class HyperbolicTangentModel(SurfaceModel):
     #: Default initial guess for the seven fit parameters (water at RT, Å units).
     DEFAULT_INITIAL_PARAMS = [1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0]
 
-    def __init__(self, initial_params: Optional[List[float]] = None) -> None:
+    def __init__(self, initial_params: list[float] | None = None) -> None:
         if initial_params is None:
             initial_params = list(self.DEFAULT_INITIAL_PARAMS)
         super().__init__(initial_params)
@@ -229,7 +229,7 @@ class HyperbolicTangentModel(SurfaceModel):
         tol = 1e-6
         at_bound = []
         for name, value, lo, hi in zip(
-            param_names, self.params, self._PARAM_LOWER, self._PARAM_UPPER
+            param_names, self.params, self._PARAM_LOWER, self._PARAM_UPPER, strict=False
         ):
             if np.isfinite(lo) and abs(value - lo) < tol * max(1.0, abs(lo)):
                 at_bound.append(f"{name}={value:.3g} at lower bound {lo}")
@@ -271,7 +271,7 @@ class HyperbolicTangentModel(SurfaceModel):
 
     def compute_isoline(
         self, scale_factor: float = 0.95
-    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Compute an iso-surface circle and wall line approximation.
 
         Parameters
@@ -308,7 +308,7 @@ class HyperbolicTangentModel(SurfaceModel):
         circle_zi = Zcenter + R * np.sin(alpha)
 
         wall_line_xi = np.linspace(Xicenter, xi_wall, 100)
-        wall_line_zi = np.ones((len(wall_line_xi))) * Zwall
+        wall_line_zi = np.ones(len(wall_line_xi)) * Zwall
 
         return circle_xi, circle_zi, wall_line_xi, wall_line_zi
 
@@ -343,7 +343,7 @@ class HyperbolicTangentModel(SurfaceModel):
         theta = (np.pi / 2 - np.arctan((zita_wall - zita_c) / xi_cross)) * 180 / np.pi
         return theta
 
-    def get_parameters(self) -> Dict[str, float]:
+    def get_parameters(self) -> dict[str, float]:
         """Return a mapping of parameter names to fitted values.
 
         Returns
@@ -355,9 +355,11 @@ class HyperbolicTangentModel(SurfaceModel):
             raise ValueError("Model must be fitted before getting parameters")
 
         param_names = ["rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2"]
-        return {name: value for name, value in zip(param_names, self.params)}
+        return {
+            name: value for name, value in zip(param_names, self.params, strict=False)
+        }
 
-    def get_parameter_strings(self) -> List[str]:
+    def get_parameter_strings(self) -> list[str]:
         """Return formatted parameter strings suitable for logging.
 
         Returns
@@ -369,4 +371,7 @@ class HyperbolicTangentModel(SurfaceModel):
             raise ValueError("Model must be fitted before getting parameter strings")
 
         param_names = ["rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2"]
-        return [f"{name}:{value}\n" for name, value in zip(param_names, self.params)]
+        return [
+            f"{name}:{value}\n"
+            for name, value in zip(param_names, self.params, strict=False)
+        ]

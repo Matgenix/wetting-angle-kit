@@ -1,4 +1,5 @@
-from typing import Any, List, Optional, Sequence
+from collections.abc import Sequence
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -46,13 +47,13 @@ class DropletSlicedPlotter:
     def plot_surface_points(
         self,
         oxygen_position: np.ndarray,
-        surface_data: List[np.ndarray],
+        surface_data: list[np.ndarray],
         popt: Sequence[float],
-        wall_coords: Optional[np.ndarray] = None,
-        output_filename: Optional[Any] = None,
-        y_com: Optional[float] = None,
-        pbc_y: Optional[float] = None,
-        alpha: Optional[float] = None,
+        wall_coords: np.ndarray | None = None,
+        output_filename: Any | None = None,
+        y_com: float | None = None,
+        pbc_y: float | None = None,
+        alpha: float | None = None,
     ) -> None:
         """Render slice figure and save to file.
 
@@ -314,12 +315,12 @@ class DropletSlicedPlotterPlotly:
     def plot_surface_points(
         self,
         oxygen_position: np.ndarray,
-        surface_data: List[np.ndarray],
+        surface_data: list[np.ndarray],
         popt: Sequence[float],
         wall_coords: np.ndarray,
-        alpha: Optional[float] = None,
-        y_com: Optional[float] = None,
-        pbc_y: Optional[float] = None,
+        alpha: float | None = None,
+        y_com: float | None = None,
+        pbc_y: float | None = None,
         show_water: bool = True,
         show_surface: bool = True,
         show_circle: bool = True,

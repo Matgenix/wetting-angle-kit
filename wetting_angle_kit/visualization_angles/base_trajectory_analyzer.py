@@ -1,7 +1,7 @@
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTrajectoryAnalyzer(ABC):
-    def __init__(self, directories: List[str], time_unit: str = "ps") -> None:
+    def __init__(self, directories: list[str], time_unit: str = "ps") -> None:
         """
         Initialize the analyzer with a list of directory paths.
 
@@ -22,7 +22,7 @@ class BaseTrajectoryAnalyzer(ABC):
             Time unit for the x-axis (e.g., "ps", "ns", "fs").
         """
         self.directories = directories
-        self.data: Dict[str, Any] = {}
+        self.data: dict[str, Any] = {}
         self.time_unit = time_unit
         self._initialize_data_structure()
 
@@ -82,7 +82,7 @@ class BaseTrajectoryAnalyzer(ABC):
         """
         pass
 
-    def compute_statistics(self, directory: str) -> Tuple[float, float, float]:
+    def compute_statistics(self, directory: str) -> tuple[float, float, float]:
         """
         Compute mean surface area, mean angle, and standard error.
 
@@ -152,9 +152,9 @@ class BaseTrajectoryAnalyzer(ABC):
 
     def plot_mean_angle_vs_surface(
         self,
-        labels: Optional[List[str]] = None,
-        color: Optional[str] = None,
-        save_path: Optional[str] = None,
+        labels: list[str] | None = None,
+        color: str | None = None,
+        save_path: str | None = None,
     ) -> None:
         """
         Generate a plot comparing mean angle vs surface
@@ -209,10 +209,10 @@ class BaseTrajectoryAnalyzer(ABC):
         colors = [color] * len(self.directories)
         # Collect data for plotting
         xvals, yvals = [], []
-        for d, label, color in zip(self.directories, labels, colors):
+        for d, label, color in zip(self.directories, labels, colors, strict=False):
             # Read data from the analysis output file
             output_file = f"{d}/output_stats.txt"
-            with open(output_file, "r") as f:
+            with open(output_file) as f:
                 lines = f.readlines()
                 mean_surface_area = float(lines[2].split(": ")[1].strip())
                 mean_contact_angle = float(

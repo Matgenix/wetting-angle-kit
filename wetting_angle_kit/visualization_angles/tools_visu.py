@@ -1,11 +1,11 @@
-from typing import Any, Optional, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 
-def plot_surface_file(file_path: str) -> Tuple[np.ndarray, np.ndarray]:
+def plot_surface_file(file_path: str) -> tuple[np.ndarray, np.ndarray]:
     """Return x,y columns from surface text file.
 
     Parameters
@@ -36,7 +36,7 @@ def plot_slice(x: np.ndarray, y: np.ndarray) -> None:
     plt.show()
 
 
-def read_surface_file(file_path: str) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def read_surface_file(file_path: str) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Load surface file returning x,y,z arrays (z zeros if absent).
 
     Parameters
@@ -106,9 +106,9 @@ def visualize_surface_with_points(surface_file: str, points: np.ndarray) -> None
 
 def plot_liquid_particles(
     positions: np.ndarray,
-    ax: Optional[Any] = None,
+    ax: Any | None = None,
     color: str = "tab:blue",
-    subsample: Optional[int] = None,
+    subsample: int | None = None,
 ) -> Any:
     """Scatter plot 3D particle positions with optional subsampling.
 

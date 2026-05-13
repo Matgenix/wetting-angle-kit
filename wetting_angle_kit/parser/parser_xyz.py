@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
 
@@ -21,7 +21,7 @@ class XYZParser(BaseParser):
         self.filepath = filepath
         self.frames = self.load_xyz_file()
 
-    def load_xyz_file(self) -> List[Dict[str, Any]]:
+    def load_xyz_file(self) -> list[dict[str, Any]]:
         """Load all frames from the XYZ file into memory.
 
         Returns
@@ -30,7 +30,7 @@ class XYZParser(BaseParser):
             Each entry has keys: ``symbols``, ``positions``, ``lattice_matrix``.
         """
         frames = []
-        with open(self.filepath, "r") as file:
+        with open(self.filepath) as file:
             lines = file.readlines()
         frame_start = 0
         while frame_start < len(lines):
@@ -57,9 +57,7 @@ class XYZParser(BaseParser):
             frame_start += num_atoms
         return frames
 
-    def parse(
-        self, frame_index: int, indices: Optional[np.ndarray] = None
-    ) -> np.ndarray:
+    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Return Cartesian coordinates for selected atoms in a frame.
 
         Parameters
@@ -81,7 +79,7 @@ class XYZParser(BaseParser):
         return frame["positions"]
 
     def parse_liquid_particles(
-        self, liquid_particle_types: List[str], frame_index: int
+        self, liquid_particle_types: list[str], frame_index: int
     ) -> np.ndarray:
         """Return positions of liquid particles (filter by symbols).
 
@@ -190,17 +188,17 @@ class XYZWaterMoleculeFinder:
         self.oh_cutoff = oh_cutoff
         self.frames = self.load_xyz_file()
 
-    def load_xyz_file(self) -> List[Dict[str, Any]]:
+    def load_xyz_file(self) -> list[dict[str, Any]]:
         """Load frames including the lattice matrix for box-size queries."""
         frames = []
-        with open(self.filepath, "r") as file:
+        with open(self.filepath) as file:
             lines = file.readlines()
         frame_start = 0
         while frame_start < len(lines):
             num_atoms = int(lines[frame_start].strip())
             frame_start += 1
             comment_line = lines[frame_start].strip()
-            lattice_matrix: Optional[np.ndarray]
+            lattice_matrix: np.ndarray | None
             if 'Lattice="' in comment_line:
                 lattice_info = comment_line.split('Lattice="')[1].split('"')[0]
                 lattice_vectors = np.array(lattice_info.split(), dtype=float)
@@ -224,7 +222,7 @@ class XYZWaterMoleculeFinder:
             frame_start += num_atoms
         return frames
 
-    def parse(self, liquid_particle_types: List[str], frame_index: int) -> np.ndarray:
+    def parse(self, liquid_particle_types: list[str], frame_index: int) -> np.ndarray:
         """Return liquid particle coordinates filtering wall types.
 
         Parameters

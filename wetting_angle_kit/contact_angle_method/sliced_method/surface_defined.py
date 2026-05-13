@@ -22,8 +22,6 @@ For a single droplet slice the interface is recovered in two steps:
 All lengths are expected in Ångströms; angles are in degrees.
 """
 
-from typing import List, Tuple
-
 import numpy as np
 from scipy.optimize import curve_fit
 
@@ -133,7 +131,7 @@ class SurfaceDefinition:
         self,
         z_data: np.ndarray,
         density: np.ndarray,
-        param_bounds: Tuple[List[float], List[float]],
+        param_bounds: tuple[list[float], list[float]],
     ) -> float:
         """Fit the profile and return estimated interface position.
 
@@ -155,7 +153,7 @@ class SurfaceDefinition:
         zd, d, h = popt  # noqa: F841 - d, h retained for clarity if extended later
         return zd
 
-    def analyze_lines(self) -> Tuple[List[List[float]], List[List[float]]]:
+    def analyze_lines(self) -> tuple[list[list[float]], list[list[float]]]:
         """Sample density along radial lines and fit interface positions.
 
         Returns

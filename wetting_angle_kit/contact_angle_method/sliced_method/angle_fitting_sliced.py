@@ -1,4 +1,4 @@
-from typing import List, Optional, Sequence, Tuple
+from collections.abc import Sequence
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -51,9 +51,9 @@ class ContactAngleSliced:
         max_dist: float,
         liquid_geom_center: np.ndarray,
         droplet_geometry: str = "cylinder_y",
-        delta_gamma: Optional[float] = None,
-        width_cylinder: Optional[float] = None,
-        delta_cylinder: Optional[float] = None,
+        delta_gamma: float | None = None,
+        width_cylinder: float | None = None,
+        delta_cylinder: float | None = None,
         surface_filter_offset: float = 2.0,
         points_per_angstrom: float = 1.0,
         density_sigma: float = SurfaceDefinition.DEFAULT_DENSITY_SIGMA,
@@ -93,7 +93,7 @@ class ContactAngleSliced:
         if self.droplet_geometry == "spherical" and delta_gamma is None:
             raise ValueError("delta_gamma must be provided for spherical analysis")
 
-    def calculate_y_axis_list(self) -> List[float]:
+    def calculate_y_axis_list(self) -> list[float]:
         """Return axis position list for the chosen droplet geometry.
 
         For cylindrical droplets the slice positions sweep from 0 to
@@ -116,7 +116,7 @@ class ContactAngleSliced:
             return [self.liquid_geom_center[1]] * int(180 / self.delta_gamma)
         return []
 
-    def calculate_gammas_list(self) -> List[float]:
+    def calculate_gammas_list(self) -> list[float]:
         """Return gamma inclination list for the chosen droplet geometry."""
         if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
             assert self.width_cylinder is not None and self.delta_cylinder is not None
@@ -139,7 +139,7 @@ class ContactAngleSliced:
             )
         return []
 
-    def surface_definition(self, v_gamma: float) -> Tuple[np.ndarray, np.ndarray]:
+    def surface_definition(self, v_gamma: float) -> tuple[np.ndarray, np.ndarray]:
         """Sample interface lines for a given gamma.
 
         Parameters
@@ -214,7 +214,7 @@ class ContactAngleSliced:
         popt[2] = float(abs(popt[2]))
         return popt
 
-    def find_intersection(self, popt: np.ndarray, y_line: float) -> Optional[float]:
+    def find_intersection(self, popt: np.ndarray, y_line: float) -> float | None:
         """Compute contact angle from circle intersection with a baseline.
 
         Parameters
@@ -239,7 +239,7 @@ class ContactAngleSliced:
 
     def circle_equation(
         self,
-        xy_data: Tuple[np.ndarray, np.ndarray],
+        xy_data: tuple[np.ndarray, np.ndarray],
         x_center: float,
         z_center: float,
         radius: float,
@@ -267,7 +267,7 @@ class ContactAngleSliced:
 
     def predict_contact_angle(
         self,
-    ) -> Tuple[List[float], List[np.ndarray], List[np.ndarray]]:
+    ) -> tuple[list[float], list[np.ndarray], list[np.ndarray]]:
         """Run slicing loop and return per-slice contact angles and geometry.
 
         Only slices for which the full pipeline (surface detection, circle

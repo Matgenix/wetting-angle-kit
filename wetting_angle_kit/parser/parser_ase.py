@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, List
+from typing import Any
 
 import numpy as np
 
@@ -52,7 +52,7 @@ class AseParser(BaseParser):
         return frame.positions
 
     def parse_liquid_particles(
-        self, liquid_particle_types: List[str], frame_index: int
+        self, liquid_particle_types: list[str], frame_index: int
     ) -> np.ndarray:
         """Return liquid atom coordinates filtering by atomic symbol list.
 
@@ -115,7 +115,7 @@ class AseWaterMoleculeFinder:
     def __init__(
         self,
         filepath: str,
-        particle_type_wall: List[str],
+        particle_type_wall: list[str],
         oxygen_type: str = "O",
         hydrogen_type: str = "H",
         oh_cutoff: float = 1.2,
@@ -201,7 +201,7 @@ class AseWallParser(BaseParser):
         Symbols representing liquid particles to exclude.
     """
 
-    def __init__(self, filepath: str, liquid_particle_types: List[str]):
+    def __init__(self, filepath: str, liquid_particle_types: list[str]):
         try:
             from ase.io import read
         except ImportError as e:  # pragma: no cover

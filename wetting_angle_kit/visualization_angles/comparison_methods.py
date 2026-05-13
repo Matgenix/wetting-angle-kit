@@ -1,5 +1,5 @@
 import os
-from typing import Any, List, Optional, Tuple
+from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -16,7 +16,7 @@ class MethodComparison:
     """
 
     def __init__(
-        self, analyzers: List[Any], method_names: Optional[List[str]] = None
+        self, analyzers: list[Any], method_names: list[str] | None = None
     ) -> None:
         self.analyzers = analyzers
         self.method_names = method_names or [a.get_method_name() for a in analyzers]
@@ -41,7 +41,7 @@ class MethodComparison:
 
     def _read_analysis_output(
         self, analyzer: Any, directory: str
-    ) -> Tuple[float, float]:
+    ) -> tuple[float, float]:
         """Return mean surface area and angle parsed from stats file.
         Parameters
         ----------
@@ -55,7 +55,7 @@ class MethodComparison:
             (mean_surface_area, mean_contact_angle).
         """
         output_file = f"{directory}/output_stats.txt"
-        with open(output_file, "r") as f:
+        with open(output_file) as f:
             lines = f.readlines()
             mean_surface_area = float(lines[2].split(": ")[1].strip())
             mean_contact_angle = float(lines[3].split(": ")[1].strip().replace("°", ""))
@@ -63,8 +63,8 @@ class MethodComparison:
 
     def plot_side_by_side_comparison(
         self,
-        save_path: Optional[str] = None,
-        figsize: Tuple[int, int] = (14, 5),
+        save_path: str | None = None,
+        figsize: tuple[int, int] = (14, 5),
         color: str = "purple",
     ) -> None:
         """
@@ -88,7 +88,9 @@ class MethodComparison:
         if len(self.analyzers) == 1:
             axes = [axes]
 
-        for ax, analyzer, method_name in zip(axes, self.analyzers, self.method_names):
+        for ax, analyzer, method_name in zip(
+            axes, self.analyzers, self.method_names, strict=False
+        ):
             # gather one point per directory
             xvals, yvals = [], []
             for directory in analyzer.directories:
@@ -139,8 +141,8 @@ class MethodComparison:
 
     def plot_overlay_comparison(
         self,
-        save_path: Optional[str] = None,
-        figsize: Tuple[int, int] = (8, 6),
+        save_path: str | None = None,
+        figsize: tuple[int, int] = (8, 6),
         color: str = "purple",
     ) -> None:
         """
@@ -164,7 +166,9 @@ class MethodComparison:
         fig, ax = plt.subplots(figsize=figsize)
         all_yvals = []
 
-        for analyzer, method_name in zip(self.analyzers, self.method_names):
+        for analyzer, method_name in zip(
+            self.analyzers, self.method_names, strict=False
+        ):
             xvals, yvals = [], []
 
             for directory in analyzer.directories:
@@ -216,7 +220,9 @@ class MethodComparison:
         print("=" * 70)
         print("METHOD COMPARISON STATISTICS")
         print("=" * 70)
-        for method_name, analyzer in zip(self.method_names, self.analyzers):
+        for method_name, analyzer in zip(
+            self.method_names, self.analyzers, strict=False
+        ):
             print(f"\n{method_name}:")
             print("-" * 70)
             all_angles = []

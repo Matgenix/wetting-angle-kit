@@ -2,7 +2,6 @@ import glob
 import logging
 import os
 import re
-from typing import Dict, List, Optional
 
 import numpy as np
 
@@ -19,9 +18,9 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
 
     def __init__(
         self,
-        directories: List[str],
+        directories: list[str],
         split_factor: int = 1,
-        time_steps: Optional[Dict[str, float]] = None,
+        time_steps: dict[str, float] | None = None,
         time_unit: str = "ps",
     ) -> None:
         """
@@ -109,7 +108,7 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             )
             # Read all batch log files for this directory
             for log_file in self.data[directory]["log_files"]:
-                with open(log_file, "r") as f:
+                with open(log_file) as f:
                     text = f.read()
 
                 # Extract R_eq
