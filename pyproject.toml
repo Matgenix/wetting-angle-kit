@@ -2,11 +2,12 @@
 name = "wetting_angle_kit"
 description = "A Python library to parse MD trajectories from LAMMPS and ASE and measure the contact through different methods"
 authors = [
-    { name = "Gabriel", email = "gabriel.taillandier@matgenix.com" }
+    { name = "Gabriel", email = "gabriel.taillandier@matgenix.com" },
+    { name = "Matgenix", email = "info@matgenix.com" },
 ]
 license = "MIT"
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dynamic = ["version"]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -29,7 +30,7 @@ dev = [
     "black>=23.0.0",
     "isort>=5.0.0",
     "mypy>=1.0.0",
-    "ruff>=0.0.0",
+    "ruff>=0.4.6",
     "pre-commit",
 ]
 doc = [
@@ -48,10 +49,10 @@ viz = [
     "ipython>=8.0.0",
 ]
 ase = ["ase>=3.23.0"]
-ovito = ["ovito"]
+ovito = ["ovito>=3.12.0"]
 # Convenience extra: installs both trajectory backends and the optional
 # visualization helpers. Use ``[all,dev,doc]`` for a full developer setup.
-all = ["ase>=3.23.0", "ovito", "ipython>=8.0.0"]
+all = ["ase>=3.23.0", "ovito>=3.12.0", "ipython>=8.0.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/Matgenix/wetting_angle_kit"
@@ -59,7 +60,7 @@ all = ["ase>=3.23.0", "ovito", "ipython>=8.0.0"]
 "Documentation" = "https://matgenix.github.io/wetting-angle-kit"
 
 [build-system]
-requires = ["setuptools>=61.0", "versioningit ~= 1.0", "wheel"]
+requires = ["setuptools>=77", "versioningit ~= 1.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -78,15 +79,19 @@ file = "wetting_angle_kit/_version.py"
 
 [tool.black]
 line-length = 88
-target-version = ["py39"]
-include = '\\.pyi?$'
+target-version = ["py310"]
+include = '\.pyi?$'
 
 [tool.isort]
 profile = "black"
 multi_line_output = 3
 
 [tool.mypy]
-python_version = "3.9"
+python_version = "3.10"
+# NumPy reductions (np.mean, etc.) and ASE attributes (frame.positions) are
+# typed as Any in their stubs, so functions returning them legitimately trip
+# no-any-return.  Re-enable if/when those returns are wrapped in np.asarray()
+# or cast(np.ndarray, ...).
 warn_return_any = false
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -110,7 +115,7 @@ testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
-addopts = "--verbose --durations=10"
+addopts = "--verbose --durations=10 --strict-markers --strict-config"
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests that require trajectory fixtures and run end-to-end",
@@ -119,8 +124,8 @@ markers = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
+target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "B", "I"]
+select = ["E", "F", "B", "I", "UP"]
 ignore = []
