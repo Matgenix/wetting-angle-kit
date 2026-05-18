@@ -103,15 +103,15 @@ class BaseParser(ABC):
         return self.frame_count()
 
     def box_size_x(self, frame_index: int) -> float:  # pragma: no cover - default
-        """Return the box x-length for a frame. (override if available)."""
+        """Return the box x-length for a frame (override if available)."""
         raise NotImplementedError("box_size_x not implemented for this parser.")
 
     def box_size_y(self, frame_index: int) -> float:  # pragma: no cover - default
-        """Return the box y-length for a frame. (override if available)."""
+        """Return the box y-length for a frame (override if available)."""
         raise NotImplementedError("box_size_y not implemented for this parser.")
 
     def box_length_max(self, frame_index: int) -> float:  # pragma: no cover - default
-        """Return the maximum box length for a frame. (override if available)."""
+        """Return the maximum box length for a frame (override if available)."""
         raise NotImplementedError("box_length_max not implemented for this parser.")
 
     def get_profile_coordinates(

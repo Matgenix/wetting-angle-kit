@@ -70,6 +70,25 @@ class ContactAngleBinning:
         output_dir: str = "output_analysis/",
         plot_graphs: bool = True,
     ) -> None:
+        """
+        Parameters
+        ----------
+        parser : BaseParser
+            Trajectory parser providing coordinates and box dimensions.
+        atom_indices : Any
+            Indices (or IDs) of liquid atoms to include in the density field.
+        droplet_geometry : str, default "spherical"
+            One of ``"spherical"``, ``"cylinder_x"``, ``"cylinder_y"``.
+        width_cylinder : float, optional
+            Box length along the cylinder axis; inferred from the parser if None.
+        binning_params : dict, optional
+            Grid definition with keys ``xi_0``, ``xi_f``, ``nbins_xi``,
+            ``zi_0``, ``zi_f``, ``nbins_zi``. A heuristic default is used if None.
+        output_dir : str, default "output_analysis/"
+            Directory for log files and density field CSVs.
+        plot_graphs : bool, default True
+            Whether to generate density contour plots.
+        """
         validate_droplet_geometry(droplet_geometry)
         self.parser = parser
         self.atom_indices = atom_indices

@@ -23,6 +23,7 @@ class BaseContactAngleAnalyzer(ABC):
 
     @abstractmethod
     def get_method_name(self) -> str:
+        """Return the method name identifier."""
         pass
 
     def summary(self) -> dict[str, float]:
@@ -36,10 +37,7 @@ class BaseContactAngleAnalyzer(ABC):
 
 
 class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
-    """
-    This class is a wrapper around the ContactAngleSlicedParallel class.
-    It is used to analyze the contact angle of a liquid on a solid surface.
-    """
+    """BaseContactAngleAnalyzer implementation using the sliced parallel method."""
 
     def __init__(
         self,
@@ -47,6 +45,16 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
         output_dir: str,
         **kwargs: Any,
     ):
+        """
+        Parameters
+        ----------
+        parser : BaseParser
+            Trajectory parser instance.
+        output_dir : str
+            Directory for output files.
+        **kwargs
+            Forwarded to ContactAngleSlicedParallel.
+        """
         self.parser = parser
         self.output_dir = output_dir
         self._processor = ContactAngleSlicedParallel(
@@ -56,6 +64,20 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
     def analyze(
         self, frame_range: list[int] | None = None, **kwargs: Any
     ) -> dict[str, Any]:
+        """Run the sliced parallel analysis and return statistics.
+
+        Parameters
+        ----------
+        frame_range : list[int], optional
+            Frame indices to process. If None, all frames are used.
+        **kwargs
+            Forwarded to process_frames_parallel.
+
+        Returns
+        -------
+        dict
+            Keys: mean_angle, std_angle, angles, frames_analyzed, method_metadata.
+        """
         if frame_range is None:
             frame_range = list(range(self.parser.frame_count()))
 
@@ -73,16 +95,24 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
         }
 
     def get_method_name(self) -> str:
+        """Return "sliced_parallel"."""
         return "sliced_parallel"
 
 
 class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):
-    """
-    This class is a wrapper around the ContactAngleBinning class.
-    It is used to analyze the contact angle of a liquid on a solid surface.
-    """
+    """BaseContactAngleAnalyzer implementation using the density-binning method."""
 
     def __init__(self, parser: Any, output_dir: str, **kwargs: Any) -> None:
+        """
+        Parameters
+        ----------
+        parser : BaseParser
+            Trajectory parser instance.
+        output_dir : str
+            Directory for output files.
+        **kwargs
+            Forwarded to ContactAngleBinning.
+        """
         self.parser = parser
         self.output_dir = output_dir
         self._analyzer = ContactAngleBinning(
@@ -95,6 +125,23 @@ class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):
         split_factor: int | None = None,
         **kwargs: Any,
     ) -> dict[str, Any]:
+        """Run the binning analysis and return statistics.
+
+        Parameters
+        ----------
+        frame_range : list[int], optional
+            Frame indices to process. If None, all frames are used.
+        split_factor : int, optional
+            If given, split frame_range into sub-batches of this size and
+            compute one angle per batch; if None, all frames form a single batch.
+        **kwargs
+            Reserved for future use.
+
+        Returns
+        -------
+        dict
+            Keys: mean_angle, std_angle, angles, frames_analyzed, method_metadata.
+        """
         if frame_range is None:
             frame_range = list(range(self.parser.frame_count()))
         if split_factor is None:
@@ -121,4 +168,5 @@ class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):
         }
 
     def get_method_name(self) -> str:
+        """Return "binning_density"."""
         return "binning_density"

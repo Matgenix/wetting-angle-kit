@@ -8,16 +8,16 @@ from wetting_angle_kit.parsers.base import BaseParser
 
 
 class XYZParser(BaseParser):
-    """XYZ trajectory parser.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to extended XYZ trajectory containing per-frame atom count, comment line
-        with lattice vectors, then atom symbol + coordinates.
-    """
+    """Extended XYZ trajectory parser."""
 
     def __init__(self, filepath: str):
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to extended XYZ trajectory containing per-frame atom count,
+            comment line with lattice vectors, then atom symbol + coordinates.
+        """
         self.filepath = filepath
         self.frames = self.load_xyz_file()
 
@@ -158,19 +158,6 @@ class XYZWaterFinder:
     This is a standalone helper (not a :class:`BaseParser`) because its
     ``parse`` signature filters by atomic symbol rather than frame index,
     which is incompatible with the parser ABC contract.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to XYZ file.
-    particle_type_wall : sequence[str]
-        Symbols that represent wall (excluded) particles.
-    oxygen_type : str, default "O"
-        Oxygen atom symbol.
-    hydrogen_type : str, default "H"
-        Hydrogen atom symbol.
-    oh_cutoff : float, default 1.2
-        Distance cutoff (Å) for O-H bonding to identify water molecules.
     """
 
     def __init__(
@@ -181,6 +168,20 @@ class XYZWaterFinder:
         hydrogen_type: str = "H",
         oh_cutoff: float = 1.2,
     ):
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to XYZ file.
+        particle_type_wall : sequence[str]
+            Symbols that represent wall (excluded) particles.
+        oxygen_type : str, default "O"
+            Oxygen atom symbol.
+        hydrogen_type : str, default "H"
+            Hydrogen atom symbol.
+        oh_cutoff : float, default 1.2
+            Distance cutoff (Å) for O-H bonding to identify water molecules.
+        """
         self.filepath = filepath
         self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type

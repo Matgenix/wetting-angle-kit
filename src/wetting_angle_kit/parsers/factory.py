@@ -12,7 +12,24 @@ def get_water_finder(
     oxygen_type: Any,
     hydrogen_type: Any,
 ) -> Any:
-    """Factory to select the correct water oxygen finder based on file extension."""
+    """Return the correct water oxygen finder for the given trajectory file.
+
+    Parameters
+    ----------
+    filename : str
+        Path to trajectory file; extension determines the finder class.
+    particle_type_wall : Any
+        Wall particle type identifiers forwarded to the finder constructor.
+    oxygen_type : Any
+        Oxygen type identifier (symbol or integer depending on format).
+    hydrogen_type : Any
+        Hydrogen type identifier (symbol or integer depending on format).
+
+    Returns
+    -------
+    LammpsDumpWaterFinder | AseWaterFinder | XYZWaterFinder
+        Finder instance matching the file format.
+    """
     ext = os.path.splitext(filename)[-1].lower()
 
     if ext == ".lammpstrj":

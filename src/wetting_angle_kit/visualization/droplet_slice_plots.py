@@ -17,21 +17,22 @@ plt.style.use("seaborn-v0_8-whitegrid")
 
 
 class DropletSlicePlotter:
-    """Plot droplet slice: surface contours, fitted circle and tangent line.
-
-    Parameters
-    ----------
-    center : bool, default True
-        If True recentre z coordinates by subtracting mean wall z.
-    show_wall : bool, default True
-        Whether to draw wall particles.
-    molecule_view : bool, default True
-        If True draw fake hydrogens around each oxygen (schematic water view).
-    """
+    """Matplotlib-based plotter for droplet slices: surface contours,
+    fitted circle and tangent line."""
 
     def __init__(
         self, center: bool = True, show_wall: bool = True, molecule_view: bool = True
     ):
+        """
+        Parameters
+        ----------
+        center : bool, default True
+            If True recentre z coordinates by subtracting mean wall z.
+        show_wall : bool, default True
+            Whether to draw wall particles.
+        molecule_view : bool, default True
+            If True draw fake hydrogens around each oxygen (schematic water view).
+        """
         self.center = center
         self.show_wall = show_wall
         self.molecule_view = molecule_view
@@ -311,6 +312,12 @@ class DropletSlicePlotlyPlotter:
     """Interactive Plotly slice visualization with toggleable layers."""
 
     def __init__(self, center: bool = True):
+        """
+        Parameters
+        ----------
+        center : bool, default True
+            If True recentre z coordinates by subtracting mean wall z.
+        """
         self.center = center
         # Colors
         self.oxygen_color = "#d62828"
@@ -540,6 +547,30 @@ class ContactAngleAnimator:
         max_dist: int = 100,
         width_cylinder: int = 21,
     ):
+        """
+        Parameters
+        ----------
+        filename : str
+            Path to LAMMPS dump trajectory file.
+        particle_type_wall : set
+            LAMMPS particle type IDs for wall atoms.
+        oxygen_type : int
+            LAMMPS particle type ID for oxygen atoms.
+        hydrogen_type : int
+            LAMMPS particle type ID for hydrogen atoms.
+        liquid_particle_types : set
+            LAMMPS particle type IDs for all liquid atoms (used to mask wall parser).
+        n_frames : int, default 10
+            Number of frames to include in the animation.
+        droplet_geometry : str, default "cylinder_y"
+            Droplet geometry passed to ContactAngleSliced.
+        delta_cylinder : int, default 5
+            Step size along the slicing axis (Å).
+        max_dist : int, default 100
+            Maximum radial distance for line sampling (Å).
+        width_cylinder : int, default 21
+            Box extent along the cylinder axis (Å).
+        """
         self.filename = filename
         self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type

@@ -6,18 +6,20 @@ import numpy as np
 
 
 class MethodComparison:
-    """Utility to compare statistics from multiple trajectory analyzers.
-    Parameters
-    ----------
-    analyzers : list
-        Analyzer instances exposing ``directories`` and required API methods.
-    method_names : list[str], optional
-        Custom display names. If None, uses each analyzer's ``get_method_name``.
-    """
+    """Utility to compare contact angle statistics
+    from multiple trajectory analyzers."""
 
     def __init__(
         self, analyzers: list[Any], method_names: list[str] | None = None
     ) -> None:
+        """
+        Parameters
+        ----------
+        analyzers : list
+            Analyzer instances exposing ``directories`` and required API methods.
+        method_names : list[str], optional
+            Custom display names. If None, uses each analyzer's ``get_method_name``.
+        """
         self.analyzers = analyzers
         self.method_names = method_names or [a.get_method_name() for a in analyzers]
         for analyzer in self.analyzers:
@@ -216,7 +218,7 @@ class MethodComparison:
         plt.close()
 
     def compare_statistics(self) -> None:
-        """Print summary statistics aggregated across methods and directories."""
+        """Print per-directory and overall mean/std statistics for each method."""
         print("=" * 70)
         print("METHOD COMPARISON STATISTICS")
         print("=" * 70)

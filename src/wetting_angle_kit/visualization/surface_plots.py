@@ -25,7 +25,7 @@ def plot_surface_file(file_path: str) -> tuple[np.ndarray, np.ndarray]:
 
 
 def plot_slice(x: np.ndarray, y: np.ndarray) -> None:
-    """Plot 2D slice given x,y arrays."""
+    """Plot a 2D surface contour line from x and y coordinate arrays."""
     plt.figure()
     plt.plot(x, y, label="Surface Slice")
     plt.xlabel("X-axis")

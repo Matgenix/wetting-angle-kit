@@ -49,23 +49,6 @@ class ContactAngleSlicedParallel:
     Frames are grouped into batches to mitigate parser pickling issues and to
     amortize object construction cost. Each batch is processed in a separate
     process using ``ProcessPoolExecutor``.
-
-    Parameters
-    ----------
-    filename : str
-        Path to trajectory file.
-    output_dir : str
-        Directory to write per-frame results.
-    droplet_geometry : str, default "spherical"
-        Geometric model identifier (e.g. "cylinder_x", "cylinder_y", "spherical").
-    atom_indices : ndarray, optional
-        Indices of liquid particles (subset). Empty array selects none.
-    delta_gamma : float, optional
-        Additional gamma constraint / filtering distance if used by sliced method.
-    delta_cylinder : float, optional
-        Y (or X) half-width of selection cylinder in cylindrical modes.
-    points_per_angstrom : float, default 1.0
-        Sampling density along each radial ray for the surface fit.
     """
 
     def __init__(
@@ -78,6 +61,24 @@ class ContactAngleSlicedParallel:
         delta_cylinder: float | None = None,
         points_per_angstrom: float = 1.0,
     ):
+        """
+        Parameters
+        ----------
+        filename : str
+            Path to trajectory file.
+        output_dir : str
+            Directory to write per-frame results.
+        droplet_geometry : str, default "spherical"
+            Geometric model identifier (e.g. "cylinder_x", "cylinder_y", "spherical").
+        atom_indices : ndarray, optional
+            Indices of liquid particles (subset). Empty array selects none.
+        delta_gamma : float, optional
+            Additional gamma constraint / filtering distance if used by sliced method.
+        delta_cylinder : float, optional
+            Y (or X) half-width of selection cylinder in cylindrical modes.
+        points_per_angstrom : float, default 1.0
+            Sampling density along each radial ray for the surface fit.
+        """
         self.filename = filename
         self.output_dir = output_dir
         self.delta_gamma = delta_gamma

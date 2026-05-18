@@ -9,16 +9,16 @@ from wetting_angle_kit.parsers.base import BaseParser
 
 
 class AseParser(BaseParser):
-    """ASE trajectory parser.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to any ASE-readable trajectory/file pattern (e.g. XYZ, extxyz,
-        POSCAR, etc.).
-    """
+    """ASE trajectory parser for any ASE-readable file format."""
 
     def __init__(self, filepath: str) -> None:
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to any ASE-readable trajectory/file pattern (e.g. XYZ, extxyz,
+            POSCAR, etc.).
+        """
         try:
             from ase.io import read
         except ImportError as e:  # pragma: no cover - dependency guard
@@ -30,8 +30,8 @@ class AseParser(BaseParser):
         self.trajectory = read(self.filepath, index=":")
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
-        """Return Cartesian coordinates for selected atoms in a frame from there index
-        or the all frame if no index is provided.
+        """Return Cartesian coordinates for selected atoms in a frame,
+        or all atoms if no indices are provided.
 
         Parameters
         ----------
@@ -93,24 +93,8 @@ class AseParser(BaseParser):
 
 
 class AseWaterFinder:
-    """Identify water oxygen atoms by counting hydrogen neighbors.
-
-    Uses ASE neighbor list to find oxygens with exactly two hydrogens.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to ASE-readable trajectory.
-    particle_type_wall : sequence[str]
-        Symbols representing wall particles (unused presently, reserved for
-        filtering).
-    oxygen_type : str, default "O"
-        Oxygen atom symbol.
-    hydrogen_type : str, default "H"
-        Hydrogen atom symbol.
-    oh_cutoff : float, default 1.2
-        O–H distance cutoff used to detect bonded hydrogens.
-    """
+    """Identify water oxygen atoms by counting hydrogen neighbors
+    via ASE neighbor list."""
 
     def __init__(
         self,
@@ -120,6 +104,21 @@ class AseWaterFinder:
         hydrogen_type: str = "H",
         oh_cutoff: float = 1.2,
     ):
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to ASE-readable trajectory.
+        particle_type_wall : sequence[str]
+            Symbols representing wall particles (unused presently, reserved for
+            filtering).
+        oxygen_type : str, default "O"
+            Oxygen atom symbol.
+        hydrogen_type : str, default "H"
+            Hydrogen atom symbol.
+        oh_cutoff : float, default 1.2
+            O–H distance cutoff used to detect bonded hydrogens.
+        """
         try:
             from ase.io import read
             from ase.neighborlist import NeighborList
@@ -192,16 +191,17 @@ class AseWallParser(BaseParser):
     ``indices`` argument of :meth:`parse` is treated as 0-based positional
     indices into the wall-only positions for compatibility with the
     :class:`BaseParser` contract.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to trajectory file.
-    liquid_particle_types : sequence[str]
-        Symbols representing liquid particles to exclude.
     """
 
     def __init__(self, filepath: str, liquid_particle_types: list[str]):
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to trajectory file.
+        liquid_particle_types : sequence[str]
+            Symbols representing liquid particles to exclude.
+        """
         try:
             from ase.io import read
         except ImportError as e:  # pragma: no cover

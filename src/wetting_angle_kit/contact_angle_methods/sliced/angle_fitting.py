@@ -16,30 +16,7 @@ class ContactAngleSliced:
     Depending on ``droplet_geometry`` the droplet is analyzed by sweeping in y
     (cylinder modes) or by gamma azimuthal angle (spherical). For each slice / tilt
     a set of radial lines is sampled, a circle is fit to interface points, and
-    the contact angle is derived from intersection with the lowest surface
-    level.
-
-    Parameters
-    ----------
-    liquid_coordinates : ndarray, shape (N, 3)
-        Oxygen (or liquid marker) coordinates.
-    max_dist : float
-        Maximum radial distance for line sampling.
-    liquid_geom_center : ndarray, shape (3,)
-        Geometric droplet center; y component overridden per slice in cylinder
-        modes.
-    droplet_geometry : str, default 'cylinder_y'
-        One of {'cylinder_y', 'cylinder_x', 'spherical'} controlling slicing
-        axis.
-    delta_gamma : float, optional
-        Angular increment (degrees) for spherical droplet geometry
-        (required if spherical).
-    width_cylinder : float, optional
-        Extent in slicing axis direction (y or x) for cylindrical droplet geometry.
-    delta_cylinder : float, optional
-        Step size along slicing axis.
-    surface_filter_offset : float, default 2.0
-        Offset added to minimum droplet height for interface point filtering.
+    the contact angle is derived from intersection with the lowest surface level.
     """
 
     #: Default azimuthal step (degrees) between radial sampling lines used
@@ -60,6 +37,35 @@ class ContactAngleSliced:
         density_sigma: float = SurfaceDefinition.DEFAULT_DENSITY_SIGMA,
         delta_angle: float = DEFAULT_DELTA_ANGLE,
     ) -> None:
+        """
+        Parameters
+        ----------
+        liquid_coordinates : ndarray, shape (N, 3)
+            Oxygen (or liquid marker) coordinates.
+        max_dist : float
+            Maximum radial distance for line sampling.
+        liquid_geom_center : ndarray, shape (3,)
+            Geometric droplet center; y component overridden per slice in cylinder
+            modes.
+        droplet_geometry : str, default 'cylinder_y'
+            One of ``{'cylinder_y', 'cylinder_x', 'spherical'}`` controlling slicing
+            axis.
+        delta_gamma : float, optional
+            Angular increment (degrees) for spherical droplet geometry
+            (required if spherical).
+        width_cylinder : float, optional
+            Extent in slicing axis direction (y or x) for cylindrical droplet geometry.
+        delta_cylinder : float, optional
+            Step size along slicing axis.
+        surface_filter_offset : float, default 2.0
+            Offset added to minimum droplet height for interface point filtering.
+        points_per_angstrom : float, default 1.0
+            Sampling density along each radial ray.
+        density_sigma : float, default SurfaceDefinition.DEFAULT_DENSITY_SIGMA
+            Gaussian smoothing width (Å) for the density-along-ray kernel.
+        delta_angle : float, default DEFAULT_DELTA_ANGLE
+            Azimuthal spacing (degrees) between radial lines.
+        """
         validate_droplet_geometry(droplet_geometry)
         self.liquid_coordinates = liquid_coordinates
         self.max_dist = max_dist
@@ -116,7 +122,8 @@ class ContactAngleSliced:
         return []
 
     def calculate_gammas_list(self) -> list[float]:
-        """Return gamma inclination list for the chosen droplet geometry."""
+        """Return the gamma tilt angle (degrees) for each slice
+        of the chosen droplet geometry."""
         if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
             assert self.width_cylinder is not None and self.delta_cylinder is not None
             return [

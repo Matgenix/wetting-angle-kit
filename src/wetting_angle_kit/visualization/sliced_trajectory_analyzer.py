@@ -9,6 +9,8 @@ from wetting_angle_kit.visualization.base_trajectory_analyzer import (
 
 
 class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
+    """BaseTrajectoryAnalyzer implementation for the sliced contact angle method."""
+
     def __init__(
         self,
         directories: list[str],
@@ -52,8 +54,8 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         return "Sliced Analysis"
 
     def load_data(self) -> None:
-        """Load the combined .npy files for all
-        directories and calculate mean surface areas per frame."""
+        """Load combined .npy files (angles, surfaces, popts)
+        from all directories and compute mean surface areas per frame."""
         for directory in self.directories:
             all_angles = np.load(
                 os.path.join(directory, "all_angles.npy"), allow_pickle=True
@@ -108,13 +110,12 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         return area
 
     def mean_surface_frame(self, surfaces: list[np.ndarray]) -> float:
-        """
-        Calculate the mean surface area for a given surfaces file.
+        """Return the mean polygon area across all surfaces in a frame.
 
         Parameters
         ----------
-        surfaces_file : str
-            Path to the surfaces file.
+        surfaces : list[ndarray]
+            List of surface polygon vertex arrays, each of shape (N, 2).
 
         Returns
         -------

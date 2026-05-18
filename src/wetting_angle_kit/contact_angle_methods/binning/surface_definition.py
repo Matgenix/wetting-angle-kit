@@ -30,31 +30,31 @@ degrees.
 """
 
 import warnings
+from abc import ABC, abstractmethod
 from typing import Any
 
 import numpy as np
 from scipy.optimize import curve_fit
 
 
-class SurfaceModel:
+class SurfaceModel(ABC):
     """Abstract base for surface models used in contact angle analysis.
 
     Subclasses must implement ``fit`` and ``evaluate``.
-
-    Parameters
-    ----------
-    initial_params : sequence of float, optional
-        Initial guess for model parameters. Interpretation is left to subclasses.
     """
 
     def __init__(self, initial_params: list[float] | None = None) -> None:
-        """Store initial parameters and prepare covariance placeholder."""
+        """
+        Parameters
+        ----------
+        initial_params : sequence of float, optional
+            Initial guess for model parameters. Interpretation is left to subclasses.
+        """
         self.params = initial_params
         self.covariance = None
 
-    def fit(
-        self, x_data: Any, density_data: np.ndarray
-    ) -> "SurfaceModel":  # pragma: no cover - abstract
+    @abstractmethod
+    def fit(self, x_data: Any, density_data: np.ndarray) -> "SurfaceModel":
         """Fit the model to density data.
 
         Parameters
@@ -69,9 +69,9 @@ class SurfaceModel:
         SurfaceModel
             The fitted model instance (``self``) for chaining.
         """
-        raise NotImplementedError("Subclasses must implement this method")
 
-    def evaluate(self, x: Any) -> float:  # pragma: no cover - abstract
+    @abstractmethod
+    def evaluate(self, x: Any) -> float:
         """Evaluate the fitted function at point ``x``.
 
         Parameters
@@ -84,7 +84,6 @@ class SurfaceModel:
         float
             Evaluated density value.
         """
-        raise NotImplementedError("Subclasses must implement this method")
 
     def evaluate_on_grid(self, xi_grid: np.ndarray, zi_grid: np.ndarray) -> np.ndarray:
         """Evaluate the fitted function on a 2D (xi, zi) grid.
@@ -113,29 +112,30 @@ class HyperbolicTangentModel(SurfaceModel):
 
     The density field is modeled as the product of two sigmoidal (tanh) terms: one
     depending on the spherical radial distance and one along the vertical axis.
-
-    Parameters
-    ----------
-    initial_params : list[float], optional
-        Seven parameters ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]`` used as
-        the starting guess for the non-linear fit. Defaults to
-        :attr:`DEFAULT_INITIAL_PARAMS`, which is tuned for water at room
-        temperature in Å units; supply system-specific values if your
-        density or droplet size differs.
-
-        - rho1 : Liquid-phase density.
-        - rho2 : Vapor-phase density.
-        - R_eq : Equivalent spherical radius.
-        - zi_c : z-coordinate of the sphere center.
-        - zi_0 : Reference wall z-coordinate.
-        - t1 : Interface thickness (radial component).
-        - t2 : Interface thickness (vertical component).
     """
 
     #: Default initial guess for the seven fit parameters (water at RT, Å units).
     DEFAULT_INITIAL_PARAMS = [1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0]
 
     def __init__(self, initial_params: list[float] | None = None) -> None:
+        """
+        Parameters
+        ----------
+        initial_params : list[float], optional
+            Seven parameters ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]`` used as
+            the starting guess for the non-linear fit. Defaults to
+            :attr:`DEFAULT_INITIAL_PARAMS`, tuned for water at room temperature
+            in Å units; supply system-specific values if your density or droplet
+            size differs.
+
+            - rho1 : Liquid-phase density.
+            - rho2 : Vapor-phase density.
+            - R_eq : Equivalent spherical radius.
+            - zi_c : z-coordinate of the sphere center.
+            - zi_0 : Reference wall z-coordinate.
+            - t1 : Interface thickness (radial component).
+            - t2 : Interface thickness (vertical component).
+        """
         if initial_params is None:
             initial_params = list(self.DEFAULT_INITIAL_PARAMS)
         super().__init__(initial_params)
@@ -151,7 +151,8 @@ class HyperbolicTangentModel(SurfaceModel):
         t1: float,
         t2: float,
     ) -> Any:
-        """Internal hyperbolic tangent density expression.
+        """Evaluate the two-component hyperbolic tangent
+        density model at position ``x``.
 
         Parameters
         ----------

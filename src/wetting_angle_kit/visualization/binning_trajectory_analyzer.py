@@ -60,7 +60,22 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
 
     @staticmethod
     def circular_segment_area(R: float, z_center: float, z_cut: float) -> float:
-        """Compute the area of a circular segment for any cut position."""
+        """Return the area of the circular cap below ``z_cut``.
+
+        Parameters
+        ----------
+        R : float
+            Circle radius.
+        z_center : float
+            z-coordinate of the circle center.
+        z_cut : float
+            Height of the cutting plane.
+
+        Returns
+        -------
+        float
+            Area of the circular segment below the cut.
+        """
         h = (z_center + R) - z_cut  # height of the cap
         if h <= 0:
             return 0.0

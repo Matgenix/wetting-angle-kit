@@ -32,21 +32,6 @@ class SurfaceDefinition:
     For each attitudinal angle beta the density is sampled along a ray emerging
     from the droplet geometric center. A simple tanh profile is fitted to obtain
     the interface position ("re") which is then projected back to XZ plane.
-
-    Parameters
-    ----------
-    atom_coords : ndarray, shape (N, 3)
-        Cartesian coordinates of liquid atoms.
-    delta_angle : float
-        Angular increment (degrees) between successive sampling rays.
-    max_dist : float
-        Maximum radial distance sampled along each ray.
-    center_geom : ndarray, shape (3,)
-        Approximate droplet geometric center.
-    gamma : float
-        Tilt angle (degrees) controlling rotation about the x-axis.
-    density_conversion : float, default 1.0
-        Factor applied multiplicatively to raw density contributions.
     """
 
     #: Minimum number of sampling points along each ray. Below this the
@@ -69,6 +54,26 @@ class SurfaceDefinition:
         points_per_angstrom: float = 1.0,
         density_sigma: float = DEFAULT_DENSITY_SIGMA,
     ) -> None:
+        """
+        Parameters
+        ----------
+        atom_coords : ndarray, shape (N, 3)
+            Cartesian coordinates of liquid atoms.
+        delta_angle : float
+            Angular increment (degrees) between successive sampling rays.
+        max_dist : float
+            Maximum radial distance sampled along each ray.
+        center_geom : ndarray, shape (3,)
+            Approximate droplet geometric center.
+        gamma : float
+            Tilt angle (degrees) controlling rotation about the x-axis.
+        density_conversion : float, default 1.0
+            Factor applied multiplicatively to raw density contributions.
+        points_per_angstrom : float, default 1.0
+            Sampling density along each ray.
+        density_sigma : float, default DEFAULT_DENSITY_SIGMA
+            Gaussian kernel width (Å) for density smoothing.
+        """
         self.atom_coords = atom_coords
         self.center_geom = center_geom
         self.density_conversion = density_conversion

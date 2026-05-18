@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class BaseTrajectoryAnalyzer(ABC):
+    """Abstract base for trajectory analyzers that compute contact angle statistics."""
+
     def __init__(self, directories: list[str], time_unit: str = "ps") -> None:
         """
         Initialize the analyzer with a list of directory paths.
@@ -129,7 +131,13 @@ class BaseTrajectoryAnalyzer(ABC):
         )
 
     def analyze(self, output_filename: str = "output_stats.txt") -> None:
-        """Analyze and save statistics for each directory to an output file."""
+        """Load data and write per-directory statistics to a text file.
+
+        Parameters
+        ----------
+        output_filename : str, default "output_stats.txt"
+            File name written inside each directory.
+        """
         self.load_data()
         for directory in self.directories:
             output_path = f"{directory}/{output_filename}"

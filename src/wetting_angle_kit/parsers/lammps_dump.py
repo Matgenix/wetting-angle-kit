@@ -11,16 +11,15 @@ logger = logging.getLogger(__name__)
 
 
 class LammpsDumpParser(BaseParser):
-    """LAMMPS dump trajectory parser.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to LAMMPS dump file.
-    """
+    """LAMMPS dump trajectory parser backed by an OVITO pipeline."""
 
     def __init__(self, filepath: str):
-        """Initialize LAMMPS dump parser via OVITO pipeline."""
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to LAMMPS dump file.
+        """
         try:
             from ovito.io import import_file
             from ovito.modifiers import ComputePropertyModifier
@@ -114,16 +113,17 @@ class LammpsDumpWallParser(BaseParser):
     of :meth:`parse` is therefore typically ignored, but it is accepted
     (as LAMMPS particle IDs, like :class:`LammpsDumpParser`) to satisfy the
     :class:`BaseParser` contract.
-
-    Parameters
-    ----------
-    filepath : str
-        Path to LAMMPS dump file.
-    liquid_particle_types : List[int]
-        Type IDs of particles to exclude as liquid.
     """
 
     def __init__(self, filepath: str, liquid_particle_types: list[int]):
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to LAMMPS dump file.
+        liquid_particle_types : List[int]
+            Type IDs of particles to exclude as liquid.
+        """
         self.filepath = filepath
         self.liquid_particle_types = liquid_particle_types
         self.pipeline = self.load_dump_ovito()
@@ -218,7 +218,7 @@ class LammpsDumpWallParser(BaseParser):
 
 
 class LammpsDumpWaterFinder:
-    """Identify water oxygen atoms in a parsed LAMMPS trajectory."""
+    """Identify water oxygen atoms in a LAMMPS trajectory via an OVITO pipeline."""
 
     def __init__(
         self,
@@ -228,7 +228,21 @@ class LammpsDumpWaterFinder:
         hydrogen_type: int = 2,
         oh_cutoff: float = 1.2,
     ):
-        """Initialize water molecule finder with OVITO pipeline."""
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to LAMMPS dump file.
+        particle_type_wall : set
+            Particle type IDs corresponding to wall atoms (reserved for future
+            filtering).
+        oxygen_type : int, default 3
+            LAMMPS particle type ID for oxygen atoms.
+        hydrogen_type : int, default 2
+            LAMMPS particle type ID for hydrogen atoms.
+        oh_cutoff : float, default 1.2
+            O–H distance cutoff (Å) for water molecule detection.
+        """
         self.filepath = filepath
         self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type
