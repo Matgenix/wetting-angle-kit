@@ -30,20 +30,19 @@ class AseParser(BaseParser):
         self.trajectory = read(self.filepath, index=":")
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
-        """Return Cartesian coordinates for selected atoms in a frame,
-        or all atoms if no indices are provided.
+        """Return Cartesian coordinates for selected atoms in a frame.
 
         Parameters
         ----------
         frame_index : int
             Frame index.
-        indices : sequence[int], optional
+        indices : ndarray, optional
             Atom indices to select; if None all atoms are returned.
 
         Returns
         -------
         ndarray, shape (M, 3)
-            Cartesian coordinates of requested atoms.
+            Atom coordinates.
         """
         frame = self.trajectory[frame_index]
         if indices is not None:
@@ -54,12 +53,12 @@ class AseParser(BaseParser):
     def parse_liquid_particles(
         self, liquid_particle_types: list[str], frame_index: int
     ) -> np.ndarray:
-        """Return liquid atom coordinates filtering by atomic symbol list.
+        """Return positions of liquid atoms filtered by atomic symbol.
 
         Parameters
         ----------
         liquid_particle_types : sequence[str]
-            Symbols identifying liquid particles.
+            Symbols identifying liquid atoms.
         frame_index : int
             Frame index.
 
@@ -72,23 +71,34 @@ class AseParser(BaseParser):
         mask = np.isin(frame.symbols, liquid_particle_types)
         return frame.positions[mask]
 
-    def box_size_y(self, frame_index: int) -> float:
-        """Return y-dimension (a2y) of simulation cell for frame."""
-        frame = self.trajectory[frame_index]
-        return float(frame.cell[1, 1])
-
     def box_size_x(self, frame_index: int) -> float:
-        """Return x-dimension (a1x) of simulation cell for frame."""
+        """Return the x-dimension of the simulation box for a frame."""
         frame = self.trajectory[frame_index]
         return float(frame.cell[0, 0])
 
+    def box_size_y(self, frame_index: int) -> float:
+        """Return the y-dimension of the simulation box for a frame."""
+        frame = self.trajectory[frame_index]
+        return float(frame.cell[1, 1])
+
     def box_length_max(self, frame_index: int) -> float:
-        """Return maximum lattice vector length for frame."""
+        """Return the maximum lattice vector length for a frame.
+
+        Parameters
+        ----------
+        frame_index : int
+            Frame index.
+
+        Returns
+        -------
+        float
+            Max ``|a_i|`` over lattice vectors.
+        """
         frame = self.trajectory[frame_index]
         return float(max(frame.cell.lengths()))
 
     def frame_count(self) -> int:
-        """Return total number of frames in trajectory."""
+        """Return the total number of frames available."""
         return len(self.trajectory)
 
 
@@ -136,7 +146,7 @@ class AseWaterFinder:
         self.oh_cutoff = oh_cutoff
 
     def get_water_oxygen_indices(self, frame_index: int) -> np.ndarray:
-        """Return indices of oxygen atoms each bonded to exactly two hydrogens.
+        """Return indices of oxygen atoms bonded to exactly two hydrogens.
 
         Parameters
         ----------
@@ -146,7 +156,7 @@ class AseWaterFinder:
         Returns
         -------
         ndarray
-            Oxygen atom indices satisfying bonding criterion.
+            Oxygen atom indices belonging to water molecules.
         """
         frame = self.trajectory[frame_index]
         symbols = np.array(frame.get_chemical_symbols())
@@ -167,7 +177,7 @@ class AseWaterFinder:
         return np.array(water_oxygens, dtype=int)
 
     def get_water_oxygen_positions(self, frame_index: int) -> np.ndarray:
-        """Return Cartesian positions of water oxygen atoms for a frame.
+        """Return positions of water oxygen atoms for a frame.
 
         Parameters
         ----------
@@ -177,7 +187,7 @@ class AseWaterFinder:
         Returns
         -------
         ndarray, shape (N, 3)
-            Oxygen atom positions; may be empty if none match criteria.
+            Oxygen atom positions; empty array if none detected.
         """
         indices = self.get_water_oxygen_indices(frame_index)
         frame = self.trajectory[frame_index]
@@ -214,15 +224,20 @@ class AseWallParser(BaseParser):
         self.trajectory = read(self.filepath, index=":")
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
-        """Return wall coordinates for the supplied frame index.
+        """Return wall atom positions for a frame.
 
         Parameters
         ----------
         frame_index : int
             Frame index.
         indices : ndarray, optional
-            0-based positional indices into the wall-only positions; if
-            None, all wall particles are returned.
+            Indices into the wall-only positions to further restrict the
+            wall atoms; if None all wall atoms are returned.
+
+        Returns
+        -------
+        ndarray, shape (M, 3)
+            Wall atoms coordinates.
         """
         frame = self.trajectory[frame_index]
         mask = ~np.isin(frame.get_chemical_symbols(), self.liquid_particle_types)
@@ -257,21 +272,32 @@ class AseWallParser(BaseParser):
         )
         return self.find_highest_wall_particle(*args, **kwargs)
 
-    def box_size_y(self, frame_index: int) -> float:
-        """Return y-dimension (a2y) of simulation cell for frame."""
-        frame = self.trajectory[frame_index]
-        return float(frame.cell[1, 1])
-
     def box_size_x(self, frame_index: int) -> float:
-        """Return x-dimension (a1x) of simulation cell for frame."""
+        """Return the x-dimension of the simulation box for a frame."""
         frame = self.trajectory[frame_index]
         return float(frame.cell[0, 0])
 
+    def box_size_y(self, frame_index: int) -> float:
+        """Return the y-dimension of the simulation box for a frame."""
+        frame = self.trajectory[frame_index]
+        return float(frame.cell[1, 1])
+
     def box_length_max(self, frame_index: int) -> float:
-        """Return maximum lattice vector length for frame."""
+        """Return the maximum lattice vector length for a frame.
+
+        Parameters
+        ----------
+        frame_index : int
+            Frame index.
+
+        Returns
+        -------
+        float
+            Max ``|a_i|`` over lattice vectors.
+        """
         frame = self.trajectory[frame_index]
         return float(max(frame.cell.lengths()))
 
     def frame_count(self) -> int:
-        """Return total number of frames in trajectory."""
+        """Return the total number of frames available."""
         return len(self.trajectory)

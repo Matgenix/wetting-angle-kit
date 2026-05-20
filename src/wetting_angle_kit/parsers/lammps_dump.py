@@ -40,20 +40,19 @@ class LammpsDumpParser(BaseParser):
         self.num_frames: int = int(self.pipeline.source.num_frames)
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
-        """Compute and return particle positions for a single frame,
-        with optional filtering by particle indices.
+        """Return Cartesian coordinates for selected atoms in a frame.
 
         Parameters
         ----------
         frame_index : int
             Frame index.
         indices : ndarray, optional
-            Atom indices to select; if None return all atoms.
+            LAMMPS particle IDs to select; if None all atoms are returned.
 
         Returns
         -------
         ndarray, shape (M, 3)
-            Particle coordinates.
+            Atom coordinates.
         """
         data = self.pipeline.compute(frame_index)
         x_par = np.asarray(data.particles["Position"])
@@ -63,20 +62,20 @@ class LammpsDumpParser(BaseParser):
             x_par = x_par[mask]
         return x_par
 
-    def box_size_y(self, frame_index: int) -> float:
-        """Return y-dimension of simulation box."""
-        data = self.pipeline.compute(frame_index)
-        y_vector = data.cell.matrix[1, :3]
-        return float(np.linalg.norm(y_vector))
-
     def box_size_x(self, frame_index: int) -> float:
-        """Return x-dimension of simulation box."""
+        """Return the x-dimension of the simulation box for a frame."""
         data = self.pipeline.compute(frame_index)
         x_vector = data.cell.matrix[0, :3]
         return float(np.linalg.norm(x_vector))
 
+    def box_size_y(self, frame_index: int) -> float:
+        """Return the y-dimension of the simulation box for a frame."""
+        data = self.pipeline.compute(frame_index)
+        y_vector = data.cell.matrix[1, :3]
+        return float(np.linalg.norm(y_vector))
+
     def box_length_max(self, frame_index: int) -> float:
-        """Return the maximum dimension of the simulation box.
+        """Return the maximum lattice vector length for a frame.
 
         Parameters
         ----------
@@ -86,7 +85,7 @@ class LammpsDumpParser(BaseParser):
         Returns
         -------
         float
-            Maximum box length.
+            Max ``|a_i|`` over lattice vectors.
         """
         data = self.pipeline.compute(frame_index)
         y_vector = np.linalg.norm(data.cell.matrix[1, :3])
@@ -95,13 +94,7 @@ class LammpsDumpParser(BaseParser):
         return float(np.max(np.array([y_vector, x_vector, z_vector])))
 
     def frame_count(self) -> int:
-        """Return the total number of frames in the trajectory.
-
-        Returns
-        -------
-        int
-            Number of frames.
-        """
+        """Return the total number of frames available."""
         return int(self.num_frames)
 
 
@@ -158,15 +151,20 @@ class LammpsDumpWallParser(BaseParser):
         return pipeline
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
-        """Return wall particle positions for a single frame.
+        """Return wall atom positions for a frame.
 
         Parameters
         ----------
         frame_index : int
             Frame index.
         indices : ndarray, optional
-            LAMMPS particle IDs to further restrict the wall particles. If
-            None, all wall particles are returned.
+            LAMMPS particle IDs to further restrict the wall atoms; if
+            None all wall atoms are returned.
+
+        Returns
+        -------
+        ndarray, shape (M, 3)
+            Wall atom coordinates.
         """
         data = self.pipeline.compute(frame_index)
         x_par = np.asarray(data.particles["Position"])
@@ -192,20 +190,31 @@ class LammpsDumpWallParser(BaseParser):
         x_wall = self.parse(frame_index)
         return float(np.max(x_wall[:, 2]))
 
-    def box_size_y(self, frame_index: int) -> float:
-        """Return the y-dimension of the simulation box."""
-        data = self.pipeline.compute(frame_index)
-        y_vector = data.cell.matrix[1, :3]
-        return float(np.linalg.norm(y_vector))
-
     def box_size_x(self, frame_index: int) -> float:
-        """Return the x-dimension of the simulation box."""
+        """Return the x-dimension of the simulation box for a frame."""
         data = self.pipeline.compute(frame_index)
         x_vector = data.cell.matrix[0, :3]
         return float(np.linalg.norm(x_vector))
 
+    def box_size_y(self, frame_index: int) -> float:
+        """Return the y-dimension of the simulation box for a frame."""
+        data = self.pipeline.compute(frame_index)
+        y_vector = data.cell.matrix[1, :3]
+        return float(np.linalg.norm(y_vector))
+
     def box_length_max(self, frame_index: int) -> float:
-        """Return the maximum simulation cell dimension for a frame."""
+        """Return the maximum lattice vector length for a frame.
+
+        Parameters
+        ----------
+        frame_index : int
+            Frame index.
+
+        Returns
+        -------
+        float
+            Max ``|a_i|`` over lattice vectors.
+        """
         data = self.pipeline.compute(frame_index)
         y_vector = np.linalg.norm(data.cell.matrix[1, :3])
         x_vector = np.linalg.norm(data.cell.matrix[0, :3])
@@ -213,7 +222,7 @@ class LammpsDumpWallParser(BaseParser):
         return float(np.max(np.array([y_vector, x_vector, z_vector])))
 
     def frame_count(self) -> int:
-        """Return total number of frames."""
+        """Return the total number of frames available."""
         return int(self.pipeline.source.num_frames)
 
 
@@ -241,7 +250,7 @@ class LammpsDumpWaterFinder:
         hydrogen_type : int, default 2
             LAMMPS particle type ID for hydrogen atoms.
         oh_cutoff : float, default 1.2
-            O–H distance cutoff (Å) for water molecule detection.
+            O-H distance cutoff (Å) for water molecule detection.
         """
         self.filepath = filepath
         self.particle_type_wall = particle_type_wall
@@ -279,7 +288,18 @@ class LammpsDumpWaterFinder:
         return pipeline
 
     def get_water_oxygen_ids(self, frame_index: int) -> np.ndarray:
-        """Return IDs of oxygen atoms belonging to water molecules."""
+        """Return LAMMPS particle IDs of oxygen atoms bonded to exactly two hydrogens.
+
+        Parameters
+        ----------
+        frame_index : int
+            Frame index.
+
+        Returns
+        -------
+        ndarray
+            Oxygen particle IDs belonging to water molecules.
+        """
         data = self.pipeline.compute(frame_index)
         if "IsWaterOxygen" not in data.particles:
             raise RuntimeError(

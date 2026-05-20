@@ -64,13 +64,13 @@ class XYZParser(BaseParser):
         ----------
         frame_index : int
             Frame index.
-        indices : sequence[int], optional
+        indices : ndarray, optional
             Atom indices to select; if None all atoms are returned.
 
         Returns
         -------
         ndarray, shape (M, 3)
-            Coordinates of requested atoms.
+            Atom coordinates.
         """
         frame = self.frames[frame_index]
         if indices is not None and len(indices) > 0:
@@ -81,23 +81,33 @@ class XYZParser(BaseParser):
     def parse_liquid_particles(
         self, liquid_particle_types: list[str], frame_index: int
     ) -> np.ndarray:
-        """Return positions of liquid particles (filter by symbols).
+        """Return positions of liquid atoms filtered by atomic symbol.
 
         Parameters
         ----------
         liquid_particle_types : sequence[str]
-            Atom symbols considered liquid (e.g. water molecule constituents).
+            Symbols identifying liquid atoms.
         frame_index : int
             Frame index.
 
         Returns
         -------
         ndarray, shape (L, 3)
-            Cartesian coordinates of liquid atoms.
+            Liquid atom positions.
         """
         frame = self.frames[frame_index]
         mask = np.isin(frame["symbols"], liquid_particle_types)
         return frame["positions"][mask]
+
+    def box_size_x(self, frame_index: int) -> float:
+        """Return the x-dimension of the simulation box for a frame."""
+        lattice_matrix = self.frames[frame_index]["lattice_matrix"]
+        return float(lattice_matrix[0, 0])
+
+    def box_size_y(self, frame_index: int) -> float:
+        """Return the y-dimension of the simulation box for a frame."""
+        lattice_matrix = self.frames[frame_index]["lattice_matrix"]
+        return float(lattice_matrix[1, 1])
 
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.
@@ -115,40 +125,8 @@ class XYZParser(BaseParser):
         lattice_matrix = self.frames[frame_index]["lattice_matrix"]
         return float(np.max(np.linalg.norm(lattice_matrix, axis=1)))
 
-    def box_size_x(self, frame_index: int) -> float:
-        """Return the box length along x (a1x component).
-
-        Parameters
-        ----------
-        frame_index : int
-            Frame index.
-
-        Returns
-        -------
-        float
-            Box x-length.
-        """
-        lattice_matrix = self.frames[frame_index]["lattice_matrix"]
-        return float(lattice_matrix[0, 0])
-
-    def box_size_y(self, frame_index: int) -> float:
-        """Return the box length along y (a2y component).
-
-        Parameters
-        ----------
-        frame_index : int
-            Frame index.
-
-        Returns
-        -------
-        float
-            Box y-length.
-        """
-        lattice_matrix = self.frames[frame_index]["lattice_matrix"]
-        return float(lattice_matrix[1, 1])
-
     def frame_count(self) -> int:
-        """Return total number of frames loaded."""
+        """Return the total number of frames available."""
         return len(self.frames)
 
 
@@ -264,7 +242,7 @@ class XYZWaterFinder:
         return float(np.max(np.linalg.norm(lattice_matrix, axis=1)))
 
     def get_water_oxygen_indices(self, frame_index: int) -> np.ndarray:
-        """Return indices of oxygen atoms belonging to water molecules.
+        """Return indices of oxygen atoms bonded to exactly two hydrogens.
 
         Parameters
         ----------
@@ -274,7 +252,7 @@ class XYZWaterFinder:
         Returns
         -------
         ndarray
-            Indices of oxygen atoms with exactly two hydrogens within cutoff.
+            Oxygen atom indices belonging to water molecules.
         """
         data = self.frames[frame_index]
         positions = data["positions"]
@@ -286,7 +264,7 @@ class XYZWaterFinder:
         )
 
     def get_water_oxygen_positions(self, frame_index: int) -> np.ndarray:
-        """Return coordinates of water oxygen atoms for a frame.
+        """Return positions of water oxygen atoms for a frame.
 
         Parameters
         ----------

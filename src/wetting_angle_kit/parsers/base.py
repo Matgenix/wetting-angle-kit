@@ -69,22 +69,22 @@ class BaseParser(ABC):
         ----------
         frame_index : int
             Frame index.
-        indices : ndarray[int], optional
-            Atom selector; if None return all atoms. The meaning of
-            ``indices`` differs by parser because the underlying file formats
-            do not all preserve atom ordering across frames:
+        indices : ndarray, optional
+            Atom indices to select; if None all atoms are returned. The
+            meaning of ``indices`` differs by parser because the underlying
+            file formats do not all preserve atom ordering across frames:
 
             * :class:`LammpsDumpParser` (LAMMPS) — ``indices`` are LAMMPS
               particle identifiers. LAMMPS may reorder atoms between frames,
               so a persistent ID is needed to track the same atom.
-            * :class:`XYZParser`, :class:`AseParser` — ``indices`` are 0-based
+            * :class:`XYZParser`, :class:`AseParser` — ``indices`` are
               positional indices into the per-frame coordinate array. These
               formats keep atom ordering stable across frames.
 
         Returns
         -------
         ndarray, shape (M, 3)
-            Particle coordinates.
+            Atom coordinates.
         """
 
     @abstractmethod
@@ -103,15 +103,34 @@ class BaseParser(ABC):
         return self.frame_count()
 
     def box_size_x(self, frame_index: int) -> float:  # pragma: no cover - default
-        """Return the box x-length for a frame (override if available)."""
+        """Return the x-dimension of the simulation box for a frame.
+
+        Override in subclasses where the underlying format exposes it.
+        """
         raise NotImplementedError("box_size_x not implemented for this parser.")
 
     def box_size_y(self, frame_index: int) -> float:  # pragma: no cover - default
-        """Return the box y-length for a frame (override if available)."""
+        """Return the y-dimension of the simulation box for a frame.
+
+        Override in subclasses where the underlying format exposes it.
+        """
         raise NotImplementedError("box_size_y not implemented for this parser.")
 
     def box_length_max(self, frame_index: int) -> float:  # pragma: no cover - default
-        """Return the maximum box length for a frame (override if available)."""
+        """Return the maximum lattice vector length for a frame.
+
+        Override in subclasses where the underlying format exposes it.
+
+        Parameters
+        ----------
+        frame_index : int
+            Frame index.
+
+        Returns
+        -------
+        float
+            Max ``|a_i|`` over lattice vectors.
+        """
         raise NotImplementedError("box_length_max not implemented for this parser.")
 
     def get_profile_coordinates(
@@ -135,9 +154,10 @@ class BaseParser(ABC):
             ``"cylinder_x"`` returns ``|y|``, ``"spherical"`` returns
             ``sqrt(x^2 + y^2)``. ``x`` and ``y`` are centered on the
             per-frame center of mass; ``z`` is left in lab frame.
-        atom_indices : Sequence[int], optional
-            Atom selector forwarded to :meth:`parse` (see that method for
-            the per-parser meaning of indices vs. identifiers).
+        atom_indices : ndarray, optional
+            Atom indices forwarded to :meth:`parse`; if None all atoms are
+            used. See :meth:`parse` for the per-parser meaning of indices
+            vs. identifiers.
 
         Returns
         -------
