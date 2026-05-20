@@ -11,7 +11,6 @@ from wetting_angle_kit.io_utils import (
     detect_parser_type,
     geometric_center,
     load_dump_ovito,
-    project_to_profile,
     save_array_as_txt,
 )
 
@@ -49,7 +48,6 @@ __all__ = [
     "detect_parser_type",
     "geometric_center",
     "load_dump_ovito",
-    "project_to_profile",
     "save_array_as_txt",
     # Contact angle analyzers
     "BaseContactAngleAnalyzer",
