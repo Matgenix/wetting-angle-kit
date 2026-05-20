@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
     HyperbolicTangentModel,
 )

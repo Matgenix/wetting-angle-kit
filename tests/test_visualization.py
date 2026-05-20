@@ -71,7 +71,6 @@ def test_droplet_sliced_plotter_writes_png(tmp_path):
 def test_droplet_sliced_plotter_plotly_returns_figure():
     """The Plotly version should build a figure with the requested layers."""
     import plotly.graph_objects as go
-
     from wetting_angle_kit.visualization import DropletSlicePlotlyPlotter
 
     oxygen, wall, surface_data, popt = _synthetic_droplet()

@@ -3,7 +3,6 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-
 from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser
 
 # Path to the test trajectory file (LAMMPS dump format)
