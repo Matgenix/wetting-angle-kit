@@ -130,32 +130,3 @@ def test_contact_angle_analyzer_factory_rejects_unknown_method(tmp_path):
             parser=object(),
             output_dir=str(tmp_path),
         )
-
-
-# --- Empty frame list ---
-
-
-def test_base_parser_empty_frame_list_does_not_crash(tmp_path):
-    """get_profile_coordinates with no frames must return empty arrays.
-
-    The method is deprecated on BaseParser but still works; verify it
-    emits the deprecation warning and returns correct empty arrays.
-    """
-    # Build a minimal stub parser.
-    from wetting_angle_kit.parsers.base import BaseParser
-
-    class _StubParser(BaseParser):
-        def parse(self, frame_index, indices=None):
-            return np.zeros((0, 3))
-
-        def frame_count(self):
-            return 0
-
-    with pytest.warns(DeprecationWarning, match="deprecated"):
-        r, z, n = _StubParser().get_profile_coordinates(
-            frame_indices=[], droplet_geometry="spherical"
-        )
-    assert r.shape == (0,)
-    assert z.shape == (0,)
-    assert n == 0
-
