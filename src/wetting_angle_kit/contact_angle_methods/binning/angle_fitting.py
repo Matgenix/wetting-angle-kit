@@ -5,9 +5,9 @@ Algorithm
 
 The trajectory is aggregated into a 2D density field ``rho(xi, zi)`` on a
 regular bin grid, where ``xi`` is the in-plane radial coordinate produced
-by :func:`wetting_angle_kit.parsers.base.project_to_profile` and
-``zi`` is the lab-frame vertical coordinate. The histogram uses
-:func:`numpy.histogram2d` (left-edge inclusive, right-edge exclusive,
+by :func:`project_to_profile` and ``zi`` is the lab-frame vertical
+coordinate. The histogram uses :func:`numpy.histogram2d` (left-edge
+inclusive, right-edge exclusive,
 last bin closed on both ends).
 
 Per-bin volume elements:
@@ -27,6 +27,7 @@ particles · Å⁻³, and the final contact angle is returned in degrees.
 import logging
 import os
 import warnings
+from collections.abc import Sequence
 from typing import Any
 
 import matplotlib
@@ -49,7 +50,8 @@ import matplotlib.pyplot as plt  # noqa: E402
 from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (  # noqa: E402
     HyperbolicTangentModel,
 )
-from wetting_angle_kit.io_utils import validate_droplet_geometry  # noqa: E402
+from wetting_angle_kit.io_utils import validate_droplet_geometry, project_to_profile # noqa: E402
+
 
 
 class ContactAngleBinning:
@@ -153,6 +155,57 @@ class ContactAngleBinning:
         self.dzi = self.zi[1] - self.zi[0]
         self.xi_cc = 0.5 * (self.xi[1:] + self.xi[:-1])
         self.zi_cc = 0.5 * (self.zi[1:] + self.zi[:-1])
+
+    def get_profile_coordinates(
+        self,
+        frame_indices: Sequence[int],
+    ) -> tuple[np.ndarray, np.ndarray, int]:
+        """Compute 2D projection coordinates (r, z) for contact angle analysis.
+
+        Projects 3D atomic positions onto a 2D plane based on the assumed
+        droplet geometry. Coordinates are accumulated across all requested
+        frames in lockstep.
+
+        Parameters
+        ----------
+        frame_indices : Sequence[int]
+            Frame indices to process.
+
+        Returns
+        -------
+        r_values : ndarray
+            Concatenated radial distances.
+        z_values : ndarray
+            Concatenated vertical coordinates.
+        n_frames : int
+            Number of frames processed (``len(frame_indices)``).
+        """
+        validate_droplet_geometry(self.droplet_geometry)
+        r_chunks: list[np.ndarray] = []
+        z_chunks: list[np.ndarray] = []
+        for frame_idx in frame_indices:
+            positions = self.parser.parse(frame_idx, self.atom_indices)
+            r_frame, z_frame = project_to_profile(positions, self.droplet_geometry)
+            r_chunks.append(r_frame)
+            z_chunks.append(z_frame)
+            if frame_idx % 10 == 0:
+                x_cm = (
+                    np.mean(positions, axis=0) if positions.size else np.full(3, np.nan)
+                )
+                logger.info(
+                    f"Frame {frame_idx}: {len(positions)} particles, "
+                    f"center of mass {np.array2string(x_cm, precision=3)}"
+                )
+        r_values = np.concatenate(r_chunks) if r_chunks else np.empty(0)
+        z_values = np.concatenate(z_chunks) if z_chunks else np.empty(0)
+        if r_values.size > 0:
+            logger.info(
+                f"r range: ({float(r_values.min()):.3f}, {float(r_values.max()):.3f})"
+            )
+            logger.info(
+                f"z range: ({float(z_values.min()):.3f}, {float(z_values.max()):.3f})"
+            )
+        return r_values, z_values, len(frame_indices)
 
     def binning(
         self, xi_par: np.ndarray, zi_par: np.ndarray, len_frames: int
@@ -316,10 +369,8 @@ class ContactAngleBinning:
         tuple(float, SurfaceModel)
             (contact_angle_degrees, fitted_model).
         """
-        xi_par, zi_par, len_frames = self.parser.get_profile_coordinates(
+        xi_par, zi_par, len_frames = self.get_profile_coordinates(
             frame_indices=frame_list,
-            droplet_geometry=self.droplet_geometry,
-            atom_indices=self.atom_indices,
         )
         n_particles = len(xi_par) / max(len_frames, 1)
         batch_label = f" {batch_index}" if batch_index is not None else ""

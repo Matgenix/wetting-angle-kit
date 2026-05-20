@@ -12,6 +12,7 @@ from wetting_angle_kit.io_utils import (
     geometric_center,
     load_dump_ovito,
     save_array_as_txt,
+    project_to_profile,
 )
 
 # Parsers

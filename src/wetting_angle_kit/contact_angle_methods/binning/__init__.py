@@ -7,4 +7,4 @@ from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
     HyperbolicTangentModel,
 )
 
-__all__ = ["ContactAngleBinning", "HyperbolicTangentModel"]
+__all__ = ["ContactAngleBinning", "HyperbolicTangentModel", "project_to_profile"]

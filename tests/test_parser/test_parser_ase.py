@@ -41,29 +41,6 @@ def test_parse_liquid_particles(ase_parser):
     assert liquid_positions.shape[1] == 3  # x, y, z coordinates
 
 
-# --- Test get_profile_coordinates ---
-def test_get_profile_coordinates(ase_parser, caplog):
-    import logging
-
-    caplog.set_level(logging.INFO, logger="wetting_angle_kit.parsers.base")
-    frame_indices = [0, 1]
-    r_values, z_values, n_frames = ase_parser.get_profile_coordinates(frame_indices)
-    assert isinstance(r_values, np.ndarray)
-    assert isinstance(z_values, np.ndarray)
-    assert n_frames == len(frame_indices)
-    assert r_values.shape == z_values.shape
-
-    # Test with atom_indices
-    atom_indices = [0, 1, 2]
-    r_values, z_values, _ = ase_parser.get_profile_coordinates(
-        frame_indices, atom_indices=atom_indices
-    )
-    assert r_values.size > 0
-    assert z_values.size > 0
-
-    # The base implementation logs the r and z ranges via the module logger.
-    assert any("r range" in rec.getMessage() for rec in caplog.records)
-    assert any("z range" in rec.getMessage() for rec in caplog.records)
 
 
 # --- Test box_size_x and box_size_y ---
@@ -125,14 +102,3 @@ def test_ase_parser_box_sizes_match_lattice_norms(tmp_path):
     assert parser.box_size_y(0) == pytest.approx(12.0)
     assert parser.box_length_max(0) == pytest.approx(20.0)
 
-
-# --- Test droplet_geometry in get_profile_coordinates ---
-def test_get_profile_coordinates_spherical(ase_parser):
-    frame_indices = [0]
-    r_values, z_values, _ = ase_parser.get_profile_coordinates(
-        frame_indices, droplet_geometry="spherical"
-    )
-    assert isinstance(r_values, np.ndarray)
-    assert isinstance(z_values, np.ndarray)
-    # Spherical radial distance is non-negative.
-    assert (r_values >= 0).all()

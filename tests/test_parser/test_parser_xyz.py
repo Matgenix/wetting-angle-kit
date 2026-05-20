@@ -53,23 +53,6 @@ def test_parse_liquid_particles(xyz_parser):
     assert liquid_positions.shape[1] == 3  # x, y, z coordinates
 
 
-# --- Test get_profile_coordinates ---
-def test_get_profile_coordinates(xyz_parser):
-    frame_indices = [0, 1]
-    r_values, z_values, n_frames = xyz_parser.get_profile_coordinates(frame_indices)
-    assert isinstance(r_values, np.ndarray)
-    assert isinstance(z_values, np.ndarray)
-    assert n_frames == len(frame_indices)
-    assert r_values.shape == z_values.shape
-
-    # Test with atom_indices
-    atom_indices = [0, 1, 2]
-    r_values, z_values, _ = xyz_parser.get_profile_coordinates(
-        frame_indices, atom_indices=atom_indices
-    )
-    assert r_values.size > 0
-    assert z_values.size > 0
-
 
 # --- Test box_length_max ---
 def test_box_length_max(xyz_parser):

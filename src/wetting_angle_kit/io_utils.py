@@ -134,3 +134,41 @@ def detect_parser_type(filename: str) -> str:
     if ext == ".xyz":
         return "xyz"
     raise ValueError(f"Unsupported trajectory file format: {ext}")
+
+def project_to_profile(
+    positions: np.ndarray, droplet_geometry: str
+) -> tuple[np.ndarray, np.ndarray]:
+    """Project 3D atomic positions onto the (r, z) plane used by analyzers.
+
+    The lateral coordinates are centered on their per-frame center of mass
+    before projection; the vertical (z) coordinate is left in lab frame.
+
+    Parameters
+    ----------
+    positions : ndarray, shape (N, 3)
+        Cartesian atomic positions for a single frame.
+    droplet_geometry : str
+        One of ``"spherical"``, ``"cylinder_x"``, ``"cylinder_y"``.
+
+    Returns
+    -------
+    r_values : ndarray, shape (N,)
+        Radial coordinate: |x_centered| for cylinder_y, |y_centered| for
+        cylinder_x, sqrt(x_centered**2 + y_centered**2) for spherical.
+    z_values : ndarray, shape (N,)
+        Vertical coordinate (lab-frame z, not centered).
+    """
+    validate_droplet_geometry(droplet_geometry)
+    if positions.size == 0:
+        return np.empty(0), np.empty(0)
+    x_cm = np.mean(positions, axis=0)
+    x_centered = positions - x_cm
+    # z stays in lab frame; analyzers need absolute heights to locate the wall.
+    z_values = positions[:, 2]
+    if droplet_geometry == "cylinder_y":
+        r_values = np.abs(x_centered[:, 0])
+    elif droplet_geometry == "cylinder_x":
+        r_values = np.abs(x_centered[:, 1])
+    else:  # spherical
+        r_values = np.sqrt(x_centered[:, 0] ** 2 + x_centered[:, 1] ** 2)
+    return r_values, z_values
