@@ -124,7 +124,8 @@ class HyperbolicTangentModel(SurfaceModel):
         initial_params : list[float], optional
             Seven parameters ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]`` used as
             the starting guess for the non-linear fit. Defaults to
-            :attr:`DEFAULT_INITIAL_PARAMS`, tuned for water at room temperature
+            :attr:`DEFAULT_INITIAL_PARAMS`, tuned for the full atomistic model of
+            liquid water at room temperature
             in Å units; supply system-specific values if your density or droplet
             size differs.
 

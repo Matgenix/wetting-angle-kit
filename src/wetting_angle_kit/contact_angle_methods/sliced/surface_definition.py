@@ -11,8 +11,8 @@ For a single droplet slice the interface is recovered in two steps:
    3D-Gaussian-smoothed density at uniformly spaced sampling points
    (``points_per_angstrom`` per Å, with a hard minimum of
    ``MIN_POINTS_PER_RAY``). The Gaussian kernel width
-   ``density_sigma`` (Å) defaults to 3.0 Å, tuned for liquid water at
-   room temperature.
+   ``density_sigma`` (Å) defaults to 3.0 Å, tuned for the full atomistic model of
+   liquid water at room temperature.
 2. **Interface fit.** A hyperbolic tangent profile
    ``rho(s) = d * tanh(zd - s) + h`` is fitted to the density along
    the ray, where ``s`` is the distance from the center (Å). The
@@ -34,13 +34,13 @@ class SurfaceDefinition:
     the interface position ("re") which is then projected back to XZ plane.
     """
 
-    #: Minimum number of sampling points along each ray. Below this the
-    #: tanh profile fit becomes numerically unreliable.
+    # Minimum number of sampling points along each ray. Below this the
+    # tanh profile fit becomes numerically unreliable.
     MIN_POINTS_PER_RAY = 20
 
-    #: Default Gaussian standard deviation (Å) for the density-along-ray
-    #: smoothing kernel. Tuned for water at room temperature; larger values
-    #: broaden contributions and smooth the interface.
+    # Default Gaussian standard deviation (Å) for the density-along-ray
+    # smoothing kernel. Tuned for the full atomistic model of water at room temperature;
+    # larger values broaden contributions and smooth the interface.
     DEFAULT_DENSITY_SIGMA = 3.0
 
     def __init__(

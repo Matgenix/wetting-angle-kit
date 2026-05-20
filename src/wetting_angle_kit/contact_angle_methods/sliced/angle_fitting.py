@@ -82,8 +82,9 @@ class ContactAngleSliced:
         # to fit the interface tanh profile.
         self.points_per_angstrom = points_per_angstrom
         # Gaussian smoothing width (Å) for the density-along-ray kernel and
-        # azimuthal spacing (deg) between radial lines. Tuned for water at
-        # RT by default; adjust for other liquids.
+        # azimuthal spacing (deg) between radial lines.
+        # Tuned for the full atomistic model of liquid water
+        # at room temperature by default; adjust for other liquids.
         self.density_sigma = density_sigma
         self.delta_angle = delta_angle
         if self.droplet_geometry in ("cylinder_y", "cylinder_x") and (
