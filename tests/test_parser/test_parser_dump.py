@@ -79,3 +79,26 @@ def test_frame_tot_emits_deprecation_warning(dump_parser):
     with pytest.warns(DeprecationWarning, match="frame_tot is deprecated"):
         total = dump_parser.frame_tot()
     assert total == dump_parser.frame_count()
+
+
+# --- Test non-orthogonal cell rejection ---
+def _write_triclinic_dump(path):
+    path.write_text(
+        "ITEM: TIMESTEP\n0\n"
+        "ITEM: NUMBER OF ATOMS\n1\n"
+        "ITEM: BOX BOUNDS xy xz yz pp pp pp\n"
+        "0.0 10.0 5.0\n"
+        "0.0 8.66 0.0\n"
+        "0.0 20.0 0.0\n"
+        "ITEM: ATOMS id type x y z\n"
+        "1 1 1.0 1.0 1.0\n"
+    )
+
+
+def test_dump_parser_rejects_triclinic_cell(tmp_path):
+    path = tmp_path / "triclinic.lammpstrj"
+    _write_triclinic_dump(path)
+    parser = LammpsDumpParser(str(path))
+    # Validation is per-frame and lazy.
+    with pytest.raises(ValueError, match="Non-orthogonal"):
+        parser.parse(0)

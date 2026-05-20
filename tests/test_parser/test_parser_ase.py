@@ -96,6 +96,36 @@ def test_frame_count(ase_parser):
     assert total_frames > 0
 
 
+# --- Test non-orthogonal cell rejection ---
+def test_ase_parser_rejects_triclinic_cell(tmp_path):
+    ase = pytest.importorskip("ase")
+    from ase import Atoms
+    from ase.io import write
+
+    atoms = Atoms("O", positions=[[0.0, 0.0, 0.0]])
+    atoms.set_cell([[10.0, 0.0, 0.0], [5.0, 8.66, 0.0], [0.0, 0.0, 20.0]])
+    path = tmp_path / "triclinic.traj"
+    write(str(path), atoms)
+    with pytest.raises(ValueError, match="Non-orthogonal"):
+        AseParser(str(path))
+    del ase
+
+
+def test_ase_parser_box_sizes_match_lattice_norms(tmp_path):
+    pytest.importorskip("ase")
+    from ase import Atoms
+    from ase.io import write
+
+    atoms = Atoms("O", positions=[[0.0, 0.0, 0.0]])
+    atoms.set_cell([[10.0, 0.0, 0.0], [0.0, 12.0, 0.0], [0.0, 0.0, 20.0]])
+    path = tmp_path / "ortho.traj"
+    write(str(path), atoms)
+    parser = AseParser(str(path))
+    assert parser.box_size_x(0) == pytest.approx(10.0)
+    assert parser.box_size_y(0) == pytest.approx(12.0)
+    assert parser.box_length_max(0) == pytest.approx(20.0)
+
+
 # --- Test droplet_geometry in get_profile_coordinates ---
 def test_get_profile_coordinates_spherical(ase_parser):
     frame_indices = [0]

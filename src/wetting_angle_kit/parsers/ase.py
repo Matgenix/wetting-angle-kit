@@ -5,7 +5,13 @@ from typing import Any
 
 import numpy as np
 
+from wetting_angle_kit.io_utils import assert_orthogonal_cell
 from wetting_angle_kit.parsers.base import BaseParser
+
+
+def _validate_ase_trajectory_orthogonal(trajectory: list) -> None:
+    for idx, frame in enumerate(trajectory):
+        assert_orthogonal_cell(np.asarray(frame.cell), context=f"Frame {idx}")
 
 
 class AseParser(BaseParser):
@@ -28,6 +34,7 @@ class AseParser(BaseParser):
             ) from e
         self.filepath = filepath
         self.trajectory = read(self.filepath, index=":")
+        _validate_ase_trajectory_orthogonal(self.trajectory)
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Return Cartesian coordinates for selected atoms in a frame.
@@ -72,14 +79,14 @@ class AseParser(BaseParser):
         return frame.positions[mask]
 
     def box_size_x(self, frame_index: int) -> float:
-        """Return the x-dimension of the simulation box for a frame."""
+        """Return the length of the first lattice vector for a frame."""
         frame = self.trajectory[frame_index]
-        return float(frame.cell[0, 0])
+        return float(frame.cell.lengths()[0])
 
     def box_size_y(self, frame_index: int) -> float:
-        """Return the y-dimension of the simulation box for a frame."""
+        """Return the length of the second lattice vector for a frame."""
         frame = self.trajectory[frame_index]
-        return float(frame.cell[1, 1])
+        return float(frame.cell.lengths()[1])
 
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.
@@ -140,6 +147,7 @@ class AseWaterFinder:
         self._ase_read = read
         self._NeighborList = NeighborList
         self.trajectory = self._ase_read(filepath, index=":")
+        _validate_ase_trajectory_orthogonal(self.trajectory)
         self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type
         self.hydrogen_type = hydrogen_type
@@ -222,6 +230,7 @@ class AseWallParser(BaseParser):
         self.filepath = filepath
         self.liquid_particle_types = liquid_particle_types
         self.trajectory = read(self.filepath, index=":")
+        _validate_ase_trajectory_orthogonal(self.trajectory)
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Return wall atom positions for a frame.
@@ -273,14 +282,14 @@ class AseWallParser(BaseParser):
         return self.find_highest_wall_particle(*args, **kwargs)
 
     def box_size_x(self, frame_index: int) -> float:
-        """Return the x-dimension of the simulation box for a frame."""
+        """Return the length of the first lattice vector for a frame."""
         frame = self.trajectory[frame_index]
-        return float(frame.cell[0, 0])
+        return float(frame.cell.lengths()[0])
 
     def box_size_y(self, frame_index: int) -> float:
-        """Return the y-dimension of the simulation box for a frame."""
+        """Return the length of the second lattice vector for a frame."""
         frame = self.trajectory[frame_index]
-        return float(frame.cell[1, 1])
+        return float(frame.cell.lengths()[1])
 
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.

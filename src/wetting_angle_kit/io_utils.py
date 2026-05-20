@@ -18,6 +18,47 @@ def validate_droplet_geometry(droplet_geometry: str) -> None:
         )
 
 
+def ovito_cell_vectors(data: Any) -> np.ndarray:
+    """Return the 3x3 lattice matrix (lattice vectors as columns) from an
+    OVITO ``DataCollection``. OVITO's ``cell.matrix`` is 3x4: the first
+    three columns are the lattice vectors and the fourth is the origin.
+    """
+    return np.asarray(data.cell.matrix)[:, :3]
+
+
+def assert_orthogonal_cell(
+    cell: np.ndarray, *, tol: float = 1e-6, context: str = ""
+) -> None:
+    """Raise ``ValueError`` if a 3x3 cell matrix is not axis-aligned orthogonal.
+
+    The check is convention-independent: an orthogonal cell whose lattice
+    vectors are aligned with the x, y, z axes is diagonal whether the
+    vectors are stored as rows (ASE/extxyz) or columns (OVITO).
+
+    Parameters
+    ----------
+    cell : ndarray, shape (3, 3)
+        Cell matrix containing the three lattice vectors.
+    tol : float, default 1e-6
+        Relative tolerance: off-diagonal entries are accepted if their
+        magnitude is below ``tol * max(|cell|)``.
+    context : str, optional
+        Description prepended to the error message (e.g. ``"Frame 3"``).
+    """
+    cell_arr = np.asarray(cell, dtype=float)
+    if cell_arr.shape != (3, 3):
+        raise ValueError(f"Cell matrix must be 3x3, got shape {cell_arr.shape}.")
+    off_diag = cell_arr - np.diag(np.diag(cell_arr))
+    scale = max(1.0, float(np.max(np.abs(cell_arr))))
+    if float(np.max(np.abs(off_diag))) > tol * scale:
+        prefix = f"{context}: " if context else ""
+        raise ValueError(
+            f"{prefix}Non-orthogonal simulation cells are not supported. "
+            "Provide a trajectory whose lattice vectors are aligned with the "
+            "x, y, z axes."
+        )
+
+
 def load_dump_ovito(filepath: str) -> Any:
     """Load a LAMMPS dump file via OVITO and return the pipeline.
 

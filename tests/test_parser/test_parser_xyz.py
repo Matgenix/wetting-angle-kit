@@ -99,3 +99,28 @@ def test_frame_count(xyz_parser):
     total_frames = xyz_parser.frame_count()
     assert isinstance(total_frames, int)
     assert total_frames > 0
+
+
+# --- Test non-orthogonal cell rejection ---
+def _write_xyz(path, lattice):
+    lat_str = " ".join(f"{v:g}" for v in np.asarray(lattice).reshape(-1))
+    path.write_text(
+        f'1\nLattice="{lat_str}" Properties=species:S:1:pos:R:3\n' "O 0.0 0.0 0.0\n"
+    )
+
+
+def test_xyz_parser_rejects_triclinic_cell(tmp_path):
+    f = tmp_path / "triclinic.xyz"
+    # b vector has a non-zero x component → not axis-aligned.
+    _write_xyz(f, [[10.0, 0.0, 0.0], [5.0, 8.66, 0.0], [0.0, 0.0, 20.0]])
+    with pytest.raises(ValueError, match="Non-orthogonal"):
+        XYZParser(str(f))
+
+
+def test_xyz_parser_box_size_matches_lattice_norms(tmp_path):
+    f = tmp_path / "ortho.xyz"
+    _write_xyz(f, [[10.0, 0.0, 0.0], [0.0, 12.0, 0.0], [0.0, 0.0, 20.0]])
+    parser = XYZParser(str(f))
+    assert parser.box_size_x(0) == pytest.approx(10.0)
+    assert parser.box_size_y(0) == pytest.approx(12.0)
+    assert parser.box_length_max(0) == pytest.approx(20.0)

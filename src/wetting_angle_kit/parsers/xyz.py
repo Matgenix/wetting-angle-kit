@@ -4,6 +4,7 @@ from typing import Any
 
 import numpy as np
 
+from wetting_angle_kit.io_utils import assert_orthogonal_cell
 from wetting_angle_kit.parsers.base import BaseParser
 
 
@@ -40,6 +41,7 @@ class XYZParser(BaseParser):
             lattice_info = comment_line.split('Lattice="')[1].split('"')[0]
             lattice_vectors = np.array(lattice_info.split(), dtype=float)
             lattice_matrix = lattice_vectors.reshape(3, 3)
+            assert_orthogonal_cell(lattice_matrix, context=f"Frame {len(frames)}")
             frame_start += 1
             symbols = []
             positions = []
@@ -100,14 +102,14 @@ class XYZParser(BaseParser):
         return frame["positions"][mask]
 
     def box_size_x(self, frame_index: int) -> float:
-        """Return the x-dimension of the simulation box for a frame."""
+        """Return the length of the first lattice vector for a frame."""
         lattice_matrix = self.frames[frame_index]["lattice_matrix"]
-        return float(lattice_matrix[0, 0])
+        return float(np.linalg.norm(lattice_matrix[0]))
 
     def box_size_y(self, frame_index: int) -> float:
-        """Return the y-dimension of the simulation box for a frame."""
+        """Return the length of the second lattice vector for a frame."""
         lattice_matrix = self.frames[frame_index]["lattice_matrix"]
-        return float(lattice_matrix[1, 1])
+        return float(np.linalg.norm(lattice_matrix[1]))
 
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.
@@ -182,6 +184,7 @@ class XYZWaterFinder:
                 lattice_info = comment_line.split('Lattice="')[1].split('"')[0]
                 lattice_vectors = np.array(lattice_info.split(), dtype=float)
                 lattice_matrix = lattice_vectors.reshape(3, 3)
+                assert_orthogonal_cell(lattice_matrix, context=f"Frame {len(frames)}")
             else:
                 lattice_matrix = None
             frame_start += 1

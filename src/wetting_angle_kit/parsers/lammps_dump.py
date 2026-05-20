@@ -5,6 +5,7 @@ from typing import Any, cast
 
 import numpy as np
 
+from wetting_angle_kit.io_utils import assert_orthogonal_cell, ovito_cell_vectors
 from wetting_angle_kit.parsers.base import BaseParser
 
 logger = logging.getLogger(__name__)
@@ -38,6 +39,17 @@ class LammpsDumpParser(BaseParser):
             ComputePropertyModifier(expressions=["1"], output_property="Unity")
         )
         self.num_frames: int = int(self.pipeline.source.num_frames)
+        self._orthogonal_validated: set[int] = set()
+
+    def _compute(self, frame_index: int) -> Any:
+        """Compute a frame and validate its cell is orthogonal (once per frame)."""
+        data = self.pipeline.compute(frame_index)
+        if frame_index not in self._orthogonal_validated:
+            assert_orthogonal_cell(
+                ovito_cell_vectors(data), context=f"Frame {frame_index}"
+            )
+            self._orthogonal_validated.add(frame_index)
+        return data
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Return Cartesian coordinates for selected atoms in a frame.
@@ -54,7 +66,7 @@ class LammpsDumpParser(BaseParser):
         ndarray, shape (M, 3)
             Atom coordinates.
         """
-        data = self.pipeline.compute(frame_index)
+        data = self._compute(frame_index)
         x_par = np.asarray(data.particles["Position"])
         particle_ids = np.asarray(data.particles["Particle Identifier"])
         if indices is not None:
@@ -63,16 +75,14 @@ class LammpsDumpParser(BaseParser):
         return x_par
 
     def box_size_x(self, frame_index: int) -> float:
-        """Return the x-dimension of the simulation box for a frame."""
-        data = self.pipeline.compute(frame_index)
-        x_vector = data.cell.matrix[0, :3]
-        return float(np.linalg.norm(x_vector))
+        """Return the length of the first lattice vector for a frame."""
+        data = self._compute(frame_index)
+        return float(np.linalg.norm(ovito_cell_vectors(data)[:, 0]))
 
     def box_size_y(self, frame_index: int) -> float:
-        """Return the y-dimension of the simulation box for a frame."""
-        data = self.pipeline.compute(frame_index)
-        y_vector = data.cell.matrix[1, :3]
-        return float(np.linalg.norm(y_vector))
+        """Return the length of the second lattice vector for a frame."""
+        data = self._compute(frame_index)
+        return float(np.linalg.norm(ovito_cell_vectors(data)[:, 1]))
 
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.
@@ -87,11 +97,8 @@ class LammpsDumpParser(BaseParser):
         float
             Max ``|a_i|`` over lattice vectors.
         """
-        data = self.pipeline.compute(frame_index)
-        y_vector = np.linalg.norm(data.cell.matrix[1, :3])
-        x_vector = np.linalg.norm(data.cell.matrix[0, :3])
-        z_vector = np.linalg.norm(data.cell.matrix[2, :3])
-        return float(np.max(np.array([y_vector, x_vector, z_vector])))
+        data = self._compute(frame_index)
+        return float(np.max(np.linalg.norm(ovito_cell_vectors(data), axis=0)))
 
     def frame_count(self) -> int:
         """Return the total number of frames available."""
@@ -120,6 +127,7 @@ class LammpsDumpWallParser(BaseParser):
         self.filepath = filepath
         self.liquid_particle_types = liquid_particle_types
         self.pipeline = self.load_dump_ovito()
+        self._orthogonal_validated: set[int] = set()
 
     def load_dump_ovito(self) -> Any:
         """Build and return the OVITO pipeline for wall-only extraction.
@@ -150,6 +158,16 @@ class LammpsDumpWallParser(BaseParser):
         )
         return pipeline
 
+    def _compute(self, frame_index: int) -> Any:
+        """Compute a frame and validate its cell is orthogonal (once per frame)."""
+        data = self.pipeline.compute(frame_index)
+        if frame_index not in self._orthogonal_validated:
+            assert_orthogonal_cell(
+                ovito_cell_vectors(data), context=f"Frame {frame_index}"
+            )
+            self._orthogonal_validated.add(frame_index)
+        return data
+
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
         """Return wall atom positions for a frame.
 
@@ -166,7 +184,7 @@ class LammpsDumpWallParser(BaseParser):
         ndarray, shape (M, 3)
             Wall atom coordinates.
         """
-        data = self.pipeline.compute(frame_index)
+        data = self._compute(frame_index)
         x_par = np.asarray(data.particles["Position"])
         if indices is not None:
             particle_ids = np.asarray(data.particles["Particle Identifier"])
@@ -191,16 +209,14 @@ class LammpsDumpWallParser(BaseParser):
         return float(np.max(x_wall[:, 2]))
 
     def box_size_x(self, frame_index: int) -> float:
-        """Return the x-dimension of the simulation box for a frame."""
-        data = self.pipeline.compute(frame_index)
-        x_vector = data.cell.matrix[0, :3]
-        return float(np.linalg.norm(x_vector))
+        """Return the length of the first lattice vector for a frame."""
+        data = self._compute(frame_index)
+        return float(np.linalg.norm(ovito_cell_vectors(data)[:, 0]))
 
     def box_size_y(self, frame_index: int) -> float:
-        """Return the y-dimension of the simulation box for a frame."""
-        data = self.pipeline.compute(frame_index)
-        y_vector = data.cell.matrix[1, :3]
-        return float(np.linalg.norm(y_vector))
+        """Return the length of the second lattice vector for a frame."""
+        data = self._compute(frame_index)
+        return float(np.linalg.norm(ovito_cell_vectors(data)[:, 1]))
 
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.
@@ -215,11 +231,8 @@ class LammpsDumpWallParser(BaseParser):
         float
             Max ``|a_i|`` over lattice vectors.
         """
-        data = self.pipeline.compute(frame_index)
-        y_vector = np.linalg.norm(data.cell.matrix[1, :3])
-        x_vector = np.linalg.norm(data.cell.matrix[0, :3])
-        z_vector = np.linalg.norm(data.cell.matrix[2, :3])
-        return float(np.max(np.array([y_vector, x_vector, z_vector])))
+        data = self._compute(frame_index)
+        return float(np.max(np.linalg.norm(ovito_cell_vectors(data), axis=0)))
 
     def frame_count(self) -> int:
         """Return the total number of frames available."""

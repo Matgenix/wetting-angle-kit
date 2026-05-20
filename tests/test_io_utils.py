@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 from wetting_angle_kit.io_utils import (
     VALID_DROPLET_GEOMETRIES,
+    assert_orthogonal_cell,
     detect_parser_type,
     geometric_center,
     save_array_as_txt,
@@ -111,3 +112,42 @@ def test_detect_parser_type_resolves_relative_path(tmp_path):
     os.makedirs(f.parent, exist_ok=True)
     f.write_text("")
     assert detect_parser_type(str(f)) == "xyz"
+
+
+# --- assert_orthogonal_cell ---
+
+
+def test_assert_orthogonal_cell_accepts_diagonal():
+    cell = np.diag([10.0, 12.0, 30.0])
+    assert_orthogonal_cell(cell)
+
+
+def test_assert_orthogonal_cell_accepts_tiny_off_diagonal():
+    cell = np.diag([10.0, 12.0, 30.0]) + 1e-9
+    np.fill_diagonal(cell, [10.0, 12.0, 30.0])
+    assert_orthogonal_cell(cell)
+
+
+def test_assert_orthogonal_cell_rejects_triclinic():
+    cell = np.array([[10.0, 0.0, 0.0], [5.0, 8.66, 0.0], [0.0, 0.0, 20.0]])
+    with pytest.raises(ValueError, match="Non-orthogonal"):
+        assert_orthogonal_cell(cell)
+
+
+def test_assert_orthogonal_cell_rejects_rotated_cube():
+    # Cubic but rotated 45° in xy: lattice vectors not aligned with axes.
+    s = 10.0 / np.sqrt(2)
+    cell = np.array([[s, s, 0.0], [-s, s, 0.0], [0.0, 0.0, 20.0]])
+    with pytest.raises(ValueError, match="Non-orthogonal"):
+        assert_orthogonal_cell(cell)
+
+
+def test_assert_orthogonal_cell_context_appears_in_message():
+    cell = np.array([[10.0, 1.0, 0.0], [0.0, 10.0, 0.0], [0.0, 0.0, 10.0]])
+    with pytest.raises(ValueError, match=r"Frame 7:"):
+        assert_orthogonal_cell(cell, context="Frame 7")
+
+
+def test_assert_orthogonal_cell_bad_shape():
+    with pytest.raises(ValueError, match="3x3"):
+        assert_orthogonal_cell(np.zeros((4, 4)))
