@@ -6,6 +6,7 @@ contact point.
 """
 
 import numpy as np
+
 from wetting_angle_kit.contact_angle_methods.sliced import ContactAngleSliced
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,

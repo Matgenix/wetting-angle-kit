@@ -2,6 +2,7 @@ import os
 
 import numpy as np
 import pytest
+
 from wetting_angle_kit.parsers.ase import AseParser
 
 # Path to the test trajectory file (ASE format)
@@ -39,8 +40,6 @@ def test_parse_liquid_particles(ase_parser):
     )
     assert isinstance(liquid_positions, np.ndarray)
     assert liquid_positions.shape[1] == 3  # x, y, z coordinates
-
-
 
 
 # --- Test box_size_x and box_size_y ---
@@ -101,4 +100,3 @@ def test_ase_parser_box_sizes_match_lattice_norms(tmp_path):
     assert parser.box_size_x(0) == pytest.approx(10.0)
     assert parser.box_size_y(0) == pytest.approx(12.0)
     assert parser.box_length_max(0) == pytest.approx(20.0)
-

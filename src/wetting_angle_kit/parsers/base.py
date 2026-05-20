@@ -2,13 +2,11 @@ from __future__ import annotations
 
 import logging
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
 
 import numpy as np
 
-from wetting_angle_kit.io_utils import validate_droplet_geometry
-
 logger = logging.getLogger(__name__)
+
 
 class BaseParser(ABC):
     """Abstract interface for trajectory parsers consumed by analyzers.
@@ -90,4 +88,3 @@ class BaseParser(ABC):
             Max ``|a_i|`` over lattice vectors.
         """
         raise NotImplementedError("box_length_max not implemented for this parser.")
-

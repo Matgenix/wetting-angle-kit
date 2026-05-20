@@ -50,8 +50,10 @@ import matplotlib.pyplot as plt  # noqa: E402
 from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (  # noqa: E402
     HyperbolicTangentModel,
 )
-from wetting_angle_kit.io_utils import validate_droplet_geometry, project_to_profile # noqa: E402
-
+from wetting_angle_kit.io_utils import (  # noqa: E402
+    project_to_profile,
+    validate_droplet_geometry,
+)
 
 
 class ContactAngleBinning:

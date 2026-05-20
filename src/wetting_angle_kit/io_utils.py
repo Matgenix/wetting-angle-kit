@@ -135,6 +135,7 @@ def detect_parser_type(filename: str) -> str:
         return "xyz"
     raise ValueError(f"Unsupported trajectory file format: {ext}")
 
+
 def project_to_profile(
     positions: np.ndarray, droplet_geometry: str
 ) -> tuple[np.ndarray, np.ndarray]:
