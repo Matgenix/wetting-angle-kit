@@ -18,15 +18,16 @@ authors:
   - name: Julien Bouquiaux
     orcid: 0000-0003-1982-052X
     affiliation: "1"
+  - name: George Froudakis
+    orcid:
+    affiliation: "2"
   - name: Gian-Marco Rignanese
     orcid: 0000-0002-1422-1205
     affiliation: "1 ,3"
   - name: David Waroquiers
     orcid:
     affiliation: "1"
-  - name: George Froudakis
-    orcid:
-    affiliation: "2"
+
 
 affiliations:
  - name: Matgenix, A6K Advanced Engineering Centre, Charleroi, Belgium.
@@ -124,13 +125,11 @@ By enabling systematic comparison of analysis methods and providing standardized
 
 
 # AI usage  disclosure
-Generative AI tools were used in the development of the software, for drafting and assist debugging. Generative AI was used to assist in refining the language, traduction and clarity of the manuscript.
+Generative AI tools were used in the development of the software, for drafting and assist debugging. Generative AI was used to assist in refining the language, traduction and clarity of the manuscript. All AI-assisted changes were verified and approved by the authors.
 
 # Acknowledgements
 
-MSCA fellowship ..
-
-
+This research was supported by the BLESSED project funded by the European Union under Marie Sklodowska-Curie Actions (Grant Agreement No. 101072578).
 
 Computational resources have been provided by the Consortium des Équipements de Calcul Intensif (CÉCI), funded by the FRS-FNRS under Grant No. 2.5020.11 and by the Walloon Region.
 

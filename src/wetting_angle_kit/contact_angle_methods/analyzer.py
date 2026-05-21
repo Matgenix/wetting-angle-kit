@@ -12,7 +12,7 @@ from wetting_angle_kit.contact_angle_methods.sliced.parallel import (
 
 
 class BaseContactAngleAnalyzer(ABC):
-    """Abstract base for contact angle analysis across trajectories."""
+    """Abstract base for contact angle analysis across trajectory files."""
 
     @abstractmethod
     def analyze(

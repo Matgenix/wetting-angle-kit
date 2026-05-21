@@ -262,12 +262,8 @@ class BaseTrajectoryAnalyzer(ABC):
             xvals_arr, yvals_arr = np.array(xvals), np.array(yvals)
             coeffs = np.polyfit(xvals_arr, yvals_arr, 1)
             fit_line = np.poly1d(coeffs)
-
-            # Calculate theta_infinity from intercept (x=0)
-            # intercept = cos(theta_inf) -> theta_inf = arccos(intercept)
             intercept = coeffs[1]
-            # Clip to valid domain [-1, 1] just in case fit goes wild,
-            # though unlikely for physical data
+
             intercept_clipped = np.clip(intercept, -1.0, 1.0)
             theta_inf_deg = np.degrees(np.arccos(intercept_clipped))
 
@@ -291,15 +287,12 @@ class BaseTrajectoryAnalyzer(ABC):
         ax.legend(frameon=False, loc="best")
         ax.grid(False)
         ax.set_xlim(left=-0.001)
-        # Adjust ylim for cosine values (typically -1 to 1, but zoom in on data)
         if len(yvals) > 0:
             margin = (max(yvals) - min(yvals)) * 0.2 if len(yvals) > 1 else 0.1
             if margin == 0:
                 margin = 0.1
             ax.set_ylim(bottom=min(yvals) - margin, top=max(yvals) + margin)
         plt.tight_layout()
-
-        # Save the plot if a path is provided
         if save_path:
             plt.savefig(save_path, dpi=400, bbox_inches="tight")
         plt.close()

@@ -12,7 +12,7 @@ def get_water_finder(
     oxygen_type: Any,
     hydrogen_type: Any,
 ) -> Any:
-    """Return the correct water oxygen finder for the given trajectory file.
+    """Return the appropriate water oxygen finder for a given trajectory file.
 
     Parameters
     ----------
@@ -21,9 +21,9 @@ def get_water_finder(
     particle_type_wall : Any
         Wall particle type identifiers forwarded to the finder constructor.
     oxygen_type : Any
-        Oxygen type identifier (symbol or integer depending on format).
+        Oxygen type identifier (symbol or integer depending on file format).
     hydrogen_type : Any
-        Hydrogen type identifier (symbol or integer depending on format).
+        Hydrogen type identifier (symbol or integer depending on file format).
 
     Returns
     -------

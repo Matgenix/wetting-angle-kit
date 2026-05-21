@@ -51,7 +51,7 @@ class ContactAngleSliced:
             One of ``{'cylinder_y', 'cylinder_x', 'spherical'}`` controlling slicing
             axis.
         delta_gamma : float, optional
-            Angular increment (degrees) for spherical droplet geometry
+            Angular step (degrees) for spherical droplet geometry
             (required if spherical).
         width_cylinder : float, optional
             Extent in slicing axis direction (y or x) for cylindrical droplet geometry.
@@ -234,7 +234,7 @@ class ContactAngleSliced:
         Returns
         -------
         float | None
-            Contact angle (deg) or None if circle does not intersect baseline.
+            Contact angle in degrees or None if circle does not intersect baseline.
         """
         _, z_center, radius = popt
         delta_z = y_line - z_center
@@ -251,7 +251,8 @@ class ContactAngleSliced:
         z_center: float,
         radius: float,
     ) -> np.ndarray:
-        """Return residuals for circle equation used in fitting.
+        """Return the residuals of the circle equation
+        used in fitting.
 
         Parameters
         ----------
@@ -281,12 +282,11 @@ class ContactAngleSliced:
         fit, and baseline intersection) succeeds contribute to the returned
         lists. The three lists are kept in lockstep: ``angles[i]``,
         ``surfaces[i]``, and ``popt_arrays[i]`` always describe the same
-        slice, so consumers can use a single index (e.g. the median index)
-        across all three.
+        slice, so that a single index can be used across all three.
 
         Returns
         -------
-        tuple(list[float], list[ndarray], list[ndarray])
+        tuple(list[float], list[np.ndarray], list[np.ndarray])
             (angles, surfaces, popt_arrays) where
             angles : list of contact angles (deg)
             surfaces : list of surface point arrays (each (M, 2))
@@ -318,7 +318,7 @@ class ContactAngleSliced:
             ]
             try:
                 popt = self.fit_circle(x_data, y_data, initial_guess)
-            except Exception:  # pragma: no cover - rare convergence failures
+            except Exception:
                 continue
             angle = self.find_intersection(popt, min_drop)
             if angle is None:

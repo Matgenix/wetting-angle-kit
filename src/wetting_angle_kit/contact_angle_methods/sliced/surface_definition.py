@@ -60,7 +60,7 @@ class SurfaceDefinition:
         atom_coords : ndarray, shape (N, 3)
             Cartesian coordinates of liquid atoms.
         delta_angle : float
-            Angular increment (degrees) between successive sampling rays.
+            Angular step (degrees) between successive sampling rays.
         max_dist : float
             Maximum radial distance sampled along each ray.
         center_geom : ndarray, shape (3,)
@@ -112,14 +112,15 @@ class SurfaceDefinition:
 
     @staticmethod
     def density_profile(z: np.ndarray, zd: float, d: float, h: float) -> np.ndarray:
-        """Simple hyperbolic tangent profile used for interface localization.
+        """Simple hyperbolic tangent profile used for liquid-vapor interface
+        localization.
 
         Parameters
         ----------
         z : ndarray
             Distances along the sampling ray (Å).
         zd : float
-            Interface position parameter to be fitted.
+            Liquid-vapor interface position parameter to be fitted.
         d : float
             Amplitude scaling parameter.
         h : float
@@ -155,7 +156,7 @@ class SurfaceDefinition:
             Fitted ``zd`` value (interface location).
         """
         popt, _ = curve_fit(self.density_profile, z_data, density, bounds=param_bounds)
-        zd, d, h = popt  # noqa: F841 - d, h retained for clarity if extended later
+        zd, d, h = popt
         return zd
 
     def analyze_lines(self) -> tuple[list[list[float]], list[list[float]]]:

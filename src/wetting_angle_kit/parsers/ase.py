@@ -27,7 +27,7 @@ class AseParser(BaseParser):
         """
         try:
             from ase.io import read
-        except ImportError as e:  # pragma: no cover - dependency guard
+        except ImportError as e:
             raise ImportError(
                 "The 'ase' package is required to use AseParser. Install with "
                 "'pip install ase'."
@@ -139,7 +139,7 @@ class AseWaterFinder:
         try:
             from ase.io import read
             from ase.neighborlist import NeighborList
-        except ImportError as e:  # pragma: no cover
+        except ImportError as e:
             raise ImportError(
                 "The 'ase' package is required to use AseWaterFinder. "
                 "Install it with: pip install ase"
@@ -222,7 +222,7 @@ class AseWallParser(BaseParser):
         """
         try:
             from ase.io import read
-        except ImportError as e:  # pragma: no cover
+        except ImportError as e:
             raise ImportError(
                 "The 'ase' package is required to use AseWallParser. Install it "
                 "with: pip install ase"
@@ -308,5 +308,5 @@ class AseWallParser(BaseParser):
         return float(max(frame.cell.lengths()))
 
     def frame_count(self) -> int:
-        """Return the total number of frames available."""
+        """Return the total number of frames in the trajectory."""
         return len(self.trajectory)

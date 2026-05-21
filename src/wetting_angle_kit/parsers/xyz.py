@@ -23,7 +23,8 @@ class XYZParser(BaseParser):
         self.frames = self.load_xyz_file()
 
     def load_xyz_file(self) -> list[dict[str, Any]]:
-        """Load all frames from the XYZ file into memory.
+        """Load all frames from the XYZ file into memory using the numpy
+            package.
 
         Returns
         -------
@@ -83,7 +84,8 @@ class XYZParser(BaseParser):
     def parse_liquid_particles(
         self, liquid_particle_types: list[str], frame_index: int
     ) -> np.ndarray:
-        """Return positions of liquid atoms filtered by atomic symbol.
+        """Return positions of liquid atoms identified by
+        their atomic symbol.
 
         Parameters
         ----------
@@ -128,7 +130,7 @@ class XYZParser(BaseParser):
         return float(np.max(np.linalg.norm(lattice_matrix, axis=1)))
 
     def frame_count(self) -> int:
-        """Return the total number of frames available."""
+        """Return the total number of frames in the trajectory."""
         return len(self.frames)
 
 

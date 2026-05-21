@@ -8,6 +8,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+
 from wetting_angle_kit.io_utils import (
     VALID_DROPLET_GEOMETRIES,
     assert_orthogonal_cell,

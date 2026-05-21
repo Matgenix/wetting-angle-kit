@@ -70,7 +70,7 @@ def load_dump_ovito(filepath: str) -> Any:
     Returns
     -------
     Any
-        OVITO pipeline object (typed as Any because OVITO ships without stubs).
+        OVITO pipeline object (typed as Any because OVITO lacks Python type stubs).
     """
     try:
         from ovito.io import import_file
@@ -170,6 +170,6 @@ def project_to_profile(
         r_values = np.abs(x_centered[:, 0])
     elif droplet_geometry == "cylinder_x":
         r_values = np.abs(x_centered[:, 1])
-    else:  # spherical
+    else:  # droplet_geometry == "spherical"
         r_values = np.sqrt(x_centered[:, 0] ** 2 + x_centered[:, 1] ** 2)
     return r_values, z_values

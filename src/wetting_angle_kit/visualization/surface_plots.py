@@ -2,7 +2,6 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 
 
 def plot_surface_file(file_path: str) -> tuple[np.ndarray, np.ndarray]:
@@ -78,12 +77,12 @@ def plot_surface_and_points(
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
     ax.plot(x_surf, y_surf, z_surf, label="Surface", color="black")
-    ax.scatter(  # type: ignore[misc]
+    ax.scatter(
         x_points, y_points, z_points, s=10, alpha=0.7, label="Points", color="tab:blue"
     )
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
-    ax.set_zlabel("Z")  # type: ignore[attr-defined]
+    ax.set_zlabel("Z")
     ax.legend()
     plt.tight_layout()
     plt.show()
@@ -135,16 +134,10 @@ def plot_liquid_particles(
     if ax is None:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection="3d")
-    ax.scatter(  # type: ignore[misc,union-attr]
+    ax.scatter(
         positions[:, 0], positions[:, 1], positions[:, 2], s=8, alpha=0.8, color=color
     )
     ax.set_xlabel("X")
     ax.set_ylabel("Y")
-    ax.set_zlabel("Z")  # type: ignore[union-attr]
+    ax.set_zlabel("Z")
     return ax
-
-
-# Example usage (commented):
-# x,y = plot_surface_file('surface.txt')
-# plot_slice(x,y)
-# visualize_surface_with_points('surf.txt', np.random.rand(100,3))

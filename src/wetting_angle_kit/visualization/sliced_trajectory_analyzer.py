@@ -149,13 +149,12 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         if not self.data[self.directories[0]]["median_angles"]:
             self.load_data()
 
-        # Use provided labels or fall back to directory basename
         plot_labels = (
             labels if labels else {d: os.path.basename(d) for d in self.directories}
         )
 
         plt.figure(figsize=(10, 6))
-        colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))  # type: ignore[attr-defined]
+        colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))
 
         for i, directory in enumerate(self.directories):
             median_angles = self.data[directory]["median_angles"]
@@ -202,7 +201,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             labels if labels else {d: os.path.basename(d) for d in self.directories}
         )
         plt.figure(figsize=(10, 6))
-        colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))  # type: ignore[attr-defined]
+        colors = plt.cm.tab20(np.linspace(0, 1, len(self.directories)))
 
         for i, directory in enumerate(self.directories):
             mean_angles = self.data[directory]["mean_angles"]

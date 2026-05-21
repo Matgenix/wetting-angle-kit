@@ -46,9 +46,10 @@ class SlicedFrameResult(NamedTuple):
 class ContactAngleSlicedParallel:
     """Batch-parallel contact angle analyzer for sliced method.
 
-    Frames are grouped into batches to mitigate parser pickling issues and to
-    amortize object construction cost. Each batch is processed in a separate
-    process using ``ProcessPoolExecutor``.
+    The frames are grouped into batches to reduce problems
+    related to serialization by the parser and to distribute
+    the cost of creating objects. Each batch is processed in
+    a separate process using ``ProcessPoolExecutor``.
     """
 
     def __init__(
@@ -77,7 +78,8 @@ class ContactAngleSlicedParallel:
         delta_cylinder : float, optional
             Y (or X) half-width of selection cylinder in cylindrical modes.
         points_per_angstrom : float, default 1.0
-            Sampling density along each radial ray for the surface fit.
+            Sampling density along each radial ray for the surface fit,
+            influences the computational cost.
         """
         self.filename = filename
         self.output_dir = output_dir
@@ -144,7 +146,7 @@ class ContactAngleSlicedParallel:
                         f"Completed batch {completed_batches}/{len(batches)} "
                         f"({len(batch_results)} frames)"
                     )
-                except Exception as e:  # pragma: no cover
+                except Exception as e:
                     logger.error(
                         f"Error in batch for frames {batch_frames}: {e}",
                         exc_info=True,
@@ -189,7 +191,7 @@ class ContactAngleSlicedParallel:
             from wetting_angle_kit.parsers.base import BaseParser
             from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser
             from wetting_angle_kit.parsers.xyz import XYZParser
-        except ImportError as e:  # pragma: no cover
+        except ImportError as e:
             logger.error(f"Failed to import required classes: {e}")
             return [
                 SlicedFrameResult(frame, None, [], [], []) for frame in batch_frames
@@ -206,7 +208,7 @@ class ContactAngleSlicedParallel:
                 parser = XYZParser(filepath=self.filename)
             else:
                 raise ValueError(f"Unsupported parser type: {parser_type}")
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             logger.error(f"Error initializing parser: {e}")
             return [
                 SlicedFrameResult(frame, None, [], [], []) for frame in batch_frames
@@ -218,7 +220,7 @@ class ContactAngleSlicedParallel:
                     frame_num, self.atom_indices, parser
                 )
                 batch_results.append(result)
-            except Exception as e:  # pragma: no cover
+            except Exception as e:
                 logger.error(f"Error processing frame {frame_num}: {e}")
                 batch_results.append(SlicedFrameResult(frame_num, None, [], [], []))
         return batch_results
@@ -232,7 +234,7 @@ class ContactAngleSlicedParallel:
                 ContactAngleSliced,
             )
 
-        except ImportError as e:  # pragma: no cover
+        except ImportError as e:
             logger.error(f"Missing sliced predictor dependency: {e}")
             return SlicedFrameResult(frame_num, None, [], [], [])
         logger.info(f"START processing frame {frame_num}")
@@ -285,6 +287,6 @@ class ContactAngleSlicedParallel:
             return SlicedFrameResult(
                 frame_num, mean_angle, angles, surfaces, popt_arrays
             )
-        except Exception as e:  # pragma: no cover
+        except Exception as e:
             logger.error(f"Error processing frame {frame_num}: {e}", exc_info=True)
             return SlicedFrameResult(frame_num, None, [], [], [])

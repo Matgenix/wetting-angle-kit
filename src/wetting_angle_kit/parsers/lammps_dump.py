@@ -235,7 +235,7 @@ class LammpsDumpWallParser(BaseParser):
         return float(np.max(np.linalg.norm(ovito_cell_vectors(data), axis=0)))
 
     def frame_count(self) -> int:
-        """Return the total number of frames available."""
+        """Return the total number of frames in the trajectory."""
         return int(self.pipeline.source.num_frames)
 
 

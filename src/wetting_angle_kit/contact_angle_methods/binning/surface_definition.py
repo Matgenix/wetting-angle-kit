@@ -114,7 +114,8 @@ class HyperbolicTangentModel(SurfaceModel):
     depending on the spherical radial distance and one along the vertical axis.
     """
 
-    #: Default initial guess for the seven fit parameters (water at RT, Å units).
+    #: Default initial guess for the seven fit parameters for full atomistic model of
+    # water at RT.
     DEFAULT_INITIAL_PARAMS = [1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0]
 
     def __init__(self, initial_params: list[float] | None = None) -> None:

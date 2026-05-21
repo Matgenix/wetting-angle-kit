@@ -32,7 +32,7 @@ class BaseParser(ABC):
               so a persistent ID is needed to track the same atom.
             * :class:`XYZParser`, :class:`AseParser` — ``indices`` are
               positional indices into the per-frame coordinate array. These
-              formats keep atom ordering stable across frames.
+              formats keep atom ordering stable across frames during simulations.
 
         Returns
         -------
@@ -55,21 +55,21 @@ class BaseParser(ABC):
         )
         return self.frame_count()
 
-    def box_size_x(self, frame_index: int) -> float:  # pragma: no cover - default
+    def box_size_x(self, frame_index: int) -> float:
         """Return the x-dimension of the simulation box for a frame.
 
         Override in subclasses where the underlying format exposes it.
         """
         raise NotImplementedError("box_size_x not implemented for this parser.")
 
-    def box_size_y(self, frame_index: int) -> float:  # pragma: no cover - default
+    def box_size_y(self, frame_index: int) -> float:
         """Return the y-dimension of the simulation box for a frame.
 
         Override in subclasses where the underlying format exposes it.
         """
         raise NotImplementedError("box_size_y not implemented for this parser.")
 
-    def box_length_max(self, frame_index: int) -> float:  # pragma: no cover - default
+    def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.
 
         Override in subclasses where the underlying format exposes it.

@@ -31,7 +31,16 @@ from collections.abc import Sequence
 from typing import Any
 
 import matplotlib
+import matplotlib.pyplot as plt
 import numpy as np
+
+from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
+    HyperbolicTangentModel,
+)
+from wetting_angle_kit.io_utils import (
+    project_to_profile,
+    validate_droplet_geometry,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -42,18 +51,7 @@ if matplotlib.get_backend().lower() != "agg":
     try:
         matplotlib.use("Agg", force=False)
     except (ImportError, ValueError):
-        # Backend is already locked in by another import; keep it.
         pass
-
-import matplotlib.pyplot as plt  # noqa: E402
-
-from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (  # noqa: E402
-    HyperbolicTangentModel,
-)
-from wetting_angle_kit.io_utils import (  # noqa: E402
-    project_to_profile,
-    validate_droplet_geometry,
-)
 
 
 class ContactAngleBinning:
@@ -237,13 +235,13 @@ class ContactAngleBinning:
         counts, _, _ = np.histogram2d(
             xi_par,
             zi_par,
-            bins=(self.xi, self.zi),  # type: ignore[arg-type]
-        )  # shape (nbins_xi-1, nbins_zi-1)
+            bins=(self.xi, self.zi),
+        )
         if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
             assert self.width_cylinder is not None
             dV = 2.0 * self.width_cylinder * self.dxi * self.dzi
             rho_cc = counts / dV
-        else:  # spherical — annular shell volume depends on radius
+        else:  # spherical droplet geometry
             dV_per_row = 2.0 * np.pi * self.xi_cc * self.dxi * self.dzi
             rho_cc = counts / dV_per_row[:, np.newaxis]
         if len_frames > 0:
