@@ -1,6 +1,8 @@
+name: tests
+
 on:
   push:
-
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -26,8 +28,10 @@ jobs:
   test:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.9', '3.10', '3.11']
+        # OVITO does not yet ship wheels for Python 3.13, so we cap at 3.12.
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
       - uses: actions/checkout@v4
@@ -47,6 +51,15 @@ jobs:
 
       - name: Test
         run: pytest --cov=wetting_angle_kit --cov-report=xml
+
+      - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   docs:
     runs-on: ubuntu-latest

@@ -3,8 +3,8 @@ import pathlib
 import numpy as np
 import pytest
 
-from wetting_angle_kit.contact_angle_method import contact_angle_analyzer
-from wetting_angle_kit.parser import DumpParser, DumpWaterMoleculeFinder
+from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 
 # --- Fixtures ---
@@ -20,7 +20,7 @@ def filename():
 
 @pytest.fixture
 def wat_find(filename):
-    return DumpWaterMoleculeFinder(
+    return LammpsDumpWaterFinder(
         filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2
     )
 
@@ -32,10 +32,12 @@ def oxygen_indices(wat_find):
 
 @pytest.fixture
 def parser(filename):
-    return DumpParser(filename)
+    return LammpsDumpParser(filename)
 
 
 # --- Unit Tests for ContactAngleSliced ---
+@pytest.mark.integration
+@pytest.mark.slow
 def test_contact_angle_sliced_with_real_data(parser, oxygen_indices):
     # Parse liquid positions for frame 0
     liquid_positions = parser.parse(frame_index=0, indices=oxygen_indices)
@@ -50,7 +52,7 @@ def test_contact_angle_sliced_with_real_data(parser, oxygen_indices):
     mean_liquid_position = np.mean(liquid_positions, axis=0)
 
     # Initialize ContactAngleSliced
-    from wetting_angle_kit.contact_angle_method.sliced_method import (
+    from wetting_angle_kit.contact_angle_methods.sliced import (
         ContactAngleSliced,
     )
 
@@ -63,14 +65,16 @@ def test_contact_angle_sliced_with_real_data(parser, oxygen_indices):
     )
 
     # Test predict_contact_angle
-    list_alfas, array_surfaces, array_popt = predictor.predict_contact_angle()
-    assert isinstance(list_alfas, list)
-    assert isinstance(array_surfaces, list)
-    assert isinstance(array_popt, list)
-    assert len(list_alfas) > 0
+    angles, surfaces, popt_arrays = predictor.predict_contact_angle()
+    assert isinstance(angles, list)
+    assert isinstance(surfaces, list)
+    assert isinstance(popt_arrays, list)
+    assert len(angles) > 0
 
 
 # --- Integration Test for SlicedContactAngleAnalyzer ---
+@pytest.mark.integration
+@pytest.mark.slow
 def test_sliced_contact_angle_analyzer_with_real_data(
     filename, oxygen_indices, tmp_path
 ):
@@ -79,7 +83,7 @@ def test_sliced_contact_angle_analyzer_with_real_data(
 
     analyzer = contact_angle_analyzer(
         method="sliced",
-        parser=DumpParser(filename),
+        parser=LammpsDumpParser(filename),
         output_dir=output_dir,
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
@@ -93,5 +97,9 @@ def test_sliced_contact_angle_analyzer_with_real_data(
     assert "std_angle" in results
     assert "angles" in results
     assert len(results["angles"]) == 1
-    assert 0 <= results["mean_angle"] <= 180
+    # The fixture is a water droplet on a graphene-like substrate, which
+    # gives a contact angle around 90-100° (literature: ~93° for graphene).
+    # Assert a tight physically-plausible band so regressions in the
+    # sliced pipeline are caught.
+    assert 80.0 <= results["mean_angle"] <= 110.0
     assert np.isfinite(results["std_angle"])

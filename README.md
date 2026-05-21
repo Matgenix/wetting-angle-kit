@@ -47,15 +47,16 @@ conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forg
 
 
 ```python
-from wetting_angle_kit import (
-    XYZParser, SlicedContactAngleAnalyzer, BinningContactAngleAnalyzer,
-    detect_parser_type, contact_angle_analyzer
+from wetting_angle_kit.contact_angle_methods import (
+    BinningContactAngleAnalyzer,
+    SlicedContactAngleAnalyzer,
 )
+from wetting_angle_kit.parsers import XYZParser
 
 trajectory_file = "trajectory.xyz"
 parser = XYZParser(trajectory_file)
 
-sliced = SlicedContactAngleAnalyzer(parser, output_repo="out_sliced", atom_indices=oxygen_ids, droplet_geometry="spherical", delta_gamma=5)
+sliced = SlicedContactAngleAnalyzer(parser, output_dir="out_sliced", atom_indices=oxygen_ids, droplet_geometry="spherical", delta_gamma=5)
 results = sliced.analyze(frame_range=range(0, 50))
 print(results["mean_angle"], results["std_angle"])
 

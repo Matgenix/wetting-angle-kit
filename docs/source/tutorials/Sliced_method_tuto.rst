@@ -34,14 +34,14 @@ Example trajectory::
 .. code-block:: python
 
    # Import necessary modules
-   from wetting_angle_kit.parser import DumpParser, DumpWaterMoleculeFinder
-   from wetting_angle_kit.contact_angle_method import contact_angle_analyzer
+   from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
+   from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
 
    # --- Step 1: Define the trajectory file ---
    filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
 
    # --- Step 2: Initialize the water molecule finder ---
-   wat_find = DumpWaterMoleculeFinder(
+   wat_find = LammpsDumpWaterFinder(
        filename,
        particle_type_wall={3},  # Wall particle types
        oxygen_type=1,  # Oxygen atom type
@@ -53,7 +53,7 @@ Example trajectory::
    print("Number of water molecules:", len(oxygen_indices))
 
    # --- Step 4: Initialize the parser ---
-   parser = DumpParser(filename)
+   parser = LammpsDumpParser(filename)
 
    # --- Step 5: Create the contact angle analyzer ---
    # Using the 'sliced' method with a spherical model
@@ -63,7 +63,7 @@ Example trajectory::
        output_dir="result_dump_spherical_sliced",
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",  # Geometry fitting model
-       delta_gamma=20,  # Smoothing parameter
+       delta_gamma=20,  # Azimuthal step (deg) for spherical slicing
    )
 
    # --- Step 6: Run the analysis ---
@@ -79,10 +79,26 @@ Example trajectory::
 
 After running the example, you'll see something like::
 
-   Number of water molecules: 423
-   Analysis results: {'frame': 1, 'contact_angle': 104.7, 'fit_quality': 0.96}
+   Number of water molecules: 1320
+   Analysis results: {
+       'mean_angle': 94.46,
+       'std_angle': 0.0,
+       'angles': {1: 94.46},
+       'frames_analyzed': [1],
+       'method_metadata': {'frames_per_angle': 1},
+   }
 
-If plotting is enabled, a visualization of the droplet profile and the fitted spherical interface is generated in ``result_dump_spherical_sliced/``.
+The ``analyze`` return dict has these keys:
+
+* ``mean_angle`` — mean contact angle (°) across the analyzed frames.
+* ``std_angle`` — standard deviation across frames.
+* ``angles`` — mapping ``frame_index -> mean angle for that frame``.
+* ``frames_analyzed`` — list of frame indices that were processed.
+* ``method_metadata`` — method-specific info (e.g. number of frames per
+  angle value).
+
+Per-frame raw outputs (alfas, surfaces, popt) are saved as ``.npy`` files
+inside the output directory.
 
 ----
 
@@ -90,7 +106,11 @@ If plotting is enabled, a visualization of the droplet profile and the fitted sp
 -------
 
 - Use ``droplet_geometry='spherical'`` for droplets and ``droplet_geometry='cylinder_y'`` for cylindrical droplet on the y axis or ``'cylinder_x'`` for cylinder on the x axis.
-- Adjust ``delta_gamma`` for smoother or sharper slicing (larger = smoother).
+- Adjust ``delta_gamma`` for the spherical mode (azimuthal step in
+  degrees between successive slices — smaller = more slices, more
+  detail, more cost). For very small droplets, also raise
+  ``points_per_angstrom`` (default 1.0) on the analyzer to densify the
+  per-ray sampling used by the interface fit.
 - To analyze multiple frames:
 
 .. code-block:: python
@@ -115,14 +135,14 @@ If plotting is enabled, a visualization of the droplet profile and the fitted sp
    using the 'sliced' method on a spherical droplet from a LAMMPS dump trajectory.
    """
 
-   from wetting_angle_kit.parser import DumpParser, DumpWaterMoleculeFinder
-   from wetting_angle_kit.contact_angle_method import contact_angle_analyzer
+   from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
+   from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
 
    # --- Step 1: Define input trajectory ---
    filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
 
    # --- Step 2: Identify water molecules ---
-   wat_find = DumpWaterMoleculeFinder(
+   wat_find = LammpsDumpWaterFinder(
        filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2  # Wall atom types
    )
 
@@ -130,7 +150,7 @@ If plotting is enabled, a visualization of the droplet profile and the fitted sp
    print(f"Number of water molecules: {len(oxygen_indices)}")
 
    # --- Step 3: Initialize parser ---
-   parser = DumpParser(filename, particle_type_wall={3})
+   parser = LammpsDumpParser(filename)
 
    # --- Step 4: Create analyzer for the sliced method ---
    analyzer = contact_angle_analyzer(
@@ -139,7 +159,7 @@ If plotting is enabled, a visualization of the droplet profile and the fitted sp
        output_dir="result_dump_spherical_sliced",
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",  # Fitting model
-       delta_gamma=20,  # Smoothing parameter
+       delta_gamma=20,  # Azimuthal step (deg) for spherical slicing
    )
 
    # --- Step 5: Run analysis ---

@@ -22,14 +22,10 @@ Ensure you have the required classes imported:
 
 .. code-block:: python
 
-   from wetting_angle_kit.visualization_angles.binning_analyzer import (
+   from wetting_angle_kit.visualization import (
        BinningTrajectoryAnalyzer,
-   )
-   from wetting_angle_kit.visualization_angles.sliced_analyzer import (
-       SlicedTrajectoryAnalyzer,
-   )
-   from wetting_angle_kit.visualization_angles.comparison_methods import (
        MethodComparison,
+       SlicedTrajectoryAnalyzer,
    )
 
 Initialize the Analyzers

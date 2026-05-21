@@ -1,13 +1,13 @@
 # Import necessary modules
-from wetting_angle_kit.contact_angle_method import contact_angle_analyzer
-from wetting_angle_kit.parser import DumpParser, DumpWaterMoleculeFinder
+from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 # --- Step 1: Define the trajectory file ---
 filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
 
 # --- Step 2: Initialize the water molecule finder ---
 # This identifies O and H atoms in water molecules
-wat_find = DumpWaterMoleculeFinder(
+wat_find = LammpsDumpWaterFinder(
     filename,
     particle_type_wall={3},  # Wall atom types
     oxygen_type=1,  # Oxygen atom type
@@ -29,7 +29,7 @@ binning_params = {
 }
 
 # --- Step 5: Initialize the parser ---
-parser = DumpParser(filename)
+parser = LammpsDumpParser(filename)
 
 # --- Step 6: Create the contact angle analyzer ---
 analyzer = contact_angle_analyzer(

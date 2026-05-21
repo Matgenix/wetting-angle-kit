@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pytest
 
-from wetting_angle_kit.parser.parser_ase import AseParser
+from wetting_angle_kit.parsers.ase import AseParser
 
 # Path to the test trajectory file (ASE format)
 TRAJECTORY_PATH = os.path.join(
@@ -42,31 +42,8 @@ def test_parse_liquid_particles(ase_parser):
     assert liquid_positions.shape[1] == 3  # x, y, z coordinates
 
 
-# --- Test get_profile_coordinates ---
-def test_get_cylindrical_coordinates(ase_parser, capsys):
-    frame_indices = [0, 1]
-    r_values, z_values, n_frames = ase_parser.get_profile_coordinates(frame_indices)
-    assert isinstance(r_values, np.ndarray)
-    assert isinstance(z_values, np.ndarray)
-    assert n_frames == len(frame_indices)
-    assert r_values.shape == z_values.shape
-
-    # Test with atom_indices
-    atom_indices = [0, 1, 2]
-    r_values, z_values, _ = ase_parser.get_profile_coordinates(
-        frame_indices, atom_indices=atom_indices
-    )
-    assert r_values.size > 0
-    assert z_values.size > 0
-
-    # Check print output
-    captured = capsys.readouterr()
-    assert "r range:" in captured.out
-    assert "z range:" in captured.out
-
-
 # --- Test box_size_x and box_size_y ---
-def test_box_size_x(ase_parser, capsys):
+def test_box_size_x(ase_parser):
     frame_index = 0
     box_size_x = ase_parser.box_size_x(frame_index)
     assert isinstance(box_size_x, float)
@@ -95,11 +72,31 @@ def test_frame_count(ase_parser):
     assert total_frames > 0
 
 
-# --- Test droplet_geometry in get_profile_coordinates ---
-def test_get_cylindrical_coordinates_type_model(ase_parser):
-    frame_indices = [0]
-    r_values, z_values, _ = ase_parser.get_profile_coordinates(
-        frame_indices, droplet_geometry="spherical"
-    )
-    assert isinstance(r_values, np.ndarray)
-    assert isinstance(z_values, np.ndarray)
+# --- Test non-orthogonal cell rejection ---
+def test_ase_parser_rejects_triclinic_cell(tmp_path):
+    ase = pytest.importorskip("ase")
+    from ase import Atoms
+    from ase.io import write
+
+    atoms = Atoms("O", positions=[[0.0, 0.0, 0.0]])
+    atoms.set_cell([[10.0, 0.0, 0.0], [5.0, 8.66, 0.0], [0.0, 0.0, 20.0]])
+    path = tmp_path / "triclinic.traj"
+    write(str(path), atoms)
+    with pytest.raises(ValueError, match="Non-orthogonal"):
+        AseParser(str(path))
+    del ase
+
+
+def test_ase_parser_box_sizes_match_lattice_norms(tmp_path):
+    pytest.importorskip("ase")
+    from ase import Atoms
+    from ase.io import write
+
+    atoms = Atoms("O", positions=[[0.0, 0.0, 0.0]])
+    atoms.set_cell([[10.0, 0.0, 0.0], [0.0, 12.0, 0.0], [0.0, 0.0, 20.0]])
+    path = tmp_path / "ortho.traj"
+    write(str(path), atoms)
+    parser = AseParser(str(path))
+    assert parser.box_size_x(0) == pytest.approx(10.0)
+    assert parser.box_size_y(0) == pytest.approx(12.0)
+    assert parser.box_length_max(0) == pytest.approx(20.0)

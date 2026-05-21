@@ -9,21 +9,25 @@ authors:
   - name: Gabriel Taillandier
     orcid: 0009-0006-9544-0982
     affiliation: "1, 2"
-  - name:
+  - name: Edoardo Monti
+    orcid: 0009-0002-8340-7940
+    affiliation: "4, 5"
+  - name: Guillaume Brunin
+    orcid: 0000-0003-1159-8389
+    affiliation: "1"
+  - name: Julien Bouquiaux
+    orcid: 0000-0003-1982-052X
+    affiliation: "1"
+  - name: George Froudakis
     orcid:
-    affiliation:
-  - name:
+    affiliation: "2"
+  - name: Gian-Marco Rignanese
+    orcid: 0000-0002-1422-1205
+    affiliation: "1 ,3"
+  - name: David Waroquiers
     orcid:
-    affiliation:
-  - name:
-    orcid:
-    affiliation:
-  - name:
-    orcid:
-    affiliation:
-  - name:
-    orcid:
-    affiliation:
+    affiliation: "1"
+
 
 affiliations:
  - name: Matgenix, A6K Advanced Engineering Centre, Charleroi, Belgium.
@@ -32,12 +36,12 @@ affiliations:
    index: 2
  - name: Institute of Condensed Matter and Nanosciences, Université catholique de Louvain, B-1348 Louvain-la-Neuve, Belgium
    index: 3
- - name: Imperial
+ - name: Department of Mathematics, Imperial College London, 180 Queen's Gate, London, SW7 2AZ, United Kingdom
    index: 4
- - name: Toyota
+ - name: Advanced Technology Division, Toyota Motor Europe NV/SA, Technical Center, Hoge Wei 33B, Zaventem, 1930, Belgium
    index: 5
 
-date: January 2026
+date:  May 2026
 bibliography: paper.bib
 ---
 
@@ -121,13 +125,11 @@ By enabling systematic comparison of analysis methods and providing standardized
 
 
 # AI usage  disclosure
-Generative AI tools were used in the development of the software, for drafting and assist debugging. Generative AI was used to assist in refining the language, traduction and clarity of the manuscript.
+Generative AI tools were used in the development of the software, for drafting and assist debugging. Generative AI was used to assist in refining the language, traduction and clarity of the manuscript. All AI-assisted changes were verified and approved by the authors.
 
 # Acknowledgements
 
-MSCA fellowship ..
-
-
+This research was supported by the BLESSED project funded by the European Union under Marie Sklodowska-Curie Actions (Grant Agreement No. 101072578).
 
 Computational resources have been provided by the Consortium des Équipements de Calcul Intensif (CÉCI), funded by the FRS-FNRS under Grant No. 2.5020.11 and by the Walloon Region.
 

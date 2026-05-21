@@ -26,14 +26,10 @@ The `BinningTrajectoryAnalyzer` and `SlicedTrajectoryAnalyzer` classes are desig
 Ensure you have the required classes imported:
 
 ```python
-from wetting_angle_kit.visualization_statistics_angles.binning_analyzer import (
+from wetting_angle_kit.visualization import (
     BinningTrajectoryAnalyzer,
-)
-from wetting_angle_kit.visualization_statistics_angles.sliced_analyzer import (
-    SlicedTrajectoryAnalyzer,
-)
-from wetting_angle_kit.visualization_statistics_angles.comparison_methods import (
     MethodComparison,
+    SlicedTrajectoryAnalyzer,
 )
 ```
 ---

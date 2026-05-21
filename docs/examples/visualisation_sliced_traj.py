@@ -1,21 +1,26 @@
+"""End-to-end example: sliced contact-angle pipeline plus visualization.
+
+Run a single-frame sliced analysis on a LAMMPS dump file and save a PNG of
+the droplet with the fitted circle, surface contour, and tangent at the
+contact point.
+"""
+
 import numpy as np
 
-from wetting_angle_kit.contact_angle_method.sliced_method import ContactAngleSliced
-from wetting_angle_kit.parser import (
-    DumpParser,
-    DumpWallParser,
-    DumpWaterMoleculeFinder,
+from wetting_angle_kit.contact_angle_methods.sliced import ContactAngleSliced
+from wetting_angle_kit.parsers import (
+    LammpsDumpParser,
+    LammpsDumpWallParser,
+    LammpsDumpWaterFinder,
 )
-from wetting_angle_kit.visualization_statistics_angles import Droplet_sliced_Plotter
+from wetting_angle_kit.visualization import DropletSlicePlotter
 
 # --- 1. Define the Input Trajectory ---
-# Note: Ensure this path points to your actual .lammpstrj file location
-filename = (
-    "../wetting_angle_kit/tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
-)
+# Adjust this to point to your local .lammpstrj file.
+filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
 
 # --- 2. Identify Water Molecules ---
-wat_find = DumpWaterMoleculeFinder(
+wat_find = LammpsDumpWaterFinder(
     filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2
 )
 
@@ -23,16 +28,14 @@ oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
 print("Number of water molecules detected:", len(oxygen_indices))
 
 # --- 3. Parse Atomic Coordinates ---
-parser = DumpParser(filepath=filename)
+parser = LammpsDumpParser(filepath=filename)
 oxygen_position = parser.parse(frame_index=10, indices=oxygen_indices)
 
-coord_wall = DumpWallParser(filename, particule_liquid_type={1, 2})
-wall_coords = coord_wall.parse(frame_index=1)
+# Wall particles are everything not in the liquid types.
+coord_wall = LammpsDumpWallParser(filename, liquid_particle_types=[1, 2])
+wall_coords = coord_wall.parse(frame_index=10)
 
 # --- 4. Compute Contact Angles ---
-#
-
-
 processor = ContactAngleSliced(
     liquid_coordinates=oxygen_position,
     liquid_geom_center=np.mean(oxygen_position, axis=0),
@@ -43,10 +46,10 @@ processor = ContactAngleSliced(
 )
 
 list_alfas, array_surfaces, array_popt = processor.predict_contact_angle()
-print("Mean contact angles (°):", list_alfas)
+print("Per-slice contact angles (°):", list_alfas)
 
 # --- 5. Visualize the Droplet ---
-plotter = Droplet_sliced_Plotter(center=True, show_wall=True, molecule_view=True)
+plotter = DropletSlicePlotter(center=True, show_wall=True, molecule_view=True)
 
 plotter.plot_surface_points(
     oxygen_position=oxygen_position,
@@ -57,4 +60,4 @@ plotter.plot_surface_points(
     alpha=list_alfas[0],
 )
 
-print(" Plot saved as 'droplet_plot.png'")
+print("Plot saved as 'droplet_plot.png'")

@@ -1,126 +1,81 @@
-# Tests for hydro_angle_analyzer
+Test suite for wetting-angle-kit
+================================
 
-This directory contains tests for the `hydro_angle_analyzer` Python package, focused on testing the functionality with existing trajectory files.
+Layout
+------
 
-## Components Tested
+::
 
-- **FrameProcessor**: Processes trajectory frames in parallel
-- **DumpParser**: Parses LAMMPS trajectory files
-- **ContactAngleAnalyzer**: Analyzes contact angles using different models
+    tests/
+    ├── conftest.py                       Shared helpers and trajectory path constants
+    ├── test_io_utils.py                  Unit tests for wetting_angle_kit.io_utils
+    ├── test_geometry_projection.py       Unit tests for the (r, z) projection used
+    │                                     by BaseParser.get_profile_coordinates
+    │                                     (covers spherical / cylinder_x / cylinder_y)
+    ├── test_edge_cases.py                Validation errors, deprecation paths,
+    │                                     NaN guards, factory rejections
+    ├── test_visualization.py             Smoke tests for the plotting helpers
+    ├── test_parser/                      Per-format parser tests (LAMMPS dump,
+    │   ├── test_parser_dump.py           XYZ, ASE)
+    │   ├── test_parser_xyz.py
+    │   └── test_parser_ase.py
+    ├── test_contact_angle_methods/       Integration tests for the sliced and
+    │   ├── test_sliced_method.py         binning analyzers on real fixtures
+    │   └── test_binning_method.py
+    └── trajectories/                     Fixture trajectories used by integration
+                                          tests (LAMMPS dump and XYZ/ASE samples)
 
-## Test Files
+Running the tests
+-----------------
 
-- `test_hydro_angle_analyzer.py`: Unit and integration tests for all components
-- `test_dump_parser.py`: Specific tests for the DumpParser class
-- `test_contact_angle_analyzer.py`: Specific tests for the ContactAngleAnalyzer class
-- `test_integration.py`: Integration tests using real trajectory files
-- `conftest.py`: Pytest fixtures and configuration
-- `pytest.ini`: Pytest configuration
+The full suite (including the slow OVITO/ASE integration tests)::
 
-## Running Tests
+    pytest
 
-### Prerequisites
+Fast unit-only run (skips the per-trajectory analyzers)::
 
-1. Make sure you have the test trajectory file available:
-   - `traj_10_3_330w_nve_4k_reajust.lammpstrj`
-   - Place this file in the root directory where you run the tests
+    pytest -m "not slow"
 
-2. Install testing requirements:
-   ```bash
-   pip install pytest
-   ```
+Only the integration tests against real trajectories::
 
-### Running All Tests
+    pytest -m integration
 
-```bash
-python -m pytest
-```
+With coverage::
 
-### Running Specific Test Files
+    pytest --cov=wetting_angle_kit --cov-report=term-missing
 
-```bash
-python -m pytest tests/test_dump_parser.py
-```
+Markers
+-------
 
-### Skipping Slow Tests
+``slow``
+    Tests that take more than ~1 second (typically the sliced analyzer
+    integration tests that fit per-frame circles).
 
-```bash
-python -m pytest -m "not slow"
-```
+``integration``
+    Tests that read a fixture trajectory from ``tests/trajectories/``
+    and exercise an analyzer end-to-end. They require the OVITO and/or
+    ASE optional dependencies.
 
-### Running Only Integration Tests
+``unit``
+    Default; the marker itself is optional. Pure-Python tests against
+    helpers, projections, factories, etc.
 
-```bash
-python -m pytest -m "integration"
-```
+Fixture trajectories
+--------------------
 
-## Testing Approach
+The two LAMMPS fixtures (``traj_spherical_drop_4k.lammpstrj`` and
+``traj_10_3_330w_nve_4k_reajust.lammpstrj``) are small water-on-substrate
+runs; the sliced and binning analyzers both produce contact angles around
+90–110° on these, matching graphene-like literature values. Tests assert
+this band as a regression check.
 
-These tests are designed to work with your existing trajectory files without generating new ones. The approach includes:
+Adding new tests
+----------------
 
-1. **Unit Tests**: Testing individual methods with minimal dependencies
-2. **Integration Tests**: Testing the full processing workflow
-3. **Mocked Tests**: Tests that don't require real files
-4. **Parameter Variations**: Testing different combinations of parameters
-
-## Key Test Categories
-
-### DumpParser Tests
-
-- Testing file loading and validation
-- Reading single and multiple frames
-- Extracting atom types and box dimensions
-- Error handling for missing files
-
-### ContactAngleAnalyzer Tests
-
-- Testing initialization with different parameters
-- Processing single batches and all batches
-- Testing different model types (cylinder, spherical)
-- Testing with different binning parameters
-- Using mocked parsers to avoid file dependencies
-
-### FrameProcessor Tests
-
-- Testing initialization and configuration
-- Parallel processing of frames
-- Testing different processor types
-- Mock testing without file dependencies
-
-## Directory Setup
-
-For proper organization, create a `tests` directory in your project root and place these test files inside it:
-
-```
-hydro_angle_analyzer/
-├── hydro_angle_analyzer/
-│   └── ... (package source files)
-├── tests/
-│   ├── conftest.py
-│   ├── test_hydro_angle_analyzer.py
-│   ├── test_dump_parser.py
-│   ├── test_contact_angle_analyzer.py
-│   ├── test_integration.py
-│   └── pytest.ini
-├── traj_10_3_330w_nve_4k_reajust.lammpstrj
-└── ... (other project files)
-```
-
-## Testing Without Real Files
-
-If you need to run tests without actual trajectory files, you can use the mock tests:
-
-```bash
-python -m pytest -k "mock"
-```
-
-This will run only the tests that use mocked components and don't require real trajectory files.
-
-## Extending the Tests
-
-To add new tests:
-
-1. Add test methods to the existing test classes
-2. Create new test classes for new components
-3. Use the `@needs_traj_file` decorator for tests that require trajectory files
-4. Use fixtures from `conftest.py` for common setup
+* Put unit tests for a single module next to existing unit-test files.
+* Add ``@pytest.mark.integration`` (and ``@pytest.mark.slow`` if the test
+  takes more than ~1 s) when your test reads a real trajectory.
+* Use ``tmp_path`` (pytest built-in) for output directories so each test
+  is hermetic.
+* Reference fixture paths via ``conftest.trajectory_path("foo.lammpstrj")``
+  or with ``os.path.join(os.path.dirname(__file__), "../trajectories/...")``.

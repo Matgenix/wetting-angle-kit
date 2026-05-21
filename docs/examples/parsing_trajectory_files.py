@@ -1,16 +1,16 @@
 """
-Example: Using DumpParser and     DumpWaterMoleculeFinder
+Example: Using LammpsDumpParser and LammpsDumpWaterFinder
 
 This example shows how to:
 1. Identify water molecules in a LAMMPS dump file.
 2. Extract only their oxygen atom coordinates.
 """
 
-from wetting_angle_kit.parser import (
-    ASE_Parser,
-    ASE_WaterMoleculeFinder,
-    DumpParser,
-    DumpWaterMoleculeFinder,
+from wetting_angle_kit.parsers import (
+    AseParser,
+    AseWaterFinder,
+    LammpsDumpParser,
+    LammpsDumpWaterFinder,
     XYZParser,
 )
 
@@ -18,7 +18,7 @@ from wetting_angle_kit.parser import (
 filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
 
 # --- Initialize water molecule finder ---
-wat_find = DumpWaterMoleculeFinder(
+wat_find = LammpsDumpWaterFinder(
     filename,
     particle_type_wall={3},  # atom type for wall
     oxygen_type=1,  # atom type for oxygen
@@ -30,9 +30,12 @@ oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
 print(f"Number of water molecules: {len(oxygen_indices)}")
 
 # --- Initialize parser ---
-parser = DumpParser(filename)
+parser = LammpsDumpParser(filename)
 
 # --- Extract only oxygen coordinates for frame 0 ---
+# For LammpsDumpParser, `indices` are LAMMPS particle IDs (because LAMMPS may
+# reorder atoms between frames). For XYZParser/AseParser, `indices` are
+# 0-based positional indices.
 oxygen_positions = parser.parse(frame_index=0, indices=oxygen_indices)
 print("Extracted oxygen coordinates shape:", oxygen_positions.shape)
 
@@ -41,7 +44,7 @@ print("Extracted oxygen coordinates shape:", oxygen_positions.shape)
 # print("All atom positions shape:", all_positions.shape)
 
 """
-Example: Using ASE_Parser and ASE_WaterMoleculeFinder
+Example: Using AseParser and AseWaterFinder
 
 This example demonstrates how to:
 1. Identify water oxygens in an ASE trajectory.
@@ -52,10 +55,11 @@ This example demonstrates how to:
 filename = "../../tests/trajectories/slice_10_mace_mlips_cylindrical_2_5.traj"
 
 # --- Initialize water molecule finder ---
-wat_find = ASE_WaterMoleculeFinder(
+wat_find = AseWaterFinder(
     filename,
     particle_type_wall=["C"],  # element name for wall
-    oh_cutoff=0.4,  # O–H cutoff distance (Å)
+    oh_cutoff=1.2,  # O–H bond cutoff (Å); ASE NeighborList handles the
+    # per-atom splitting internally now.
 )
 
 # --- Get oxygen indices for frame 0 ---
@@ -63,7 +67,7 @@ oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 print(f"Number of water molecules: {len(oxygen_indices)}")
 
 # --- Initialize parser ---
-parser = ASE_Parser(filename)
+parser = AseParser(filename)
 
 # --- Extract oxygen coordinates only ---
 oxygen_positions = parser.parse(frame_index=0, indices=oxygen_indices)

@@ -1,7 +1,7 @@
 Visualization Tutorial — Droplet Surface and Contact Angle
 ===========================================================
 
-This tutorial demonstrates how to visualize a droplet and compute its contact angle using the **wetting_angle_kit** package. We'll use the ``sliced`` contact angle method and visualize the resulting droplet with the ``DropletSlicedPlotter`` class.
+This tutorial demonstrates how to visualize a droplet and compute its contact angle using the **wetting_angle_kit** package. We'll use the ``sliced`` contact angle method and visualize the resulting droplet with the ``DropletSlicePlotter`` class.
 
 ----
 
@@ -23,13 +23,13 @@ The visualization workflow involves the following steps:
 .. code-block:: python
 
    import numpy as np
-   from wetting_angle_kit.parser import (
-       DumpParser,
-       DumpWaterMoleculeFinder,
-       DumpWallParser,
+   from wetting_angle_kit.parsers import (
+       LammpsDumpParser,
+       LammpsDumpWaterFinder,
+       LammpsDumpWallParser,
    )
-   from wetting_angle_kit.contact_angle_method.sliced_method import ContactAngleSliced
-   from wetting_angle_kit.visualization_angles import DropletSlicedPlotter
+   from wetting_angle_kit.contact_angle_methods.sliced import ContactAngleSliced
+   from wetting_angle_kit.visualization import DropletSlicePlotter
 
 ----
 
@@ -49,7 +49,7 @@ The visualization workflow involves the following steps:
 
 .. code-block:: python
 
-   wat_find = DumpWaterMoleculeFinder(
+   wat_find = LammpsDumpWaterFinder(
        filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2
    )
 
@@ -63,11 +63,13 @@ The visualization workflow involves the following steps:
 
 .. code-block:: python
 
-   parser = DumpParser(filepath=filename)
+   parser = LammpsDumpParser(filepath=filename)
    oxygen_position = parser.parse(frame_index=10, indices=oxygen_indices)
 
-   coord_wall = DumpWallParser(filename, particule_liquid_type={1, 2})
-   wall_coords = coord_wall.parse(frame_index=1)
+   # Wall parser: ``liquid_particle_types`` lists everything the parser
+   # should *exclude* (so that what remains are the wall atoms).
+   coord_wall = LammpsDumpWallParser(filename, liquid_particle_types=[1, 2])
+   wall_coords = coord_wall.parse(frame_index=10)
 
 ----
 
@@ -95,7 +97,7 @@ The visualization workflow involves the following steps:
 
 .. code-block:: python
 
-   plotter = DropletSlicedPlotter(center=True, show_wall=True, molecule_view=True)
+   plotter = DropletSlicePlotter(center=True, show_wall=True, molecule_view=True)
 
    plotter.plot_surface_points(
        oxygen_position=oxygen_position,

@@ -1,5 +1,5 @@
 # Auto-generated version file
-wetting_angle_kit/_version.py
+src/wetting_angle_kit/_version.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

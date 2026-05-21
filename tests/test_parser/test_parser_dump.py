@@ -4,7 +4,7 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from wetting_angle_kit.parser.parser_dump import DumpParser
+from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser
 
 # Path to the test trajectory file (LAMMPS dump format)
 TRAJECTORY_PATH = os.path.join(
@@ -12,24 +12,24 @@ TRAJECTORY_PATH = os.path.join(
 )
 
 
-# --- Fixture for DumpParser ---
+# --- Fixture for LammpsDumpParser ---
 @pytest.fixture
 def dump_parser():
-    return DumpParser(TRAJECTORY_PATH)
+    return LammpsDumpParser(TRAJECTORY_PATH)
 
 
 # --- Test ImportError ---
 @patch(
     "ovito.io.import_file",
     side_effect=ImportError(
-        "The 'ovito' package is required for DumpParser. Install with: "
+        "The 'ovito' package is required for LammpsDumpParser. Install with: "
         "pip install wetting_angle_kit[ovito]"
     ),
 )
 def test_dump_parser_no_ovito(mock_import_file):
     with pytest.raises(ImportError) as excinfo:
-        DumpParser(TRAJECTORY_PATH)
-    assert "The 'ovito' package is required for DumpParser" in str(excinfo.value)
+        LammpsDumpParser(TRAJECTORY_PATH)
+    assert "The 'ovito' package is required for LammpsDumpParser" in str(excinfo.value)
 
 
 # --- Test parse ---
@@ -68,8 +68,38 @@ def test_box_length_max(dump_parser):
     assert max_length > 0
 
 
-# --- Test frame_tot ---
-def test_frame_tot(dump_parser):
-    total_frames = dump_parser.frame_tot()
+# --- Test frame_count ---
+def test_frame_count(dump_parser):
+    total_frames = dump_parser.frame_count()
     assert isinstance(total_frames, int)
     assert total_frames > 0
+
+
+# --- frame_tot is a deprecated alias for frame_count ---
+def test_frame_tot_emits_deprecation_warning(dump_parser):
+    with pytest.warns(DeprecationWarning, match="frame_tot is deprecated"):
+        total = dump_parser.frame_tot()
+    assert total == dump_parser.frame_count()
+
+
+# --- Test non-orthogonal cell rejection ---
+def _write_triclinic_dump(path):
+    path.write_text(
+        "ITEM: TIMESTEP\n0\n"
+        "ITEM: NUMBER OF ATOMS\n1\n"
+        "ITEM: BOX BOUNDS xy xz yz pp pp pp\n"
+        "0.0 10.0 5.0\n"
+        "0.0 8.66 0.0\n"
+        "0.0 20.0 0.0\n"
+        "ITEM: ATOMS id type x y z\n"
+        "1 1 1.0 1.0 1.0\n"
+    )
+
+
+def test_dump_parser_rejects_triclinic_cell(tmp_path):
+    path = tmp_path / "triclinic.lammpstrj"
+    _write_triclinic_dump(path)
+    parser = LammpsDumpParser(str(path))
+    # Validation is per-frame and lazy.
+    with pytest.raises(ValueError, match="Non-orthogonal"):
+        parser.parse(0)
