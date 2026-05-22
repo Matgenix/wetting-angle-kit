@@ -8,6 +8,7 @@ from wetting_angle_kit.parsers.xyz import XYZWaterFinder
 
 
 def test_get_water_finder_lammpstrj():
+    pytest.importorskip("ovito")
     finder = get_water_finder(
         trajectory_path("traj_spherical_drop_4k.lammpstrj"),
         particle_type_wall={1},

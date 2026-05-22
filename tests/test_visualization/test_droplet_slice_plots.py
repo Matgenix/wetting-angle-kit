@@ -182,6 +182,7 @@ def test_plotly_plotter_layers_can_be_disabled():
 
 def test_contact_angle_animator_init_loads_fixture(tmp_path):
     """ContactAngleAnimator.__init__ wires up parsers and finders for a real fixture."""
+    pytest.importorskip("ovito")
     animator = ContactAngleAnimator(
         filename=trajectory_path("traj_spherical_drop_4k.lammpstrj"),
         particle_type_wall={3},
@@ -203,6 +204,7 @@ def test_contact_angle_animator_init_loads_fixture(tmp_path):
 @pytest.mark.slow
 def test_contact_angle_animator_generates_html(tmp_path):
     """Smoke-test ContactAngleAnimator on the LAMMPS fixture via cylinder_y geometry."""
+    pytest.importorskip("ovito")
     output = tmp_path / "animation.html"
     animator = ContactAngleAnimator(
         filename=trajectory_path("traj_spherical_drop_4k.lammpstrj"),
