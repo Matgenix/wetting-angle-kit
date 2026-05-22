@@ -88,7 +88,7 @@ def test_frame_count(xyz_parser):
 def _write_xyz(path, lattice):
     lat_str = " ".join(f"{v:g}" for v in np.asarray(lattice).reshape(-1))
     path.write_text(
-        f'1\nLattice="{lat_str}" Properties=species:S:1:pos:R:3\n' "O 0.0 0.0 0.0\n"
+        f'1\nLattice="{lat_str}" Properties=species:S:1:pos:R:3\nO 0.0 0.0 0.0\n'
     )
 
 

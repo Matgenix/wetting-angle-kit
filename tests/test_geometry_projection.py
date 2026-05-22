@@ -5,8 +5,6 @@ These exercise all three droplet geometries (including ``cylinder_x``
 which was not previously covered by any test).
 """
 
-from __future__ import annotations
-
 import numpy as np
 import pytest
 

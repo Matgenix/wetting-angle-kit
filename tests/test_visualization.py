@@ -5,8 +5,6 @@ They do not validate pixel-level rendering; they only catch regressions
 that break the call graph (wrong kwargs, missing layers, etc.).
 """
 
-from __future__ import annotations
-
 # Force the non-interactive backend before any pyplot import in this module.
 import matplotlib
 import numpy as np

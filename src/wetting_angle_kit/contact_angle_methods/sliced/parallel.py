@@ -78,8 +78,8 @@ class ContactAngleSlicedParallel:
         delta_cylinder : float, optional
             Y (or X) half-width of selection cylinder in cylindrical modes.
         points_per_angstrom : float, default 1.0
-            Sampling density along each radial ray for the surface fit,
-            influences the computational cost.
+            Sampling density along each radial ray for the surface fit.
+            Influences the computational cost.
         """
         self.filename = filename
         self.output_dir = output_dir

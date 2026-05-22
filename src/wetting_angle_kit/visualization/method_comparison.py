@@ -37,8 +37,7 @@ class MethodComparison:
             output_file = f"{directory}/output_stats.txt"
             if not os.path.exists(output_file):
                 raise FileNotFoundError(
-                    f"No analysis found for {directory}. "
-                    "Please run the analysis first."
+                    f"No analysis found for {directory}. Please run the analysis first."
                 )
 
     def _read_analysis_output(

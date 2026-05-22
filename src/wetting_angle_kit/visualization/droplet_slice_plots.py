@@ -651,8 +651,7 @@ class ContactAngleAnimator:
                 name=f"Frame {frame_idx}",
                 layout=go.Layout(
                     title_text=(
-                        f"Frame {frame_idx} | Median contact angle = "
-                        f"{alpha:.2f}\u00b0"
+                        f"Frame {frame_idx} | Median contact angle = {alpha:.2f}\u00b0"
                     )
                 ),
             )
@@ -661,7 +660,7 @@ class ContactAngleAnimator:
         fig.frames = frames_list
         fig.add_traces(frames_list[0].data)
         fig.update_layout(
-            title=("Interactive Contact Angle Evolution (Median Slice per " "Frame)"),
+            title=("Interactive Contact Angle Evolution (Median Slice per Frame)"),
             width=800,
             height=600,
             margin=dict(l=80, r=200, t=80, b=100),

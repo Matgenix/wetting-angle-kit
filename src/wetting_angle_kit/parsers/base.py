@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 
 import numpy as np
@@ -42,7 +40,7 @@ class BaseParser(ABC):
 
     @abstractmethod
     def frame_count(self) -> int:
-        """Return the total number of frames available."""
+        """Return the total number of frames in the trajectory."""
 
     def frame_tot(self) -> int:
         """Return the total number of frames available. (Legacy name)."""

@@ -1,7 +1,5 @@
 """Edge-case tests for input validation, NaN guards, and deprecation paths."""
 
-from __future__ import annotations
-
 import numpy as np
 import pytest
 

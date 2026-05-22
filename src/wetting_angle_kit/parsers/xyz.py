@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Any
 
 import numpy as np
@@ -23,8 +21,7 @@ class XYZParser(BaseParser):
         self.frames = self.load_xyz_file()
 
     def load_xyz_file(self) -> list[dict[str, Any]]:
-        """Load all frames from the XYZ file into memory using the numpy
-            package.
+        """Load all frames from the XYZ file into memory using numpy.
 
         Returns
         -------

@@ -344,7 +344,7 @@ class ContactAngleBinning:
             os.path.join(self.output_dir, f"rho_field{batch_str}.csv"),
             csv_data,
             delimiter=",",
-            header=(f"x_{len(xi_cc)},y_{len(zi_cc)}," f"rho_{len(xi_cc) * len(zi_cc)}"),
+            header=(f"x_{len(xi_cc)},y_{len(zi_cc)},rho_{len(xi_cc) * len(zi_cc)}"),
         )
 
     def process_batch(
