@@ -28,7 +28,7 @@ class XYZParser(BaseParser):
         list[dict]
             Each entry has keys: ``symbols``, ``positions``, ``lattice_matrix``.
         """
-        frames = []
+        frames: list[dict[str, np.ndarray]] = []
         with open(self.filepath) as file:
             lines = file.readlines()
         frame_start = 0
@@ -170,7 +170,7 @@ class XYZWaterFinder:
 
     def load_xyz_file(self) -> list[dict[str, Any]]:
         """Load frames including the lattice matrix for box-size queries."""
-        frames = []
+        frames: list[dict[str, np.ndarray]] = []
         with open(self.filepath) as file:
             lines = file.readlines()
         frame_start = 0
