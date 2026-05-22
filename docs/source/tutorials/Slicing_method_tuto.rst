@@ -1,14 +1,14 @@
-Tutorial: Contact Angle Analysis (Sliced Method)
+Tutorial: Contact Angle Analysis (Slicing Method)
 =================================================
 
-This tutorial explains how to compute the contact angle of a droplet using the **sliced method** in ``wetting_angle_kit``.
+This tutorial explains how to compute the contact angle of a droplet using the **slicing method** in ``wetting_angle_kit``.
 
 ----
 
 1. Overview
 -----------
 
-The **sliced method** divides the droplet into slices (along the z-axis) and fits a geometric model (e.g. spherical) to the liquid–solid interface profile.
+The **slicing method** divides the droplet into slices (along the z-axis) and fits a geometric model (e.g. spherical) to the liquid–solid interface profile.
 This is ideal for study the evolution of the angles among a trajectory.
 
 ----
@@ -56,11 +56,11 @@ Example trajectory::
    parser = LammpsDumpParser(filename)
 
    # --- Step 5: Create the contact angle analyzer ---
-   # Using the 'sliced' method with a spherical model
+   # Using the 'slicing' method with a spherical model
    analyzer = contact_angle_analyzer(
-       method="sliced",
+       method="slicing",
        parser=parser,
-       output_dir="result_dump_spherical_sliced",
+       output_dir="result_dump_spherical_slicing",
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",  # Geometry fitting model
        delta_gamma=20,  # Azimuthal step (deg) for spherical slicing
@@ -124,15 +124,15 @@ inside the output directory.
 6. Related Files
 ----------------
 
-**Example Script:** ``docs/examples/contact_angle_sliced/example_sliced.py``
+**Example Script:** ``docs/examples/contact_angle_slicing/example_slicing.py``
 
 .. code-block:: python
 
    """
-   Example: Contact Angle Analysis Using the Sliced Method
+   Example: Contact Angle Analysis Using the Slicing Method
 
    This example demonstrates how to perform a contact angle analysis
-   using the 'sliced' method on a spherical droplet from a LAMMPS dump trajectory.
+   using the 'slicing' method on a spherical droplet from a LAMMPS dump trajectory.
    """
 
    from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
@@ -152,11 +152,11 @@ inside the output directory.
    # --- Step 3: Initialize parser ---
    parser = LammpsDumpParser(filename)
 
-   # --- Step 4: Create analyzer for the sliced method ---
+   # --- Step 4: Create analyzer for the slicing method ---
    analyzer = contact_angle_analyzer(
-       method="sliced",
+       method="slicing",
        parser=parser,
-       output_dir="result_dump_spherical_sliced",
+       output_dir="result_dump_spherical_slicing",
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",  # Fitting model
        delta_gamma=20,  # Azimuthal step (deg) for spherical slicing

@@ -1,6 +1,6 @@
-"""Sliced contact-angle example.
+"""Slicing contact-angle example.
 
-Runs the per-frame sliced (circle-fitting) analyzer on a LAMMPS dump
+Runs the per-frame slicing (circle-fitting) analyzer on a LAMMPS dump
 file and prints the resulting mean contact angle.
 """
 
@@ -22,12 +22,12 @@ wat_find = LammpsDumpWaterFinder(
 oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
 print("Number of water molecules:", len(oxygen_indices))
 
-# --- Step 3: Build the sliced analyzer ---
+# --- Step 3: Build the slicing analyzer ---
 parser = LammpsDumpParser(filename)
 analyzer = contact_angle_analyzer(
-    method="sliced",
+    method="slicing",
     parser=parser,
-    output_dir="results_sliced_example",
+    output_dir="results_slicing_example",
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",
     delta_gamma=20,  # Azimuthal step for spherical slicing (degrees)

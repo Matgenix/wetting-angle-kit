@@ -10,8 +10,8 @@ from wetting_angle_kit.visualization.droplet_slice_plots import (
     DropletSlicePlotter,
 )
 from wetting_angle_kit.visualization.method_comparison import MethodComparison
-from wetting_angle_kit.visualization.sliced_trajectory_analyzer import (
-    SlicedTrajectoryAnalyzer,
+from wetting_angle_kit.visualization.slicing_trajectory_analyzer import (
+    SlicingTrajectoryAnalyzer,
 )
 from wetting_angle_kit.visualization.surface_plots import (
     plot_liquid_particles,
@@ -28,7 +28,7 @@ __all__ = [
     "DropletSlicePlotter",
     "DropletSlicePlotlyPlotter",
     "ContactAngleAnimator",
-    "SlicedTrajectoryAnalyzer",
+    "SlicingTrajectoryAnalyzer",
     "plot_slice",
     "plot_surface_file",
     "read_surface_file",

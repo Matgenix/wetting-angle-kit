@@ -35,10 +35,10 @@ def parser(filename):
     return LammpsDumpParser(filename)
 
 
-# --- Unit Tests for ContactAngleSliced ---
+# --- Unit Tests for ContactAngleSlicing ---
 @pytest.mark.integration
 @pytest.mark.slow
-def test_contact_angle_sliced_with_real_data(parser, oxygen_indices):
+def test_contact_angle_slicing_with_real_data(parser, oxygen_indices):
     # Parse liquid positions for frame 0
     liquid_positions = parser.parse(frame_index=0, indices=oxygen_indices)
     max_dist = int(
@@ -51,12 +51,12 @@ def test_contact_angle_sliced_with_real_data(parser, oxygen_indices):
     )
     mean_liquid_position = np.mean(liquid_positions, axis=0)
 
-    # Initialize ContactAngleSliced
-    from wetting_angle_kit.contact_angle_methods.sliced import (
-        ContactAngleSliced,
+    # Initialize ContactAngleSlicing
+    from wetting_angle_kit.contact_angle_methods.slicing import (
+        ContactAngleSlicing,
     )
 
-    predictor = ContactAngleSliced(
+    predictor = ContactAngleSlicing(
         liquid_coordinates=liquid_positions,
         liquid_geom_center=mean_liquid_position,
         droplet_geometry="spherical",
@@ -72,17 +72,17 @@ def test_contact_angle_sliced_with_real_data(parser, oxygen_indices):
     assert len(angles) > 0
 
 
-# --- Integration Test for SlicedContactAngleAnalyzer ---
+# --- Integration Test for SlicingContactAngleAnalyzer ---
 @pytest.mark.integration
 @pytest.mark.slow
-def test_sliced_contact_angle_analyzer_with_real_data(
+def test_slicing_contact_angle_analyzer_with_real_data(
     filename, oxygen_indices, tmp_path
 ):
     # Use a temporary directory for output
-    output_dir = tmp_path / "result_dump_spherical_sliced"
+    output_dir = tmp_path / "result_dump_spherical_slicing"
 
     analyzer = contact_angle_analyzer(
-        method="sliced",
+        method="slicing",
         parser=LammpsDumpParser(filename),
         output_dir=output_dir,
         atom_indices=oxygen_indices,
@@ -100,6 +100,6 @@ def test_sliced_contact_angle_analyzer_with_real_data(
     # The fixture is a water droplet on a graphene-like substrate, which
     # gives a contact angle around 90-100° (literature: ~93° for graphene).
     # Assert a tight physically-plausible band so regressions in the
-    # sliced pipeline are caught.
+    # slicing pipeline are caught.
     assert 80.0 <= results["mean_angle"] <= 110.0
     assert np.isfinite(results["std_angle"])

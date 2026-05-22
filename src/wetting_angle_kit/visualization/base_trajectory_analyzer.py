@@ -125,7 +125,7 @@ class BaseTrajectoryAnalyzer(ABC):
             Cleaned directory name for plotting.
         """
         return (
-            directory.replace("_reduce_sliced", "")
+            directory.replace("_reduce_slicing", "")
             .replace("_reduce_binning", "")
             .replace("result_dump_", "")
         )

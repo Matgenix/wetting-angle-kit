@@ -18,8 +18,8 @@ _MP_CONTEXT = mp.get_context("spawn")
 logger = logging.getLogger(__name__)
 
 
-class SlicedFrameResult(NamedTuple):
-    """Per-frame output from the sliced parallel worker.
+class SlicingFrameResult(NamedTuple):
+    """Per-frame output from the slicing parallel worker.
 
     Attributes
     ----------
@@ -43,8 +43,8 @@ class SlicedFrameResult(NamedTuple):
     popts: list
 
 
-class ContactAngleSlicedParallel:
-    """Batch-parallel contact angle analyzer for sliced method.
+class ContactAngleSlicingParallel:
+    """Batch-parallel contact angle analyzer for slicing method.
 
     The frames are grouped into batches to reduce problems
     related to serialization by the parser and to distribute
@@ -74,7 +74,7 @@ class ContactAngleSlicedParallel:
         atom_indices : ndarray, optional
             Indices of liquid particles (subset). Empty array selects none.
         delta_gamma : float, optional
-            Additional gamma constraint / filtering distance if used by sliced method.
+            Additional gamma constraint / filtering distance if used by slicing method.
         delta_cylinder : float, optional
             Y (or X) half-width of selection cylinder in cylindrical modes.
         points_per_angstrom : float, default 1.0
@@ -183,7 +183,9 @@ class ContactAngleSlicedParallel:
         batch_size = math.ceil(len(frames) / num_batches)
         return [frames[i : i + batch_size] for i in range(0, len(frames), batch_size)]
 
-    def _process_batch_worker(self, batch_frames: list[int]) -> list[SlicedFrameResult]:
+    def _process_batch_worker(
+        self, batch_frames: list[int]
+    ) -> list[SlicingFrameResult]:
         """Worker routine executed in child process for a batch."""
         try:
             from wetting_angle_kit.io_utils import detect_parser_type
@@ -194,7 +196,7 @@ class ContactAngleSlicedParallel:
         except ImportError as e:
             logger.error(f"Failed to import required classes: {e}")
             return [
-                SlicedFrameResult(frame, None, [], [], []) for frame in batch_frames
+                SlicingFrameResult(frame, None, [], [], []) for frame in batch_frames
             ]
         try:
             parser_type = detect_parser_type(self.filename)
@@ -211,9 +213,9 @@ class ContactAngleSlicedParallel:
         except Exception as e:
             logger.error(f"Error initializing parser: {e}")
             return [
-                SlicedFrameResult(frame, None, [], [], []) for frame in batch_frames
+                SlicingFrameResult(frame, None, [], [], []) for frame in batch_frames
             ]
-        batch_results: list[SlicedFrameResult] = []
+        batch_results: list[SlicingFrameResult] = []
         for frame_num in batch_frames:
             try:
                 result = self._process_single_frame_with_parsers(
@@ -222,21 +224,21 @@ class ContactAngleSlicedParallel:
                 batch_results.append(result)
             except Exception as e:
                 logger.error(f"Error processing frame {frame_num}: {e}")
-                batch_results.append(SlicedFrameResult(frame_num, None, [], [], []))
+                batch_results.append(SlicingFrameResult(frame_num, None, [], [], []))
         return batch_results
 
     def _process_single_frame_with_parsers(
         self, frame_num: int, atom_indices: np.ndarray, parser: BaseParser
-    ) -> SlicedFrameResult:
+    ) -> SlicingFrameResult:
         """Process a single frame and compute mean contact angle."""
         try:
-            from wetting_angle_kit.contact_angle_methods.sliced.angle_fitting import (
-                ContactAngleSliced,
+            from wetting_angle_kit.contact_angle_methods.slicing.angle_fitting import (
+                ContactAngleSlicing,
             )
 
         except ImportError as e:
-            logger.error(f"Missing sliced predictor dependency: {e}")
-            return SlicedFrameResult(frame_num, None, [], [], [])
+            logger.error(f"Missing slicing predictor dependency: {e}")
+            return SlicingFrameResult(frame_num, None, [], [], [])
         logger.info(f"START processing frame {frame_num}")
         try:
             liquid_positions = parser.parse(
@@ -266,7 +268,7 @@ class ContactAngleSlicedParallel:
             else:
                 box_dimensions = None
             mean_liquid_position = np.mean(liquid_positions, axis=0)
-            predictor = ContactAngleSliced(
+            predictor = ContactAngleSlicing(
                 liquid_coordinates=liquid_positions,
                 max_dist=max_dist,
                 liquid_geom_center=mean_liquid_position,
@@ -284,9 +286,9 @@ class ContactAngleSlicedParallel:
                 mean_angle = float(np.mean(angles))
             if mean_angle is not None:
                 logger.info(f"Frame {frame_num} - mean angle: {mean_angle:.2f}°")
-            return SlicedFrameResult(
+            return SlicingFrameResult(
                 frame_num, mean_angle, angles, surfaces, popt_arrays
             )
         except Exception as e:
             logger.error(f"Error processing frame {frame_num}: {e}", exc_info=True)
-            return SlicedFrameResult(frame_num, None, [], [], [])
+            return SlicingFrameResult(frame_num, None, [], [], [])

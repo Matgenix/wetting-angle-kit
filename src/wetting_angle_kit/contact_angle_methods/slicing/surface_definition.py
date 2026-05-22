@@ -1,4 +1,4 @@
-"""Sliced-method interface estimator.
+"""Slicing-method interface estimator.
 
 Algorithm
 ---------
@@ -27,7 +27,7 @@ from scipy.optimize import curve_fit
 
 
 class SurfaceDefinition:
-    """Radial line sampling interface estimator for sliced contact angle.
+    """Radial line sampling interface estimator for slicing contact angle.
 
     For each attitudinal angle beta the density is sampled along a ray emerging
     from the droplet geometric center. A simple tanh profile is fitted to obtain

@@ -6,17 +6,17 @@ import pytest
 from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
     HyperbolicTangentModel,
 )
-from wetting_angle_kit.contact_angle_methods.sliced.angle_fitting import (
-    ContactAngleSliced,
+from wetting_angle_kit.contact_angle_methods.slicing.angle_fitting import (
+    ContactAngleSlicing,
 )
 
 # --- Invalid droplet_geometry should be rejected by both analyzers ---
 
 
-def test_contact_angle_sliced_rejects_invalid_geometry():
+def test_contact_angle_slicing_rejects_invalid_geometry():
     coords = np.array([[0.0, 0.0, 0.0]])
     with pytest.raises(ValueError, match="Unknown droplet_geometry"):
-        ContactAngleSliced(
+        ContactAngleSlicing(
             liquid_coordinates=coords,
             max_dist=10,
             liquid_geom_center=np.zeros(3),
@@ -25,7 +25,7 @@ def test_contact_angle_sliced_rejects_invalid_geometry():
         )
 
 
-# --- Sliced predictor: empty result lists stay in lockstep ---
+# --- Slicing predictor: empty result lists stay in lockstep ---
 
 
 def test_predict_contact_angle_returns_aligned_lists():
@@ -33,7 +33,7 @@ def test_predict_contact_angle_returns_aligned_lists():
     length. This guards against the historical bug where median_idx into
     angles would address a different slice in popt_arrays/surfaces."""
     coords = np.array([[0.0, 0.0, 10.0]])  # single atom = no tanh interface
-    predictor = ContactAngleSliced(
+    predictor = ContactAngleSlicing(
         liquid_coordinates=coords,
         max_dist=10,
         liquid_geom_center=np.zeros(3),
@@ -44,10 +44,10 @@ def test_predict_contact_angle_returns_aligned_lists():
     assert len(angles) == len(surfaces) == len(popts)
 
 
-def test_contact_angle_sliced_copies_geometric_center():
+def test_contact_angle_slicing_copies_geometric_center():
     """Constructor must not retain a reference to the caller's array."""
     center = np.array([1.0, 2.0, 3.0])
-    predictor = ContactAngleSliced(
+    predictor = ContactAngleSlicing(
         liquid_coordinates=np.zeros((1, 3)),
         max_dist=10,
         liquid_geom_center=center,
@@ -62,9 +62,9 @@ def test_contact_angle_sliced_copies_geometric_center():
 # --- Cylindrical mode without delta_cylinder/width_cylinder warns ---
 
 
-def test_sliced_cylinder_without_width_warns():
+def test_slicing_cylinder_without_width_warns():
     with pytest.warns(UserWarning, match="width_cylinder and delta_cylinder"):
-        ContactAngleSliced(
+        ContactAngleSlicing(
             liquid_coordinates=np.zeros((3, 3)),
             max_dist=10,
             liquid_geom_center=np.zeros(3),
@@ -72,9 +72,9 @@ def test_sliced_cylinder_without_width_warns():
         )
 
 
-def test_sliced_spherical_requires_delta_gamma():
+def test_slicing_spherical_requires_delta_gamma():
     with pytest.raises(ValueError, match="delta_gamma must be provided"):
-        ContactAngleSliced(
+        ContactAngleSlicing(
             liquid_coordinates=np.zeros((3, 3)),
             max_dist=10,
             liquid_geom_center=np.zeros(3),

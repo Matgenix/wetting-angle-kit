@@ -3,7 +3,7 @@ from typing import Any
 from wetting_angle_kit.contact_angle_methods.analyzer import (
     BaseContactAngleAnalyzer,
     BinningContactAngleAnalyzer,
-    SlicedContactAngleAnalyzer,
+    SlicingContactAngleAnalyzer,
 )
 
 
@@ -15,7 +15,7 @@ def contact_angle_analyzer(
     Parameters
     ----------
     method : str
-        Analysis method; one of ``"sliced"`` or ``"binning"``.
+        Analysis method; one of ``"slicing"`` or ``"binning"``.
     parser : BaseParser
         Trajectory parser instance.
     output_dir : str
@@ -28,8 +28,8 @@ def contact_angle_analyzer(
     BaseContactAngleAnalyzer
         Configured analyzer ready to call ``analyze()``.
     """
-    if method == "sliced":
-        return SlicedContactAngleAnalyzer(
+    if method == "slicing":
+        return SlicingContactAngleAnalyzer(
             parser=parser, output_dir=output_dir, **kwargs
         )
     elif method == "binning":
@@ -37,4 +37,4 @@ def contact_angle_analyzer(
             parser=parser, output_dir=output_dir, **kwargs
         )
     else:
-        raise ValueError(f"Unknown method '{method}'. Expected 'sliced' or 'binning'.")
+        raise ValueError(f"Unknown method '{method}'. Expected 'slicing' or 'binning'.")

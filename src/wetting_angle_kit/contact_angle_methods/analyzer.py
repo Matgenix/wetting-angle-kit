@@ -6,8 +6,8 @@ import numpy as np
 from wetting_angle_kit.contact_angle_methods.binning.angle_fitting import (
     ContactAngleBinning,
 )
-from wetting_angle_kit.contact_angle_methods.sliced.parallel import (
-    ContactAngleSlicedParallel,
+from wetting_angle_kit.contact_angle_methods.slicing.parallel import (
+    ContactAngleSlicingParallel,
 )
 
 
@@ -36,8 +36,8 @@ class BaseContactAngleAnalyzer(ABC):
         }
 
 
-class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
-    """BaseContactAngleAnalyzer implementation using the sliced parallel method."""
+class SlicingContactAngleAnalyzer(BaseContactAngleAnalyzer):
+    """BaseContactAngleAnalyzer implementation using the slicing parallel method."""
 
     def __init__(
         self,
@@ -53,18 +53,18 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
         output_dir : str
             Directory for output files.
         **kwargs
-            Forwarded to ContactAngleSlicedParallel.
+            Forwarded to ContactAngleSlicingParallel.
         """
         self.parser = parser
         self.output_dir = output_dir
-        self._processor = ContactAngleSlicedParallel(
+        self._processor = ContactAngleSlicingParallel(
             filename=parser.filepath, output_dir=output_dir, **kwargs
         )
 
     def analyze(
         self, frame_range: list[int] | None = None, **kwargs: Any
     ) -> dict[str, Any]:
-        """Run the sliced parallel analysis and return statistics.
+        """Run the slicing parallel analysis and return statistics.
 
         Parameters
         ----------
@@ -95,8 +95,8 @@ class SlicedContactAngleAnalyzer(BaseContactAngleAnalyzer):
         }
 
     def get_method_name(self) -> str:
-        """Return "sliced_parallel"."""
-        return "sliced_parallel"
+        """Return "slicing_parallel"."""
+        return "slicing_parallel"
 
 
 class BinningContactAngleAnalyzer(BaseContactAngleAnalyzer):

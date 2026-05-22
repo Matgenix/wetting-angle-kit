@@ -4,14 +4,14 @@ from collections.abc import Sequence
 import numpy as np
 from scipy.optimize import curve_fit
 
-from wetting_angle_kit.contact_angle_methods.sliced.surface_definition import (
+from wetting_angle_kit.contact_angle_methods.slicing.surface_definition import (
     SurfaceDefinition,
 )
 from wetting_angle_kit.io_utils import validate_droplet_geometry
 
 
-class ContactAngleSliced:
-    """Sliced radial line method to estimate contact angle via circle fitting.
+class ContactAngleSlicing:
+    """Slicing radial line method to estimate contact angle via circle fitting.
 
     Depending on ``droplet_geometry`` the droplet is analyzed by sweeping in y
     (cylinder modes) or by gamma azimuthal angle (spherical). For each slice / tilt

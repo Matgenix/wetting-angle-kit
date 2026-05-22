@@ -9,6 +9,6 @@ Step-by-step guides for using wetting_angle_kit.
 
    Parser_tutorial
    Binning_method_tuto
-   Sliced_method_tuto
-   Visualization_sliced_droplet
+   Slicing_method_tuto
+   Visualization_slicing_droplet
    Visualization_trajectories_comparison_methods

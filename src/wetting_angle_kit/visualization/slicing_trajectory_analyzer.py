@@ -8,8 +8,8 @@ from wetting_angle_kit.visualization.base_trajectory_analyzer import (
 )
 
 
-class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
-    """BaseTrajectoryAnalyzer implementation for the sliced contact angle method."""
+class SlicingTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
+    """BaseTrajectoryAnalyzer implementation for the slicing contact angle method."""
 
     def __init__(
         self,
@@ -35,7 +35,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         super().__init__(directories, time_unit=time_unit)
 
     def _initialize_data_structure(self) -> None:
-        """Initialize data structure for sliced analysis."""
+        """Initialize data structure for slicing analysis."""
         for directory in self.directories:
             self.data[directory] = {
                 "surfaces_files": [],
@@ -51,7 +51,7 @@ class SlicedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
 
     def get_method_name(self) -> str:
         """Return method name."""
-        return "Sliced Analysis"
+        return "Slicing Analysis"
 
     def load_data(self) -> None:
         """Load combined .npy files (angles, surfaces, popts)

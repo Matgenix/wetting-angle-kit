@@ -21,14 +21,14 @@ Base Analyzer
    :members:
    :show-inheritance:
 
-Sliced Method
+Slicing Method
 ^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.contact_angle_methods.sliced
+.. automodule:: wetting_angle_kit.contact_angle_methods.slicing
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: ContactAngleSliced, ContactAngleSlicedParallel
+   :exclude-members: ContactAngleSlicing, ContactAngleSlicingParallel
 
 Binning Method
 ^^^^^^^^^^^^^

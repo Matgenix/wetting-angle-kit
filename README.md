@@ -9,7 +9,7 @@
 
 wetting_angle_kit provides modular tools to parse MD trajectories (LAMMPS dump, XYZ, ASE) and compute droplet contact angles using two complementary approaches:
 
-1. Sliced Method (per-frame circle fit) – robust against transient shape changes.
+1. Slicing Method (per-frame circle fit) – robust against transient shape changes.
 2. Binning Density Method – averages frames into a density field for a single representative angle.
 
 The documentation is available [here](https://matgenix.github.io/wetting-angle-kit), you can find examples and tutorials.
@@ -56,7 +56,7 @@ conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forg
 ```python
 from wetting_angle_kit.contact_angle_methods import (
     BinningContactAngleAnalyzer,
-    SlicedContactAngleAnalyzer,
+    SlicingContactAngleAnalyzer,
 )
 from wetting_angle_kit.parsers import XYZParser, XYZWaterFinder
 
@@ -69,14 +69,14 @@ oxygen_ids = finder.get_water_oxygen_indices(frame_index=0)
 
 parser = XYZParser(trajectory_file)
 
-sliced = SlicedContactAngleAnalyzer(
+slicing = SlicingContactAngleAnalyzer(
     parser,
-    output_dir="out_sliced",
+    output_dir="out_slicing",
     atom_indices=oxygen_ids,
     droplet_geometry="spherical",
     delta_gamma=5,
 )
-results = sliced.analyze(frame_range=range(0, 50))
+results = slicing.analyze(frame_range=range(0, 50))
 print(results["mean_angle"], results["std_angle"])
 
 binning = BinningContactAngleAnalyzer(

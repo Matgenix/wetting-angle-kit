@@ -8,7 +8,7 @@ The contact angle is defined as the angle between the tangent to the liquid-vapo
 
 
 
-The sliced method
+The slicing method
 ----------------
 
 .. image:: ../../images/wetting_angle_kit_3d_droplet.jpg
@@ -17,7 +17,7 @@ The sliced method
 
 To accurately define the liquid-vapor interface of the droplet, we employ a vertical slicing strategy along the z-axis. First, a definition of a 2D slicing plane passing through the droplet's geometric center is determined by an azimuthal angle.
 
-.. image:: ../../images/wetting_angle_kit_sliced_2d.jpg
+.. image:: ../../images/wetting_angle_kit_slicing_2d.jpg
    :align: center
 
 Within this plane, we identify the interface coordinates by scanning radially from the geometric center. For a given axis (defined by an altitudinal angle), the local density is measured at discrete intervals. A function is then fitted to this density profile to locate the sharp drop in density that marks the limit between the liquid and vapor phases. This operation is repeated across a range of altitudinal angles to generate a cloud of points representing the droplet's profile on that plane.

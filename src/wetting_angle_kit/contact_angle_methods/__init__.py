@@ -1,25 +1,25 @@
 from wetting_angle_kit.contact_angle_methods.analyzer import (
     BaseContactAngleAnalyzer,
     BinningContactAngleAnalyzer,
-    SlicedContactAngleAnalyzer,
+    SlicingContactAngleAnalyzer,
 )
 from wetting_angle_kit.contact_angle_methods.binning.angle_fitting import (
     ContactAngleBinning,
 )
 from wetting_angle_kit.contact_angle_methods.factory import contact_angle_analyzer
-from wetting_angle_kit.contact_angle_methods.sliced.angle_fitting import (
-    ContactAngleSliced,
+from wetting_angle_kit.contact_angle_methods.slicing.angle_fitting import (
+    ContactAngleSlicing,
 )
-from wetting_angle_kit.contact_angle_methods.sliced.parallel import (
-    ContactAngleSlicedParallel,
+from wetting_angle_kit.contact_angle_methods.slicing.parallel import (
+    ContactAngleSlicingParallel,
 )
 
 __all__ = [
     "BaseContactAngleAnalyzer",
-    "SlicedContactAngleAnalyzer",
+    "SlicingContactAngleAnalyzer",
     "BinningContactAngleAnalyzer",
     "contact_angle_analyzer",
     "ContactAngleBinning",
-    "ContactAngleSliced",
-    "ContactAngleSlicedParallel",
+    "ContactAngleSlicing",
+    "ContactAngleSlicingParallel",
 ]

@@ -1,13 +1,13 @@
-"""End-to-end example: sliced contact-angle pipeline plus visualization.
+"""End-to-end example: slicing contact-angle pipeline plus visualization.
 
-Run a single-frame sliced analysis on a LAMMPS dump file and save a PNG of
+Run a single-frame slicing analysis on a LAMMPS dump file and save a PNG of
 the droplet with the fitted circle, surface contour, and tangent at the
 contact point.
 """
 
 import numpy as np
 
-from wetting_angle_kit.contact_angle_methods.sliced import ContactAngleSliced
+from wetting_angle_kit.contact_angle_methods.slicing import ContactAngleSlicing
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,
     LammpsDumpWallParser,
@@ -36,7 +36,7 @@ coord_wall = LammpsDumpWallParser(filename, liquid_particle_types=[1, 2])
 wall_coords = coord_wall.parse(frame_index=10)
 
 # --- 4. Compute Contact Angles ---
-processor = ContactAngleSliced(
+processor = ContactAngleSlicing(
     liquid_coordinates=oxygen_position,
     liquid_geom_center=np.mean(oxygen_position, axis=0),
     droplet_geometry="cylinder_y",

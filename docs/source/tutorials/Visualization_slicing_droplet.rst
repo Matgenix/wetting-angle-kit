@@ -1,7 +1,7 @@
 Visualization Tutorial — Droplet Surface and Contact Angle
 ===========================================================
 
-This tutorial demonstrates how to visualize a droplet and compute its contact angle using the **wetting_angle_kit** package. We'll use the ``sliced`` contact angle method and visualize the resulting droplet with the ``DropletSlicePlotter`` class.
+This tutorial demonstrates how to visualize a droplet and compute its contact angle using the **wetting_angle_kit** package. We'll use the ``slicing`` contact angle method and visualize the resulting droplet with the ``DropletSlicePlotter`` class.
 
 ----
 
@@ -12,7 +12,7 @@ The visualization workflow involves the following steps:
 
 1. Parse atomic positions from a trajectory file.
 2. Identify water molecules (oxygen and hydrogen atoms).
-3. Compute the droplet surface and contact angle using the *sliced method*.
+3. Compute the droplet surface and contact angle using the *slicing method*.
 4. Visualize the droplet, fitted circle, tangent, and wall.
 
 ----
@@ -28,7 +28,7 @@ The visualization workflow involves the following steps:
        LammpsDumpWaterFinder,
        LammpsDumpWallParser,
    )
-   from wetting_angle_kit.contact_angle_methods.sliced import ContactAngleSliced
+   from wetting_angle_kit.contact_angle_methods.slicing import ContactAngleSlicing
    from wetting_angle_kit.visualization import DropletSlicePlotter
 
 ----
@@ -78,7 +78,7 @@ The visualization workflow involves the following steps:
 
 .. code-block:: python
 
-   processor = ContactAngleSliced(
+   processor = ContactAngleSlicing(
        liquid_coordinates=oxygen_position,
        liquid_geom_center=np.mean(oxygen_position, axis=0),
        droplet_geometry="cylinder_y",
@@ -114,4 +114,4 @@ Outputs
 -------
 
 .. image:: ../../images/droplet_plot.png
-   :alt: Droplet sliced method visualization
+   :alt: Droplet slicing method visualization
