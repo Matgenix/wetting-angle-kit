@@ -1,4 +1,5 @@
 import os
+import pathlib
 
 import numpy as np
 import pytest
@@ -141,7 +142,7 @@ def test_base_analyze_writes_output_stats(binning_result_dir):
     analyzer.analyze()
     output_file = os.path.join(binning_result_dir, "output_stats.txt")
     assert os.path.exists(output_file)
-    with open(output_file) as f:
+    with open(output_file, encoding="utf-8") as f:
         text = f.read()
     assert "Mean Contact Angle:" in text
     assert "Std Contact Angle:" in text
@@ -165,7 +166,10 @@ def test_base_plot_mean_angle_vs_surface(binning_result_dir, tmp_path):
     second = tmp_path / "binning_result_2"
     second.mkdir()
     for src in os.listdir(binning_result_dir):
-        (second / src).write_text(open(os.path.join(binning_result_dir, src)).read())
+        (second / src).write_text(
+            (pathlib.Path(binning_result_dir) / src).read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
 
     analyzer = BinningTrajectoryAnalyzer([binning_result_dir, str(second)])
     save_path = tmp_path / "scaling.png"
