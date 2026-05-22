@@ -33,7 +33,7 @@ repos:
   rev: v1.10.0
   hooks:
   - id: mypy
-    files: ^wetting_angle_kit/
+    files: ^src/wetting_angle_kit/
     additional_dependencies:
     - tokenize-rt==4.1.0
 - repo: https://github.com/codespell-project/codespell

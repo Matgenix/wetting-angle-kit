@@ -73,11 +73,11 @@ instance/
 .scrapy
 
 # Sphinx documentation
-doc/build/doctrees
-doc/build/generate-stamp
-doc/source/api/m*.rst
+docs/build/doctrees
+docs/build/generate-stamp
+docs/source/api/m*.rst
 
-doc/source/changelog.rst
+docs/source/changelog.rst
 
 # PyBuilder
 .pybuilder/
