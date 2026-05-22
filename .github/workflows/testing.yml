@@ -50,7 +50,7 @@ jobs:
           pip install .[dev,all]
 
       - name: Test
-        run: pytest --cov=wetting_angle_kit --cov-report=xml
+        run: pytest --cov=wetting_angle_kit --cov-report=xml --cov-fail-under=70
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11'
@@ -60,6 +60,32 @@ jobs:
           fail_ci_if_error: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # macOS smoke test: confirms the package installs and the non-OVITO code
+  # paths work on macOS. OVITO is skipped because it does not ship via PyPI
+  # for macOS; install via its conda channel locally if you need it.
+  test-macos:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: pyproject.toml
+
+      - name: Install dependencies (ASE only, no OVITO)
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[dev,ase]
+
+      - name: Test (skip OVITO-dependent tests)
+        run: |
+          pytest \
+            --ignore=tests/test_parser/test_parser_dump.py \
+            --ignore=tests/test_contact_angle_methods
 
   docs:
     runs-on: ubuntu-latest

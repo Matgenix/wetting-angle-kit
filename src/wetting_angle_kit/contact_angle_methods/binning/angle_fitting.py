@@ -238,7 +238,11 @@ class ContactAngleBinning:
             bins=(self.xi, self.zi),
         )
         if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
-            assert self.width_cylinder is not None
+            if self.width_cylinder is None:
+                raise ValueError(
+                    "width_cylinder is required for "
+                    f"droplet_geometry={self.droplet_geometry!r}"
+                )
             dV = 2.0 * self.width_cylinder * self.dxi * self.dzi
             rho_cc = counts / dV
         else:  # spherical droplet geometry

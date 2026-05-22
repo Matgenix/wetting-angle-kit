@@ -102,7 +102,7 @@ Use the MethodComparison class to compare the two methods:
 ```python
 comparison = MethodComparison([sliced, binning])
 comparison.plot_side_by_side_comparison(save_path="comparison.png")
-comparison.compare_statistics()
+print(comparison.compare_statistics())
 ```
 ### Example Output:
 

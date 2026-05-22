@@ -115,10 +115,17 @@ class ContactAngleSliced:
             Y (or X if 'cylinder_x') positions; spherical returns repeated center y.
         """
         if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
-            assert self.width_cylinder is not None and self.delta_cylinder is not None
+            if self.width_cylinder is None or self.delta_cylinder is None:
+                raise ValueError(
+                    "width_cylinder and delta_cylinder are required for "
+                    f"droplet_geometry={self.droplet_geometry!r}"
+                )
             return list(np.arange(0, self.width_cylinder, self.delta_cylinder))
         if self.droplet_geometry == "spherical":
-            assert self.delta_gamma is not None
+            if self.delta_gamma is None:
+                raise ValueError(
+                    "delta_gamma is required for droplet_geometry='spherical'"
+                )
             return [self.liquid_geom_center[1]] * int(180 / self.delta_gamma)
         return []
 
@@ -126,7 +133,11 @@ class ContactAngleSliced:
         """Return the gamma tilt angle (degrees) for each slice
         of the chosen droplet geometry."""
         if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
-            assert self.width_cylinder is not None and self.delta_cylinder is not None
+            if self.width_cylinder is None or self.delta_cylinder is None:
+                raise ValueError(
+                    "width_cylinder and delta_cylinder are required for "
+                    f"droplet_geometry={self.droplet_geometry!r}"
+                )
             return [
                 0.0
                 for _ in np.arange(
@@ -136,7 +147,10 @@ class ContactAngleSliced:
                 )
             ]
         if self.droplet_geometry == "spherical":
-            assert self.delta_gamma is not None
+            if self.delta_gamma is None:
+                raise ValueError(
+                    "delta_gamma is required for droplet_geometry='spherical'"
+                )
             return list(
                 np.linspace(
                     0.0,

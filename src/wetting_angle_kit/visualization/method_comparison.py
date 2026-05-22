@@ -216,16 +216,26 @@ class MethodComparison:
             plt.savefig(save_path, dpi=400, bbox_inches="tight")
         plt.close()
 
-    def compare_statistics(self) -> None:
-        """Print per-directory and overall mean/std statistics for each method."""
-        print("=" * 70)
-        print("METHOD COMPARISON STATISTICS")
-        print("=" * 70)
+    def compare_statistics(self) -> str:
+        """Build per-directory and overall mean/std statistics for each method.
+
+        Returns
+        -------
+        str
+            The full formatted report. The caller is responsible for displaying
+            it (e.g. ``print(comparator.compare_statistics())``). Returning a
+            string instead of printing makes the output capturable from
+            notebooks and tests.
+        """
+        lines: list[str] = []
+        lines.append("=" * 70)
+        lines.append("METHOD COMPARISON STATISTICS")
+        lines.append("=" * 70)
         for method_name, analyzer in zip(
             self.method_names, self.analyzers, strict=False
         ):
-            print(f"\n{method_name}:")
-            print("-" * 70)
+            lines.append(f"\n{method_name}:")
+            lines.append("-" * 70)
             all_angles = []
             all_surfaces = []
             for directory in analyzer.directories:
@@ -242,13 +252,14 @@ class MethodComparison:
                     mean_contact_angle = float(np.mean(angles))
                 all_angles.extend(angles)
                 all_surfaces.extend(surfaces)
-                print(f"  {analyzer.get_clean_label(directory)}:")
-                print(f"    Mean Surface Area: {mean_surface_area:.4f}")
-                print(f"    Mean Angle: {mean_contact_angle:.4f}°")
+                lines.append(f"  {analyzer.get_clean_label(directory)}:")
+                lines.append(f"    Mean Surface Area: {mean_surface_area:.4f}")
+                lines.append(f"    Mean Angle: {mean_contact_angle:.4f}°")
             if all_angles:
-                print("\n  Overall Statistics:")
-                print(f"    Total samples: {len(all_angles)}")
-                print(f"    Mean Surface Area: {np.mean(all_surfaces):.4f}")
-                print(f"    Mean Angle: {np.mean(all_angles):.4f}°")
-                print(f"    Std Angle: {np.std(all_angles):.4f}°")
-        print("\n" + "=" * 70)
+                lines.append("\n  Overall Statistics:")
+                lines.append(f"    Total samples: {len(all_angles)}")
+                lines.append(f"    Mean Surface Area: {np.mean(all_surfaces):.4f}")
+                lines.append(f"    Mean Angle: {np.mean(all_angles):.4f}°")
+                lines.append(f"    Std Angle: {np.std(all_angles):.4f}°")
+        lines.append("\n" + "=" * 70)
+        return "\n".join(lines)

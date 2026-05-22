@@ -1,0 +1,42 @@
+cff-version: 1.2.0
+message: "If you use wetting-angle-kit in your research, please cite it using the metadata below."
+title: "wetting-angle-kit: a Python package to streamline the computation of wetting contact angles of nanodroplets on surfaces"
+type: software
+license: BSD-3-Clause
+repository-code: "https://github.com/Matgenix/wetting_angle_kit"
+url: "https://matgenix.github.io/wetting-angle-kit"
+authors:
+  - family-names: Taillandier
+    given-names: Gabriel
+    orcid: "https://orcid.org/0009-0006-9544-0982"
+    affiliation: "Matgenix; University of Crete"
+  - family-names: Monti
+    given-names: Edoardo
+    orcid: "https://orcid.org/0009-0002-8340-7940"
+    affiliation: "Imperial College London; Toyota Motor Europe"
+  - family-names: Brunin
+    given-names: Guillaume
+    orcid: "https://orcid.org/0000-0003-1159-8389"
+    affiliation: "Matgenix"
+  - family-names: Bouquiaux
+    given-names: Julien
+    orcid: "https://orcid.org/0000-0003-1982-052X"
+    affiliation: "Matgenix"
+  - family-names: Froudakis
+    given-names: George
+    orcid: "https://orcid.org/0000-0002-6907-1822"
+    affiliation: "University of Crete"
+  - family-names: Rignanese
+    given-names: Gian-Marco
+    orcid: "https://orcid.org/0000-0002-1422-1205"
+    affiliation: "Matgenix; UCLouvain"
+  - family-names: Waroquiers
+    given-names: David
+    orcid: "https://orcid.org/0000-0001-8943-9762"
+    affiliation: "Matgenix"
+keywords:
+  - molecular dynamics
+  - contact angle
+  - wetting
+  - nanodroplets
+  - python

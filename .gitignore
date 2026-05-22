@@ -75,7 +75,6 @@ instance/
 # Sphinx documentation
 docs/build/doctrees
 docs/build/generate-stamp
-docs/source/api/m*.rst
 
 docs/source/changelog.rst
 
