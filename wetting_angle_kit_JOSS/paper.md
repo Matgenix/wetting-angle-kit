@@ -19,13 +19,13 @@ authors:
     orcid: 0000-0003-1982-052X
     affiliation: "1"
   - name: George Froudakis
-    orcid:
+    orcid: 0000-0002-6907-1822
     affiliation: "2"
   - name: Gian-Marco Rignanese
     orcid: 0000-0002-1422-1205
     affiliation: "1 ,3"
   - name: David Waroquiers
-    orcid:
+    orcid: 0000-0001-8943-9762
     affiliation: "1"
 
 
@@ -151,6 +151,7 @@ as illustrated in Fig. \ref{geometries}: spherical and cylindrical [@Scocchi2011
 \hfill
 \includegraphics[width=0.48\textwidth]{wetting_angle_kit_cylinder.pdf}
 \caption{Geometric representations of droplets used in the analysis: spherical droplet (left) and cylindrical droplet (right).}
+\label{geometries}
 \end{figure}
 
 The software architecture relies on abstract base classes to enforce
@@ -174,7 +175,7 @@ Wetting-angle-kit provides a reproducible framework for contact angle analysis
 in molecular simulations, addressing a common need in studies of nanoscale wetting.
 The package has been validated using MD simulations of water droplets on graphene
 and polymer substrates, yielding contact angle values consistent
-with literature results (e.g., ~93° for graphene, ~110° for PTFE).
+with literature results (e.g., ~93° for graphene, ~110° for PTFE), see Fig.~\ref{results}.
 These results are consistent with literature values obtained using
 similar carbon-oxygen LJ parameters [@Jorgensen1996].
 
@@ -191,6 +192,7 @@ similar carbon-oxygen LJ parameters [@Jorgensen1996].
     \includegraphics[width=\linewidth]{mean_cos_angle_vs_surface_ptfe.pdf}
     \caption{PTFE}
 \end{minipage}
+\label{results}
 \end{figure}
 
 By enabling systematic comparison of analysis methods

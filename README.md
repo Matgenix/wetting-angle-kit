@@ -13,7 +13,7 @@ The documentation is available [here](https://matgenix.github.io/wetting-angle-k
 
 Before installing wetting_angle_kit, ensure you have the following prerequisites:
 
-1. **Python 3.9 or higher**: Make sure you have Python 3.9 or higher installed on your system.
+1. **Python 3.10 or higher**: Make sure you have Python 3.10 or higher installed on your system.
 2. **Conda**: Ensure you have Conda installed. If not, you can install it from [here](https://docs.conda.io/en/latest/miniconda.html).
 
 Core (only to analyse simple xyz trajectories):

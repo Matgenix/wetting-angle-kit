@@ -5,7 +5,8 @@ authors = [
     { name = "Gabriel", email = "gabriel.taillandier@matgenix.com" },
     { name = "Matgenix", email = "info@matgenix.com" },
 ]
-license = "MIT"
+license = "BSD-3-Clause"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["version"]
