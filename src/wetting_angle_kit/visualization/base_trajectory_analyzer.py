@@ -141,7 +141,7 @@ class BaseTrajectoryAnalyzer(ABC):
         self.load_data()
         for directory in self.directories:
             output_path = f"{directory}/{output_filename}"
-            with open(output_path, "w") as f:
+            with open(output_path, "w", encoding="utf-8") as f:
                 f.write(f"Directory: {directory}\n")
                 f.write(f"Method: {self.get_method_name()}\n")
                 f.write(
@@ -220,7 +220,7 @@ class BaseTrajectoryAnalyzer(ABC):
         for d, label, color in zip(self.directories, labels, colors, strict=False):
             # Read data from the analysis output file
             output_file = f"{d}/output_stats.txt"
-            with open(output_file) as f:
+            with open(output_file, encoding="utf-8") as f:
                 lines = f.readlines()
                 mean_surface_area = float(lines[2].split(": ")[1].strip())
                 mean_contact_angle = float(

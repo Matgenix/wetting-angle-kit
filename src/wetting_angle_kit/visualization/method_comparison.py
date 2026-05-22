@@ -56,7 +56,7 @@ class MethodComparison:
             (mean_surface_area, mean_contact_angle).
         """
         output_file = f"{directory}/output_stats.txt"
-        with open(output_file) as f:
+        with open(output_file, encoding="utf-8") as f:
             lines = f.readlines()
             mean_surface_area = float(lines[2].split(": ")[1].strip())
             mean_contact_angle = float(lines[3].split(": ")[1].strip().replace("°", ""))
