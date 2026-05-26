@@ -54,7 +54,7 @@ conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forg
 
 
 ```python
-from wetting_angle_kit.contact_angle_methods import (
+from wetting_angle_kit.analysis import (
     BinningContactAngleAnalyzer,
     SlicingContactAngleAnalyzer,
 )

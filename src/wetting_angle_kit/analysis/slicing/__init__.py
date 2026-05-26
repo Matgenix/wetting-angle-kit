@@ -1,12 +1,12 @@
 """Public exports for the slicing contact angle method."""
 
-from wetting_angle_kit.contact_angle_methods.slicing.angle_fitting import (
+from wetting_angle_kit.analysis.slicing.angle_fitting import (
     ContactAngleSlicing,
 )
-from wetting_angle_kit.contact_angle_methods.slicing.parallel import (
+from wetting_angle_kit.analysis.slicing.parallel import (
     ContactAngleSlicingParallel,
 )
-from wetting_angle_kit.contact_angle_methods.slicing.surface_definition import (
+from wetting_angle_kit.analysis.slicing.surface_definition import (
     SurfaceDefinition,
 )
 

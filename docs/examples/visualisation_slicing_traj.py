@@ -7,7 +7,7 @@ contact point.
 
 import numpy as np
 
-from wetting_angle_kit.contact_angle_methods.slicing import ContactAngleSlicing
+from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,
     LammpsDumpWallParser,

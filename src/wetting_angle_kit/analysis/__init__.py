@@ -1,9 +1,20 @@
+"""Contact-angle analysis orchestrators and per-method engines."""
+
 from typing import Any
 
-from wetting_angle_kit.contact_angle_methods.analyzer import (
+from wetting_angle_kit.analysis.analyzer import (
     BaseContactAngleAnalyzer,
     BinningContactAngleAnalyzer,
     SlicingContactAngleAnalyzer,
+)
+from wetting_angle_kit.analysis.binning.angle_fitting import (
+    ContactAngleBinning,
+)
+from wetting_angle_kit.analysis.slicing.angle_fitting import (
+    ContactAngleSlicing,
+)
+from wetting_angle_kit.analysis.slicing.parallel import (
+    ContactAngleSlicingParallel,
 )
 
 
@@ -38,3 +49,14 @@ def contact_angle_analyzer(
         )
     else:
         raise ValueError(f"Unknown method '{method}'. Expected 'slicing' or 'binning'.")
+
+
+__all__ = [
+    "BaseContactAngleAnalyzer",
+    "SlicingContactAngleAnalyzer",
+    "BinningContactAngleAnalyzer",
+    "contact_angle_analyzer",
+    "ContactAngleBinning",
+    "ContactAngleSlicing",
+    "ContactAngleSlicingParallel",
+]

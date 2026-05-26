@@ -6,7 +6,7 @@ import numpy as np
 import plotly.graph_objects as go
 from matplotlib.ticker import AutoMinorLocator
 
-from wetting_angle_kit.contact_angle_methods.slicing import ContactAngleSlicing
+from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,
     LammpsDumpWallParser,

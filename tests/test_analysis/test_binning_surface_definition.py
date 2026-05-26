@@ -1,6 +1,6 @@
 import numpy as np
 
-from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
+from wetting_angle_kit.analysis.binning.surface_definition import (
     HyperbolicTangentModel,
 )
 

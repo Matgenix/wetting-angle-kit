@@ -34,7 +34,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
+from wetting_angle_kit.analysis.binning.surface_definition import (
     HyperbolicTangentModel,
 )
 from wetting_angle_kit.io_utils import (

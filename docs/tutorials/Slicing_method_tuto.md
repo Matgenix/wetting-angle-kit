@@ -30,7 +30,7 @@ tests/trajectories/traj_spherical_drop_4k.lammpstrj
 ````python
 # Import necessary modules
 from wetting_angle_kit.parsers import LammpsDumpParser,     LammpsDumpWaterFinder
-from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+from wetting_angle_kit.analysis import contact_angle_analyzer
 
 # --- Step 1: Define the trajectory file ---
 filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
@@ -114,7 +114,7 @@ using the 'slicing' method on a spherical droplet from a LAMMPS dump trajectory.
 """
 
 from wetting_angle_kit.parsers import LammpsDumpParser,     LammpsDumpWaterFinder
-from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+from wetting_angle_kit.analysis import contact_angle_analyzer
 
 # --- Step 1: Define input trajectory ---
 filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"

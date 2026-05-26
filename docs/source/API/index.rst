@@ -11,20 +11,20 @@ Parser Module
    :undoc-members:
    :show-inheritance:
 
-Contact Angle Methods
-----------------------
+Analysis
+--------
 
 Base Analyzer
 ^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.contact_angle_methods.analyzer
+.. automodule:: wetting_angle_kit.analysis.analyzer
    :members:
    :show-inheritance:
 
 Slicing Method
 ^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.contact_angle_methods.slicing
+.. automodule:: wetting_angle_kit.analysis.slicing
    :members:
    :undoc-members:
    :show-inheritance:
@@ -33,7 +33,7 @@ Slicing Method
 Binning Method
 ^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.contact_angle_methods.binning
+.. automodule:: wetting_angle_kit.analysis.binning
    :members:
    :undoc-members:
    :show-inheritance:

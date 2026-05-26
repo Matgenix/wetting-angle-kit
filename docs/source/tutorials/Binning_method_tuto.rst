@@ -39,7 +39,7 @@ Example trajectory::
 
    # Import necessary modules
    from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
-   from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+   from wetting_angle_kit.analysis import contact_angle_analyzer
 
    # --- Step 1: Define the trajectory file ---
    filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"

@@ -28,7 +28,7 @@ The visualization workflow involves the following steps:
        LammpsDumpWaterFinder,
        LammpsDumpWallParser,
    )
-   from wetting_angle_kit.contact_angle_methods.slicing import ContactAngleSlicing
+   from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
    from wetting_angle_kit.visualization import DropletSlicePlotter
 
 ----

@@ -3,10 +3,10 @@ import os
 import numpy as np
 import pytest
 
-from wetting_angle_kit.contact_angle_methods.slicing.angle_fitting import (
+from wetting_angle_kit.analysis.slicing.angle_fitting import (
     ContactAngleSlicing,
 )
-from wetting_angle_kit.contact_angle_methods.slicing.parallel import (
+from wetting_angle_kit.analysis.slicing.parallel import (
     ContactAngleSlicingParallel,
     SlicingFrameResult,
 )

@@ -232,7 +232,7 @@ class ContactAngleSlicingParallel:
     ) -> SlicingFrameResult:
         """Process a single frame and compute mean contact angle."""
         try:
-            from wetting_angle_kit.contact_angle_methods.slicing.angle_fitting import (
+            from wetting_angle_kit.analysis.slicing.angle_fitting import (
                 ContactAngleSlicing,
             )
 

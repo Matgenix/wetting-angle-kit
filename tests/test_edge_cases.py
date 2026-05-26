@@ -3,10 +3,10 @@
 import numpy as np
 import pytest
 
-from wetting_angle_kit.contact_angle_methods.binning.surface_definition import (
+from wetting_angle_kit.analysis.binning.surface_definition import (
     HyperbolicTangentModel,
 )
-from wetting_angle_kit.contact_angle_methods.slicing.angle_fitting import (
+from wetting_angle_kit.analysis.slicing.angle_fitting import (
     ContactAngleSlicing,
 )
 
@@ -121,7 +121,7 @@ def test_hyperbolic_tangent_compute_isoline_raises_for_unphysical_fit():
 
 
 def test_contact_angle_analyzer_factory_rejects_unknown_method(tmp_path):
-    from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+    from wetting_angle_kit.analysis import contact_angle_analyzer
 
     with pytest.raises(ValueError, match="Unknown method"):
         contact_angle_analyzer(
@@ -135,7 +135,7 @@ def test_contact_angle_analyzer_factory_rejects_unknown_method(tmp_path):
 
 
 def _make_binning_analyzer(parser, tmp_path):
-    from wetting_angle_kit.contact_angle_methods.binning import ContactAngleBinning
+    from wetting_angle_kit.analysis.binning import ContactAngleBinning
 
     return ContactAngleBinning(
         parser=parser,

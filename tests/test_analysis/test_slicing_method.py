@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import pytest
 
-from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+from wetting_angle_kit.analysis import contact_angle_analyzer
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 
@@ -52,7 +52,7 @@ def test_contact_angle_slicing_with_real_data(parser, oxygen_indices):
     mean_liquid_position = np.mean(liquid_positions, axis=0)
 
     # Initialize ContactAngleSlicing
-    from wetting_angle_kit.contact_angle_methods.slicing import (
+    from wetting_angle_kit.analysis.slicing import (
         ContactAngleSlicing,
     )
 

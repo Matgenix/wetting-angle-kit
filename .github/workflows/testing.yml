@@ -85,7 +85,7 @@ jobs:
         run: |
           pytest \
             --ignore=tests/test_parser/test_parser_dump.py \
-            --ignore=tests/test_contact_angle_methods
+            --ignore=tests/test_analysis
 
   docs:
     runs-on: ubuntu-latest

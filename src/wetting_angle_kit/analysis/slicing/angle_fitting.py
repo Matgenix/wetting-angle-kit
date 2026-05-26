@@ -4,7 +4,7 @@ from collections.abc import Sequence
 import numpy as np
 from scipy.optimize import curve_fit
 
-from wetting_angle_kit.contact_angle_methods.slicing.surface_definition import (
+from wetting_angle_kit.analysis.slicing.surface_definition import (
     SurfaceDefinition,
 )
 from wetting_angle_kit.io_utils import validate_droplet_geometry

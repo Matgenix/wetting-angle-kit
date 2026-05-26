@@ -4,7 +4,7 @@ Runs the per-frame slicing (circle-fitting) analyzer on a LAMMPS dump
 file and prints the resulting mean contact angle.
 """
 
-from wetting_angle_kit.contact_angle_methods import contact_angle_analyzer
+from wetting_angle_kit.analysis import contact_angle_analyzer
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 # --- Step 1: Define the trajectory file ---
