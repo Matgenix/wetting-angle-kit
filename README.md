@@ -1,9 +1,9 @@
 # wetting_angle_kit
 
-[![Tests](https://github.com/Matgenix/wetting_angle_kit/actions/workflows/testing.yml/badge.svg)](https://github.com/Matgenix/wetting_angle_kit/actions/workflows/testing.yml)
-[![codecov](https://codecov.io/gh/Matgenix/wetting_angle_kit/branch/main/graph/badge.svg)](https://codecov.io/gh/Matgenix/wetting_angle_kit)
-[![PyPI version](https://img.shields.io/pypi/v/wetting_angle_kit.svg)](https://pypi.org/project/wetting_angle_kit/)
-[![Python versions](https://img.shields.io/pypi/pyversions/wetting_angle_kit.svg)](https://pypi.org/project/wetting_angle_kit/)
+[![tests](https://img.shields.io/github/actions/workflow/status/Matgenix/wetting-angle-kit/testing.yml?branch=main&label=tests)](https://github.com/Matgenix/wetting-angle-kit/actions/workflows/testing.yml)
+[![code coverage](https://codecov.io/gh/Matgenix/wetting-angle-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/Matgenix/wetting-angle-kit)
+[![pypi version](https://img.shields.io/pypi/v/wetting-angle-kit?color=blue)](https://pypi.org/project/wetting-angle-kit/)
+[![Python versions](https://img.shields.io/pypi/pyversions/wetting-angle-kit)](https://pypi.org/project/wetting-angle-kit/)
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-matgenix.github.io-blue)](https://matgenix.github.io/wetting-angle-kit)
 
