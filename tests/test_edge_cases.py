@@ -194,3 +194,56 @@ def test_binning_get_profile_coordinates_concatenates_frames(tmp_path):
     np.testing.assert_allclose(r, np.array([1.0, 1.0, 0.0, 2.0, 2.0, 0.0]))
     # z is lab-frame, concatenated as-is.
     np.testing.assert_array_equal(z, np.array([5.0, 6.0, 7.0, 8.0, 9.0, 10.0]))
+
+
+def test_binning_warns_and_falls_back_when_parser_has_no_box(tmp_path):
+    """Parsers that don't expose box_size_x/y (plain XYZ without a Lattice=
+    line, custom stubs) must trigger the fallback warning and still produce
+    results via the legacy arithmetic-mean centering."""
+    from wetting_angle_kit.parsers.base import BaseParser
+
+    frame = np.array([[1.0, 0.0, 5.0], [-1.0, 0.0, 6.0], [0.0, 0.0, 7.0]])
+
+    class _StubParser(BaseParser):
+        def parse(self, frame_index, indices=None):
+            return frame
+
+        def frame_count(self):
+            return 1
+
+        # box_size_x / box_size_y inherited from BaseParser raise NotImplementedError.
+
+    analyzer = _make_binning_analyzer(_StubParser(), tmp_path)
+    with pytest.warns(UserWarning, match="does not expose lateral box sizes"):
+        r, z, n = analyzer.get_profile_coordinates(frame_indices=[0])
+    assert n == 1
+    np.testing.assert_allclose(r, np.array([1.0, 1.0, 0.0]))
+    np.testing.assert_array_equal(z, np.array([5.0, 6.0, 7.0]))
+
+
+def test_binning_no_warning_when_parser_exposes_box(tmp_path):
+    """The fallback warning must NOT fire when the parser exposes box info;
+    otherwise it would spam every real run."""
+    import warnings
+
+    from wetting_angle_kit.parsers.base import BaseParser
+
+    frame = np.array([[1.0, 0.0, 5.0], [-1.0, 0.0, 6.0], [0.0, 0.0, 7.0]])
+
+    class _StubParserWithBox(BaseParser):
+        def parse(self, frame_index, indices=None):
+            return frame
+
+        def frame_count(self):
+            return 1
+
+        def box_size_x(self, frame_index):
+            return 100.0
+
+        def box_size_y(self, frame_index):
+            return 100.0
+
+    analyzer = _make_binning_analyzer(_StubParserWithBox(), tmp_path)
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        analyzer.get_profile_coordinates(frame_indices=[0])

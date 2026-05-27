@@ -183,9 +183,41 @@ class ContactAngleBinning:
         validate_droplet_geometry(self.droplet_geometry)
         r_chunks: list[np.ndarray] = []
         z_chunks: list[np.ndarray] = []
+        # Probe the parser once for lateral box info (skip if no frames
+        # were requested). If unavailable -- e.g. plain XYZ without a
+        # Lattice= line, or a custom parser that doesn't expose
+        # box_size_x/y -- fall back to the legacy arithmetic-mean
+        # centering. That is correct only for trajectories whose dynamics
+        # already recenter the droplet at every frame and where atoms are
+        # not wrapped across periodic boundaries.
+        box_size: tuple[float, float] | None = None
+        if frame_indices:
+            try:
+                box_size = (
+                    self.parser.box_size_x(frame_index=frame_indices[0]),
+                    self.parser.box_size_y(frame_index=frame_indices[0]),
+                )
+            except (NotImplementedError, ValueError):
+                warnings.warn(
+                    "Parser does not expose lateral box sizes; falling back "
+                    "to arithmetic-mean droplet centering. This is correct "
+                    "only if the trajectory already recenters the droplet at "
+                    "every frame and atoms are not wrapped across periodic "
+                    "boundaries. Provide lattice information in the "
+                    "trajectory to enable PBC-aware recentering.",
+                    UserWarning,
+                    stacklevel=2,
+                )
         for frame_idx in frame_indices:
             positions = self.parser.parse(frame_idx, self.atom_indices)
-            r_frame, z_frame = project_to_profile(positions, self.droplet_geometry)
+            if box_size is not None:
+                box_size = (
+                    self.parser.box_size_x(frame_index=frame_idx),
+                    self.parser.box_size_y(frame_index=frame_idx),
+                )
+            r_frame, z_frame = project_to_profile(
+                positions, self.droplet_geometry, box_size=box_size
+            )
             r_chunks.append(r_frame)
             z_chunks.append(z_frame)
             if frame_idx % 10 == 0:

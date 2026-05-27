@@ -86,10 +86,12 @@ Finally, the entire procedure is repeated for multiple azimuthal angles (rotatin
 **Binning Method**
 ^^^^^^^^^^^^^^^^^^
 
-.. warning::
-    For the binning method, it is crucial that the droplet remains centered in the simulation box. We recommend using a recentering command during the simulation, such as:
+.. note::
+    The binning and slicing methods both recenter the droplet per frame, using a periodic-image-aware (circular-mean) construction. This means trajectories where the droplet drifts during the run, or where atoms are wrapped across a periodic boundary, are handled transparently. Producing a pre-recentered trajectory at simulation time is therefore optional, though still convenient for visualization and post-processing:
 
     ``fix recenter group_id INIT INIT NULL``
+
+    Both methods do require that the simulation box be large enough that the droplet does not interact with its periodic image (i.e. its lateral diameter is comfortably below the box length). If that condition is violated, the radial density profile will be physically meaningless regardless of the centering strategy.
 
 The **Binning Method** uses a spatial discretization approach, suitable for averaging over multiple frames to get a smooth density profile.
 

@@ -136,13 +136,56 @@ def detect_parser_type(filename: str) -> str:
     raise ValueError(f"Unsupported trajectory file format: {ext}")
 
 
-def project_to_profile(
-    positions: np.ndarray, droplet_geometry: str
-) -> tuple[np.ndarray, np.ndarray]:
-    """Project 3D atomic positions onto the (r, z) plane used by analyzers.
+def _circular_mean_1d(coords: np.ndarray, box_length: float) -> float:
+    """Periodic ("circular") mean of 1D coordinates on a box of length L.
 
-    The lateral coordinates are centered on their per-frame center of mass
-    before projection; the vertical (z) coordinate is left in lab frame.
+    Maps each coordinate to a phase angle on a circle of circumference L,
+    averages on the circle, and maps back to [0, L). This gives a meaningful
+    center for a localized cluster regardless of where it sits relative to
+    the periodic boundary -- including the half-in/half-out case where the
+    plain arithmetic mean is wrong.
+
+    Degenerate for a distribution that fills the box uniformly (the resulting
+    angle is dominated by noise); callers must only apply it to axes along
+    which the cluster is localized.
+    """
+    theta = 2.0 * np.pi * coords / box_length
+    mean_angle = np.arctan2(np.mean(np.sin(theta)), np.mean(np.cos(theta)))
+    return float((mean_angle % (2.0 * np.pi)) * box_length / (2.0 * np.pi))
+
+
+def _confined_lateral_axes(droplet_geometry: str) -> tuple[int, ...]:
+    """Lateral axes on which the droplet is localized (and therefore needs
+    PBC-aware recentering). The axial direction of a cylinder is excluded
+    because the atomic distribution along it fills the box."""
+    if droplet_geometry == "spherical":
+        return (0, 1)
+    if droplet_geometry == "cylinder_y":
+        return (0,)
+    # cylinder_x
+    return (1,)
+
+
+def recenter_droplet_pbc(
+    positions: np.ndarray,
+    droplet_geometry: str,
+    box_size: tuple[float, float],
+) -> tuple[np.ndarray, np.ndarray]:
+    """Fold atomic positions into the minimum-image frame around the
+    droplet's circular-mean center of mass.
+
+    Use this on raw trajectory frames whose dynamics did not recenter the
+    droplet (or recentered it but left atoms wrapped at the periodic
+    boundary). After this call, atoms that belong to the same droplet form a
+    single contiguous cluster around the returned center -- correct even
+    when the droplet straddles a box face. The operation is idempotent on
+    already-centered, unwrapped trajectories.
+
+    Recentering is applied only on the *confined* lateral axes
+    (cross-section of a cylinder, both x and y for a sphere). The axial
+    direction of a cylinder is left untouched: the atomic distribution
+    there fills the box, the circular mean is degenerate, and downstream
+    analyses do not use a center along that axis.
 
     Parameters
     ----------
@@ -150,6 +193,69 @@ def project_to_profile(
         Cartesian atomic positions for a single frame.
     droplet_geometry : str
         One of ``"spherical"``, ``"cylinder_x"``, ``"cylinder_y"``.
+    box_size : (Lx, Ly)
+        Lateral box lengths.
+
+    Returns
+    -------
+    positions_folded : ndarray, shape (N, 3)
+        Positions shifted by integer multiples of L on each confined axis so
+        that the droplet forms a single cluster around ``com``. The axial
+        axis of a cylinder and the z axis are returned unchanged.
+    com : ndarray, shape (3,)
+        Droplet center: circular-mean on confined axes, arithmetic mean on
+        the others (axial / z). Lies in the lab frame; on confined axes it
+        is mapped into ``[0, L)``.
+
+    Notes
+    -----
+    The caller is responsible for ensuring the simulation box is large
+    enough that the droplet does not overlap with its periodic image; this
+    function does not validate box sizing.
+    """
+    validate_droplet_geometry(droplet_geometry)
+    if positions.size == 0:
+        return positions.copy(), np.full(3, np.nan)
+
+    folded = positions.copy()
+    com = np.mean(positions, axis=0)  # default for axes we don't touch
+    for axis in _confined_lateral_axes(droplet_geometry):
+        L = float(box_size[axis])
+        cm = _circular_mean_1d(positions[:, axis], L)
+        d = positions[:, axis] - cm
+        d -= L * np.round(d / L)  # minimum image around the circular COM
+        folded[:, axis] = cm + d
+        com[axis] = cm
+    return folded, com
+
+
+def project_to_profile(
+    positions: np.ndarray,
+    droplet_geometry: str,
+    box_size: tuple[float, float] | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    """Project 3D atomic positions onto the (r, z) plane used by analyzers.
+
+    The lateral coordinates are recentered on their per-frame center of mass
+    before projection; the vertical (z) coordinate is left in lab frame.
+
+    When ``box_size`` is given, the center of mass along each confined lateral
+    axis is computed with the Bai & Breen circular-mean construction and the
+    atoms are folded into the minimum-image frame around it. This handles
+    trajectories where the droplet straddles a periodic boundary, in which
+    case a plain arithmetic mean is meaningless. The axial direction of a
+    cylindrical droplet (along which atoms fill the box) is never recentered.
+
+    Parameters
+    ----------
+    positions : ndarray, shape (N, 3)
+        Cartesian atomic positions for a single frame.
+    droplet_geometry : str
+        One of ``"spherical"``, ``"cylinder_x"``, ``"cylinder_y"``.
+    box_size : (Lx, Ly), optional
+        Lateral box lengths. If omitted, the arithmetic mean is used and no
+        PBC handling is applied (legacy behavior: only correct when the
+        trajectory already recenters the droplet at every frame).
 
     Returns
     -------
@@ -162,8 +268,16 @@ def project_to_profile(
     validate_droplet_geometry(droplet_geometry)
     if positions.size == 0:
         return np.empty(0), np.empty(0)
-    x_cm = np.mean(positions, axis=0)
-    x_centered = positions - x_cm
+
+    if box_size is None:
+        # Legacy path: arithmetic-mean centering on the confined axes only.
+        x_centered = positions.copy()
+        for axis in _confined_lateral_axes(droplet_geometry):
+            x_centered[:, axis] = positions[:, axis] - np.mean(positions[:, axis])
+    else:
+        folded, com = recenter_droplet_pbc(positions, droplet_geometry, box_size)
+        x_centered = folded - com
+
     # z stays in lab frame; analyzers need absolute heights to locate the wall.
     z_values = positions[:, 2]
     if droplet_geometry == "cylinder_y":

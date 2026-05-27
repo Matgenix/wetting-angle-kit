@@ -7,6 +7,7 @@ from typing import NamedTuple
 
 import numpy as np
 
+from wetting_angle_kit.io_utils import recenter_droplet_pbc
 from wetting_angle_kit.parsers import BaseParser
 
 # "spawn" is required because parser instances may hold un-picklable handles
@@ -260,14 +261,27 @@ class ContactAngleSlicingParallel:
                 f"Frame {frame_num}: Parsed {len(liquid_positions)} liquid "
                 f"particles with max_dist {max_dist}"
             )
+            # Fold the droplet into the minimum-image frame around its
+            # circular-mean COM before the cylinder_x axis swap, so the
+            # box_size argument is in the parser's native frame. This makes
+            # downstream radial sampling robust to droplets that straddle a
+            # periodic boundary, and is idempotent for trajectories already
+            # recentered during dynamics.
+            box_size_xy = (
+                parser.box_size_x(frame_index=frame_num),
+                parser.box_size_y(frame_index=frame_num),
+            )
+            liquid_positions, mean_liquid_position = recenter_droplet_pbc(
+                liquid_positions, self.droplet_geometry, box_size=box_size_xy
+            )
             if self.droplet_geometry == "cylinder_x":
                 liquid_positions = liquid_positions[:, [1, 0, 2]]
+                mean_liquid_position = mean_liquid_position[[1, 0, 2]]
                 box_dimensions = parser.box_size_x(frame_index=frame_num)
             elif self.droplet_geometry == "cylinder_y":
                 box_dimensions = parser.box_size_y(frame_index=frame_num)
             else:
                 box_dimensions = None
-            mean_liquid_position = np.mean(liquid_positions, axis=0)
             predictor = ContactAngleSlicing(
                 liquid_coordinates=liquid_positions,
                 max_dist=max_dist,

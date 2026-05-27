@@ -7,6 +7,7 @@ import plotly.graph_objects as go
 from matplotlib.ticker import AutoMinorLocator
 
 from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
+from wetting_angle_kit.io_utils import recenter_droplet_pbc
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,
     LammpsDumpWallParser,
@@ -618,9 +619,16 @@ class ContactAngleAnimator:
             oxygen_position = self.parser.parse(
                 frame_index=frame_idx, indices=self.oxygen_indices
             )
+            box_size_xy = (
+                self.parser.box_size_x(frame_index=frame_idx),
+                self.parser.box_size_y(frame_index=frame_idx),
+            )
+            oxygen_position, liquid_geom_center = recenter_droplet_pbc(
+                oxygen_position, self.droplet_geometry, box_size=box_size_xy
+            )
             processor = ContactAngleSlicing(
                 liquid_coordinates=oxygen_position,
-                liquid_geom_center=np.mean(oxygen_position, axis=0),
+                liquid_geom_center=liquid_geom_center,
                 droplet_geometry=self.droplet_geometry,
                 delta_cylinder=self.delta_cylinder,
                 max_dist=self.max_dist,
