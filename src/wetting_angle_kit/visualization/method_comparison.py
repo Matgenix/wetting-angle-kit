@@ -145,6 +145,7 @@ class MethodComparison:
         save_path: str | None = None,
         figsize: tuple[int, int] = (7, 5),
         colors: list[str] | None = None,
+        point_labels: list[list[str]] | None = None,
     ) -> None:
         """Overlay Modified Young's equation plot across all analyzers.
 
@@ -159,6 +160,10 @@ class MethodComparison:
             Figure size in inches.
         colors : list[str], optional
             One color per analyzer. If None a default palette is used.
+        point_labels : list[list[str]] or None, optional
+            Custom labels for each data point. Outer list corresponds to
+            analyzers, inner list to directories (same order as
+            ``analyzer.directories``). If None, directory names are used.
         """
         if colors is None:
             colors = ["#0A9396", "#bb3e03", "#9b5de5", "#f15bb5", "#00bbf9"]
@@ -185,7 +190,7 @@ class MethodComparison:
             color = colors[idx % len(colors)]
             xvals, yvals = [], []
 
-            for directory in analyzer.directories:
+            for dir_idx, directory in enumerate(analyzer.directories):
                 mean_sa, mean_angle = self._read_analysis_output(analyzer, directory)
                 # Read std from output_stats.txt (line 4)
                 output_file = f"{directory}/output_stats.txt"
@@ -211,8 +216,14 @@ class MethodComparison:
                     capsize=3,
                     lw=1.2,
                 )
+
+                # Annotation
+                if point_labels is not None:
+                    text = point_labels[idx][dir_idx]
+                else:
+                    text = analyzer.get_clean_label(directory)
                 ax.annotate(
-                    analyzer.get_clean_label(directory),
+                    text,
                     xy=(x, y),
                     xytext=(5, 5),
                     textcoords="offset points",
