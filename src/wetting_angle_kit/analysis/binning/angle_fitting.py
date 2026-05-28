@@ -71,6 +71,7 @@ class ContactAngleBinning:
         binning_params: dict[str, Any] | None = None,
         output_dir: str = "output_analysis/",
         plot_graphs: bool = True,
+        precentered: bool = False,
     ) -> None:
         """
         Parameters
@@ -90,6 +91,13 @@ class ContactAngleBinning:
             Directory for log files and density field CSVs.
         plot_graphs : bool, default True
             Whether to generate density contour plots.
+        precentered : bool, default False
+            Set True to declare that the trajectory already recenters the
+            droplet at every frame and atoms are not wrapped across periodic
+            boundaries. The per-frame circular-mean recentering is then
+            skipped (using a plain arithmetic mean instead), removing the
+            associated overhead. Setting this on a trajectory that does NOT
+            satisfy the precondition will produce wrong results.
         """
         validate_droplet_geometry(droplet_geometry)
         self.parser = parser
@@ -98,6 +106,7 @@ class ContactAngleBinning:
         self.width_cylinder = width_cylinder
         self.output_dir = output_dir
         self.plot_graphs = plot_graphs
+        self.precentered = precentered
         if binning_params is None:
             max_dist = int(
                 np.max(
@@ -183,15 +192,17 @@ class ContactAngleBinning:
         validate_droplet_geometry(self.droplet_geometry)
         r_chunks: list[np.ndarray] = []
         z_chunks: list[np.ndarray] = []
-        # Probe the parser once for lateral box info (skip if no frames
-        # were requested). If unavailable -- e.g. plain XYZ without a
-        # Lattice= line, or a custom parser that doesn't expose
-        # box_size_x/y -- fall back to the legacy arithmetic-mean
-        # centering. That is correct only for trajectories whose dynamics
-        # already recenter the droplet at every frame and where atoms are
-        # not wrapped across periodic boundaries.
+        # If the user has declared the trajectory pre-centered, skip the
+        # box probe entirely and use the legacy arithmetic-mean path.
+        # Otherwise probe the parser once for lateral box info (skip if no
+        # frames were requested). If unavailable -- e.g. plain XYZ without
+        # a Lattice= line, or a custom parser that doesn't expose
+        # box_size_x/y -- fall back to the legacy centering. That is
+        # correct only when the trajectory already recenters the droplet
+        # at every frame and atoms are not wrapped across periodic
+        # boundaries.
         box_size: tuple[float, float] | None = None
-        if frame_indices:
+        if frame_indices and not self.precentered:
             try:
                 box_size = (
                     self.parser.box_size_x(frame_index=frame_indices[0]),

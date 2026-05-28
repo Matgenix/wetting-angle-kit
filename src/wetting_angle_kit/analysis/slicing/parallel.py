@@ -62,6 +62,7 @@ class ContactAngleSlicingParallel:
         delta_gamma: float | None = None,
         delta_cylinder: float | None = None,
         points_per_angstrom: float = 1.0,
+        precentered: bool = False,
     ):
         """
         Parameters
@@ -81,6 +82,13 @@ class ContactAngleSlicingParallel:
         points_per_angstrom : float, default 1.0
             Sampling density along each radial ray for the surface fit.
             Influences the computational cost.
+        precentered : bool, default False
+            Set True to declare that the trajectory already recenters the
+            droplet at every frame and atoms are not wrapped across periodic
+            boundaries. The per-frame circular-mean recentering is then
+            skipped (using a plain arithmetic mean instead), removing the
+            associated overhead. Setting this on a trajectory that does NOT
+            satisfy the precondition will produce wrong results.
         """
         self.filename = filename
         self.output_dir = output_dir
@@ -89,6 +97,7 @@ class ContactAngleSlicingParallel:
         self.droplet_geometry = droplet_geometry
         self.points_per_angstrom = points_per_angstrom
         self.atom_indices = atom_indices if atom_indices is not None else np.array([])
+        self.precentered = precentered
         os.makedirs(self.output_dir, exist_ok=True)
 
     def process_frames_parallel(
@@ -266,14 +275,18 @@ class ContactAngleSlicingParallel:
             # box_size argument is in the parser's native frame. This makes
             # downstream radial sampling robust to droplets that straddle a
             # periodic boundary, and is idempotent for trajectories already
-            # recentered during dynamics.
-            box_size_xy = (
-                parser.box_size_x(frame_index=frame_num),
-                parser.box_size_y(frame_index=frame_num),
-            )
-            liquid_positions, mean_liquid_position = recenter_droplet_pbc(
-                liquid_positions, self.droplet_geometry, box_size=box_size_xy
-            )
+            # recentered during dynamics. Skipped (with a plain arithmetic
+            # mean) when the user has declared the trajectory pre-centered.
+            if self.precentered:
+                mean_liquid_position = np.mean(liquid_positions, axis=0)
+            else:
+                box_size_xy = (
+                    parser.box_size_x(frame_index=frame_num),
+                    parser.box_size_y(frame_index=frame_num),
+                )
+                liquid_positions, mean_liquid_position = recenter_droplet_pbc(
+                    liquid_positions, self.droplet_geometry, box_size=box_size_xy
+                )
             if self.droplet_geometry == "cylinder_x":
                 liquid_positions = liquid_positions[:, [1, 0, 2]]
                 mean_liquid_position = mean_liquid_position[[1, 0, 2]]
