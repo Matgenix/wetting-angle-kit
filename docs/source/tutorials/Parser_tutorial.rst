@@ -1,12 +1,12 @@
 Tutorial: Using the Parser Module
 ===================================
 
-This tutorial shows how to load different trajectory formats using the ``wetting_angle_kit.parser`` submodule.
+This tutorial shows how to load different trajectory formats using the ``wetting_angle_kit.parsers`` submodule.
 
 The parser provides a unified interface to read atomic coordinates from:
 
-- LAMMPS dump files (``DumpParser``, ``    DumpWaterMoleculeFinder``)
-- ASE ``.traj`` files (``AseParser``, ``AseWaterMoleculeFinder``)
+- LAMMPS dump files (``LammpsDumpParser``, ``    LammpsDumpWaterFinder``)
+- ASE ``.traj`` files (``AseParser``, ``AseWaterFinder``)
 - XYZ files (``XYZParser``)
 
 Each parser can extract atomic positions for selected frames and atoms, allowing efficient and flexible analysis of molecular simulations.
@@ -31,14 +31,14 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 
 .. code-block:: python
 
-   from wetting_angle_kit.parser import DumpParser, DumpWaterMoleculeFinder
+   from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
    # --- Step 1: Define the trajectory file ---
    filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
 
    # --- Step 2: Initialize the water molecule finder ---
    # Specify particle types for the wall and for water oxygens and hydrogens
-   wat_find = DumpWaterMoleculeFinder(
+   wat_find = LammpsDumpWaterFinder(
        filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2
    )
 
@@ -47,7 +47,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
    print("Number of water molecules:", len(oxygen_indices))
 
    # --- Step 4: Initialize the parser ---
-   parser = DumpParser(filename)
+   parser = LammpsDumpParser(filename)
 
    # --- Step 5: Extract coordinates of only the water oxygens ---
    oxygen_positions = parser.parse(frame_index=0, indices=oxygen_indices)
@@ -65,13 +65,13 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 
 .. code-block:: python
 
-   from wetting_angle_kit.parser import AseParser, AseWaterMoleculeFinder
+   from wetting_angle_kit.parsers import AseParser, AseWaterFinder
 
    # --- Step 1: Define the trajectory file ---
    filename = "../../tests/trajectories/slice_10_mace_mlips_cylindrical_2_5.traj"
 
    # --- Step 2: Initialize the water molecule finder ---
-   wat_find = AseWaterMoleculeFinder(
+   wat_find = AseWaterFinder(
        filename,
        particle_type_wall=["C"],  # Wall elements (e.g., carbon)
        oh_cutoff=0.4,  # O–H bond cutoff distance
@@ -97,7 +97,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 
 .. code-block:: python
 
-   from wetting_angle_kit.parser import XYZParser
+   from wetting_angle_kit.parsers import XYZParser
 
    # --- Step 1: Define the trajectory file ---
    filename = "../../tests/trajectories/slice_10_mace_mlips_cylindrical_2_5.xyz"

@@ -1,6 +1,6 @@
 # wetting_angle_kit Documentation
 
-This package provides both *sliced* and *binning* methods to compute the contact angle of droplets from molecular dynamics simulations.
+This package provides both *slicing* and *binning* methods to compute the contact angle of droplets from molecular dynamics simulations.
 
 ## Structure
 - `examples/`: Ready-to-run example scripts and notebooks

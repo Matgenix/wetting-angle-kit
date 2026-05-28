@@ -65,10 +65,10 @@ Both methods are capable of analyzing:
 *   **Spherical Droplets**: Standard spherical cap shapes.
 *   **Cylindrical Droplets**: Cylindrical droplets (e.g., water on a nanowire or with periodic boundary conditions), analyzed along the cylinder's axis (x or y).
 
-**Sliced Method**
+**Slicing Method**
 ^^^^^^^^^^^^^^^^^
 
-The **Sliced Method** is ideal for analyzing the evolution of the contact angle over time or for symmetric droplets.
+The **Slicing Method** is ideal for analyzing the evolution of the contact angle over time or for symmetric droplets.
 
 *   **Theory**: The droplet is divided into vertical slices along the z-axis.
 *   **Process**: For each slice, the liquid-vapor interface is determined. A geometric model (such as a sphere or cylinder) is then fitted to these interface points.
@@ -86,10 +86,12 @@ Finally, the entire procedure is repeated for multiple azimuthal angles (rotatin
 **Binning Method**
 ^^^^^^^^^^^^^^^^^^
 
-.. warning::
-    For the binning method, it is crucial that the droplet remains centered in the simulation box. We recommend using a recentering command during the simulation, such as:
+.. note::
+    The binning and slicing methods both recenter the droplet per frame, using a periodic-image-aware (circular-mean) construction. This means trajectories where the droplet drifts during the run, or where atoms are wrapped across a periodic boundary, are handled transparently. Producing a pre-recentered trajectory at simulation time is therefore optional, though still convenient for visualization and post-processing:
 
     ``fix recenter group_id INIT INIT NULL``
+
+    Both methods do require that the simulation box be large enough that the droplet does not interact with its periodic image (i.e. its lateral diameter is comfortably below the box length). If that condition is violated, the radial density profile will be physically meaningless regardless of the centering strategy.
 
 The **Binning Method** uses a spatial discretization approach, suitable for averaging over multiple frames to get a smooth density profile.
 
@@ -102,7 +104,7 @@ The **Binning Method** uses a spatial discretization approach, suitable for aver
 
 Finally, the results are visualized to validate the analysis.
 
-*   **Profile Plots**: View the fitted geometric shape (circle, ellipse) overlaying the droplet points (as seen in the Sliced method).
+*   **Profile Plots**: View the fitted geometric shape (circle, ellipse) overlaying the droplet points (as seen in the Slicing method).
 *   **Heatmaps**: For the Binning method, a 2D density heatmap is generated, showing the liquid distribution and the computed interface line.
 
 Examples of these visualizations can be found in the respective tutorials for each method.
@@ -110,10 +112,10 @@ Examples of these visualizations can be found in the respective tutorials for ea
 Troubleshooting
 ---------------
 
-* **NaN angles**: Usually occur when the surface filter removes too many points (empty slice). Adjust ``surface_filter_offset`` (default 2.0) in ``ContactAngleSliced`` or relax slice width. Ensure enough atoms remain after filtering (>=3) for circle fitting.
+* **NaN angles**: Usually occur when the surface filter removes too many points (empty slice). Adjust ``surface_filter_offset`` (default 2.0) in ``ContactAngleSlicing`` or relax slice width. Ensure enough atoms remain after filtering (>=3) for circle fitting.
 
 * **Empty outputs / NoneType failures**: Confirm ``width_cylinder`` and ``delta_cylinder`` are passed for cylindrical models and ``delta_gamma`` for spherical model. Parser must supply box dimensions for automatic max distance estimation.
 
-* **Multiprocessing hangs**: Use the batch-parallel wrapper (``ContactAngleSlicedParallel.process_frames_parallel``) which employs spawn start method; avoid invoking OVITO parsers inside global contexts before multiprocessing starts.
+* **Multiprocessing hangs**: Use the batch-parallel wrapper (``ContactAngleSlicingParallel.process_frames_parallel``) which employs spawn start method; avoid invoking OVITO parsers inside global contexts before multiprocessing starts.
 
 * **OVITO ImportError**: Install with the ovito extra or via the Conda command listed above. Verify channel priority and version pin if dependency resolution fails.

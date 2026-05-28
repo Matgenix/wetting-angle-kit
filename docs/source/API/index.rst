@@ -6,34 +6,34 @@ Complete reference for all modules, classes, and functions in wetting_angle_kit.
 Parser Module
 -------------
 
-.. automodule:: wetting_angle_kit.parser
+.. automodule:: wetting_angle_kit.parsers
    :members:
    :undoc-members:
    :show-inheritance:
 
-Contact Angle Methods
-----------------------
+Analysis
+--------
 
 Base Analyzer
 ^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.contact_angle_method.contact_angle_analyzer
+.. automodule:: wetting_angle_kit.analysis.analyzer
    :members:
    :show-inheritance:
 
-Sliced Method
+Slicing Method
 ^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.contact_angle_method.sliced_method
+.. automodule:: wetting_angle_kit.analysis.slicing
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: ContactAngleSliced, ContactAngleSlicedParallel
+   :exclude-members: ContactAngleSlicing, ContactAngleSlicingParallel
 
 Binning Method
 ^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.contact_angle_method.binning_method
+.. automodule:: wetting_angle_kit.analysis.binning
    :members:
    :undoc-members:
    :show-inheritance:
@@ -42,7 +42,7 @@ Binning Method
 Visualization and Statistics
 -----------------------------
 
-.. automodule:: wetting_angle_kit.visualization_angles
+.. automodule:: wetting_angle_kit.visualization
    :members:
    :undoc-members:
    :show-inheritance:

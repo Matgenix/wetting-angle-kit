@@ -25,22 +25,22 @@ Example of using the binning method for contact angle analysis.
 
 ----
 
-Sliced Contact Angle Analysis
+Slicing Contact Angle Analysis
 ------------------------------
 
-Example of using the sliced method for contact angle analysis.
+Example of using the slicing method for contact angle analysis.
 
-.. literalinclude:: ../../examples/sliced_ca.py
+.. literalinclude:: ../../examples/slicing_ca.py
    :language: python
    :linenos:
 
 ----
 
-Visualizing Sliced Trajectories
+Visualizing Slicing Trajectories
 --------------------------------
 
-Example of visualizing droplet trajectories with the sliced method.
+Example of visualizing droplet trajectories with the slicing method.
 
-.. literalinclude:: ../../examples/visualisation_sliced_traj.py
+.. literalinclude:: ../../examples/visualisation_slicing_traj.py
    :language: python
    :linenos:

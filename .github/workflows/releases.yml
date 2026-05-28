@@ -15,7 +15,7 @@ jobs:
   publish:
     name: Publish package
     runs-on: ubuntu-latest
-    if: github.repository == 'Matgenix/wetting_angle_kit' && startsWith(github.ref, 'refs/tags/v')
+    if: github.repository == 'Matgenix/wetting-angle-kit' && startsWith(github.ref, 'refs/tags/v')
 
     steps:
     - name: Checkout repository
@@ -118,7 +118,7 @@ jobs:
         password: ${{ secrets.PYPI_PASSWORD }}
 
   deploy_docs:
-    if: github.repository == 'Matgenix/wetting_angle_kit' && startsWith(github.ref, 'refs/tags/v')
+    if: github.repository == 'Matgenix/wetting-angle-kit' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       pages: write      # to deploy to Pages
@@ -126,7 +126,7 @@ jobs:
     needs: publish
     environment:
       name: "Documentation"
-      url: https://Matgenix.github.io/wetting_angle_kit
+      url: https://Matgenix.github.io/wetting-angle-kit
 
     steps:
     - name: Deploy docs

@@ -1,6 +1,6 @@
 # Tutorial: Comparing Trajectory Analysis Methods
 
-This tutorial demonstrates how to use the `BinningTrajectoryAnalyzer` and `SlicedTrajectoryAnalyzer` classes to analyze and compare contact angle and surface area data from trajectory simulations.
+This tutorial demonstrates how to use the `BinningTrajectoryAnalyzer` and `SlicingTrajectoryAnalyzer` classes to analyze and compare contact angle and surface area data from trajectory simulations.
 
 ---
 
@@ -16,7 +16,7 @@ This tutorial demonstrates how to use the `BinningTrajectoryAnalyzer` and `Slice
 ---
 
 ## Introduction
-The `BinningTrajectoryAnalyzer` and `SlicedTrajectoryAnalyzer` classes are designed to analyze trajectory data, specifically focusing on **surface area** and **contact angle** statistics. These tools are useful for comparing different analysis methods and visualizing results.
+The `BinningTrajectoryAnalyzer` and `SlicingTrajectoryAnalyzer` classes are designed to analyze trajectory data, specifically focusing on **surface area** and **contact angle** statistics. These tools are useful for comparing different analysis methods and visualizing results.
 
 ---
 
@@ -26,14 +26,10 @@ The `BinningTrajectoryAnalyzer` and `SlicedTrajectoryAnalyzer` classes are desig
 Ensure you have the required classes imported:
 
 ```python
-from wetting_angle_kit.visualization_statistics_angles.binning_analyzer import (
+from wetting_angle_kit.visualization import (
     BinningTrajectoryAnalyzer,
-)
-from wetting_angle_kit.visualization_statistics_angles.sliced_analyzer import (
-    SlicedTrajectoryAnalyzer,
-)
-from wetting_angle_kit.visualization_statistics_angles.comparison_methods import (
     MethodComparison,
+    SlicingTrajectoryAnalyzer,
 )
 ```
 ---
@@ -43,14 +39,14 @@ Specify the directories containing your trajectory data:
 
 ```python
 directories = [
-    "sliced_analysis_CA/result_dump_traj_500_binned",
-    "sliced_analysis_CA/result_dump_traj_1k_binned",
-    "sliced_analysis_CA/result_dump_traj_2k_binned",
-    "sliced_analysis_CA/result_dump_traj_4k_binned",
+    "slicing_analysis_CA/result_dump_traj_500_binned",
+    "slicing_analysis_CA/result_dump_traj_1k_binned",
+    "slicing_analysis_CA/result_dump_traj_2k_binned",
+    "slicing_analysis_CA/result_dump_traj_4k_binned",
 ]
 
 # Initialize the analyzers
-sliced = SlicedTrajectoryAnalyzer(directories)
+slicing = SlicingTrajectoryAnalyzer(directories)
 binning = BinningTrajectoryAnalyzer(directories)
 ```
 ---
@@ -61,15 +57,15 @@ binning = BinningTrajectoryAnalyzer(directories)
 Run the analysis for both methods:
 
 ```python
-sliced.analyze()
+slicing.analyze()
 binning.analyze()
 ```
 
 ### Example Output:
 
 ```text
-Directory: sliced_analysis_CA/result_dump_traj_2k_reduce_binned
-  Method: Sliced Analysis
+Directory: slicing_analysis_CA/result_dump_traj_2k_reduce_binned
+  Method: Slicing Analysis
   Mean Surface Area: 2770.0659
   Mean Contact Angle: 91.7015°
 
@@ -90,13 +86,13 @@ Directory: binning_analysis_CA/result_dump_traj_2k_reduce_binned
 ### Plot Mean Angle vs Surface Area
 
 ```python
-sliced.plot_mean_angle_vs_surface(save_path="mean_angle_vs_surface_sliced.png")
+slicing.plot_mean_angle_vs_surface(save_path="mean_angle_vs_surface_slicing.png")
 binning.plot_mean_angle_vs_surface(save_path="mean_angle_vs_surface_binning.png")
 ```
 ### Plot Median Angle Evolution
-For the sliced method, plot the evolution of median angles:
+For the slicing method, plot the evolution of median angles:
 ```python
-sliced.plot_median_alfas_evolution(save_path="evolution_of_angles_sliced_method.png")
+slicing.plot_median_alfas_evolution(save_path="evolution_of_angles_slicing_method.png")
 ```
 ## Method Comparison
 
@@ -104,9 +100,9 @@ sliced.plot_median_alfas_evolution(save_path="evolution_of_angles_sliced_method.
 Use the MethodComparison class to compare the two methods:
 
 ```python
-comparison = MethodComparison([sliced, binning])
+comparison = MethodComparison([slicing, binning])
 comparison.plot_side_by_side_comparison(save_path="comparison.png")
-comparison.compare_statistics()
+print(comparison.compare_statistics())
 ```
 ### Example Output:
 
@@ -114,9 +110,9 @@ comparison.compare_statistics()
 ======================================================================
 METHOD COMPARISON STATISTICS
 ======================================================================
-Sliced Analysis:
+Slicing Analysis:
 ----------------------------------------------------------------------
-  sliced_analysis_CA/traj_2k/:
+  slicing_analysis_CA/traj_2k/:
     Mean Surface Area: 2770.0659 ± 15.2001
     Mean Angle: 91.7015° ± 5.6130°
   Overall Statistics:
@@ -138,7 +134,7 @@ Binning Analysis:
 ```
 
 ## Conclusion
-- The SlicedTrajectoryAnalyzer provides more detailed statistics with higher sample counts.
+- The SlicingTrajectoryAnalyzer provides more detailed statistics with higher sample counts.
 
 - The BinningTrajectoryAnalyzer offers a simplified, binning approach.
 
