@@ -184,9 +184,7 @@ class MethodComparison:
 
         fig, ax = plt.subplots(figsize=figsize)
 
-        for idx, (analyzer, method_name) in enumerate(
-            zip(self.analyzers, self.method_names, strict=False)
-        ):
+        for idx, analyzer in enumerate(self.analyzers):
             color = colors[idx % len(colors)]
             xvals, yvals = [], []
 
@@ -249,17 +247,43 @@ class MethodComparison:
                     "--",
                     color=color,
                     lw=1.5,
-                    label=(
-                        f"{method_name}: "
-                        rf"$\theta_{{\infty}} = {theta_inf:.1f}^\circ$"
-                    ),
                 )
 
-        ax.set_xlabel(r"$1 / \sqrt{A} \; (\mathrm{\AA^{-1}})$")
+                # θ∞ as colored text near the y-intercept of the fit
+                ax.text(
+                    0.002,
+                    fit_line(0.002),
+                    rf"$\theta_{{\infty}} = {theta_inf:.1f}°$",
+                    fontsize=9,
+                    color=color,
+                    va="bottom",
+                )
+
+        # Legend: one dot per analyzer + one shared dashed line
+        legend_handles = []
+        for idx, method_name in enumerate(self.method_names):
+            color = colors[idx % len(colors)]
+            legend_handles.append(
+                plt.Line2D(
+                    [],
+                    [],
+                    marker="o",
+                    color=color,
+                    linestyle="None",
+                    markersize=6,
+                    label=method_name,
+                )
+            )
+        legend_handles.append(
+            plt.Line2D([], [], linestyle="--", color="gray", lw=1.5, label="Linear fit")
+        )
+        ax.legend(handles=legend_handles, frameon=False, loc="best")
+
+        ax.set_xlabel(r"$1 / \sqrt{S} \; (\mathrm{\AA^{-1}})$")
         ax.set_ylabel(r"$\cos(\theta)$")
-        ax.set_title("Modified Young's Eq – Comparison")
-        ax.legend(frameon=False, loc="best")
+        ax.set_title("Modified Young's equation linear fitting")
         ax.set_xlim(left=-0.001)
+        ax.grid(False)
         plt.tight_layout()
         if save_path:
             plt.savefig(save_path, dpi=400, bbox_inches="tight")
