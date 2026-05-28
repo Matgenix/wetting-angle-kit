@@ -66,22 +66,22 @@ reproducibility across different simulation setups.
 The computation of contact angles from MD simulations has advanced significantly
 since early methodologies were proposed in 1997, with notable developments
 occurring in 2012, 2016, and 2024 [@Hautman1997; @Rafiee2012; @Vega2016; @Carlson2024].
-Despite these advancements, the field currently lacks a standardized, unified platform
+Despite these advancements, the field currently lacks a standardized, unified tool
 for comparing and validating the diverse methods used to derive contact angles.
-This fragmentation poses challenges to reproducibility and collaborative research.
+This fragmentation poses challenges with respect to reproducibility and collaborative research.
 These implementations are often not publicly available or lack sufficient documentation,
 further limiting reproducibility. In addition, the lack of a standardized framework
 makes it difficult to benchmark different approaches
 or assess the impact of methodological choices.
 
-Wetting-angle-kit addresses this gap by providing a flexible, open-source framework.
+Wetting-angle-kit addresses this gap by providing a flexible, open-source package.
 It allows researchers to implement new post-processing methods
 for contact angle analysis, benchmark them against established techniques,
 and establish a consistent baseline for wettability analysis in MD.
 
 # State of the field
 
-General-purpose molecular simulation post-process analysis tools,
+General-purpose molecular simulation post-processing tools,
 such as OVITO [@Stukowski2010], MDSuite [@Tovey2023],
 and MDAnalysis [@Gowers2016; @MichaudAgrawal2011],
 provide flexible frameworks for analyzing and visualizing trajectories.
@@ -108,7 +108,7 @@ simplifying the integration of new features.
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.9\textwidth, trim=50 400 50 100, clip]{package_overviewDiagram.drawio.pdf}
-\caption{Package workflow scheme.}
+\caption{Package structure.}
 \end{figure}
 
 The parser module provides a unified interface for reading trajectory data
