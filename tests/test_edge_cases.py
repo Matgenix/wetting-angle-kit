@@ -221,6 +221,47 @@ def test_binning_warns_and_falls_back_when_parser_has_no_box(tmp_path):
     np.testing.assert_array_equal(z, np.array([5.0, 6.0, 7.0]))
 
 
+def test_binning_precentered_skips_box_probe_and_warning(tmp_path):
+    """precentered=True must bypass the box probe entirely so a parser
+    that lacks box_size_x/y is accepted silently, no warning is issued,
+    and the result matches the legacy arithmetic-mean path."""
+    import warnings
+
+    from wetting_angle_kit.analysis.binning import ContactAngleBinning
+    from wetting_angle_kit.parsers.base import BaseParser
+
+    frame = np.array([[1.0, 0.0, 5.0], [-1.0, 0.0, 6.0], [0.0, 0.0, 7.0]])
+
+    class _StubParser(BaseParser):
+        def parse(self, frame_index, indices=None):
+            return frame
+
+        def frame_count(self):
+            return 1
+
+    analyzer = ContactAngleBinning(
+        parser=_StubParser(),
+        atom_indices=None,
+        droplet_geometry="spherical",
+        binning_params={
+            "xi_0": 0.0,
+            "xi_f": 10.0,
+            "nbins_xi": 5,
+            "zi_0": 0.0,
+            "zi_f": 10.0,
+            "nbins_zi": 5,
+        },
+        output_dir=str(tmp_path),
+        plot_graphs=False,
+        precentered=True,
+    )
+    with warnings.catch_warnings():
+        warnings.simplefilter("error", UserWarning)
+        r, z, n = analyzer.get_profile_coordinates(frame_indices=[0])
+    assert n == 1
+    np.testing.assert_allclose(r, np.array([1.0, 1.0, 0.0]))
+
+
 def test_binning_no_warning_when_parser_exposes_box(tmp_path):
     """The fallback warning must NOT fire when the parser exposes box info;
     otherwise it would spam every real run."""

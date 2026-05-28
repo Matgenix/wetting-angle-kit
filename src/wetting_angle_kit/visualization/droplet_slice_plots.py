@@ -547,6 +547,7 @@ class ContactAngleAnimator:
         delta_cylinder: int = 5,
         max_dist: int = 100,
         width_cylinder: int = 21,
+        precentered: bool = False,
     ):
         """
         Parameters
@@ -571,6 +572,12 @@ class ContactAngleAnimator:
             Maximum radial distance for line sampling (Å).
         width_cylinder : int, default 21
             Box extent along the cylinder axis (Å).
+        precentered : bool, default False
+            Set True if the trajectory already recenters the droplet at
+            every frame and atoms are not wrapped across periodic
+            boundaries; the per-frame circular-mean recentering is then
+            skipped. Setting this on a trajectory that does NOT satisfy the
+            precondition will misplace the contact-angle overlay.
         """
         self.filename = filename
         self.particle_type_wall = particle_type_wall
@@ -582,6 +589,7 @@ class ContactAngleAnimator:
         self.delta_cylinder = delta_cylinder
         self.max_dist = max_dist
         self.width_cylinder = width_cylinder
+        self.precentered = precentered
 
         # Initialize objects
         self.wat_find = LammpsDumpWaterFinder(
@@ -619,13 +627,16 @@ class ContactAngleAnimator:
             oxygen_position = self.parser.parse(
                 frame_index=frame_idx, indices=self.oxygen_indices
             )
-            box_size_xy = (
-                self.parser.box_size_x(frame_index=frame_idx),
-                self.parser.box_size_y(frame_index=frame_idx),
-            )
-            oxygen_position, liquid_geom_center = recenter_droplet_pbc(
-                oxygen_position, self.droplet_geometry, box_size=box_size_xy
-            )
+            if self.precentered:
+                liquid_geom_center = np.mean(oxygen_position, axis=0)
+            else:
+                box_size_xy = (
+                    self.parser.box_size_x(frame_index=frame_idx),
+                    self.parser.box_size_y(frame_index=frame_idx),
+                )
+                oxygen_position, liquid_geom_center = recenter_droplet_pbc(
+                    oxygen_position, self.droplet_geometry, box_size=box_size_xy
+                )
             processor = ContactAngleSlicing(
                 liquid_coordinates=oxygen_position,
                 liquid_geom_center=liquid_geom_center,

@@ -38,15 +38,27 @@ class LammpsDumpParser(BaseParser):
         )
         self.num_frames: int = int(self.pipeline.source.num_frames)
         self._orthogonal_validated: set[int] = set()
+        # LRU-of-1 cache: a single frame computation is reused across
+        # repeated _compute() calls for the same frame_index. Per-frame
+        # callers typically need parse() + box_size_x() + box_size_y() in
+        # close succession, and recomputing the OVITO pipeline three times
+        # for the same frame can be a significant fraction of analysis
+        # runtime on large systems.
+        self._cached_frame: int | None = None
+        self._cached_data: Any = None
 
     def _compute(self, frame_index: int) -> Any:
         """Compute a frame and validate its cell is orthogonal (once per frame)."""
+        if frame_index == self._cached_frame:
+            return self._cached_data
         data = self.pipeline.compute(frame_index)
         if frame_index not in self._orthogonal_validated:
             assert_orthogonal_cell(
                 ovito_cell_vectors(data), context=f"Frame {frame_index}"
             )
             self._orthogonal_validated.add(frame_index)
+        self._cached_frame = frame_index
+        self._cached_data = data
         return data
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
@@ -126,6 +138,8 @@ class LammpsDumpWallParser(BaseParser):
         self.liquid_particle_types = liquid_particle_types
         self.pipeline = self.load_dump_ovito()
         self._orthogonal_validated: set[int] = set()
+        self._cached_frame: int | None = None
+        self._cached_data: Any = None
 
     def load_dump_ovito(self) -> Any:
         """Build and return the OVITO pipeline for wall-only extraction.
@@ -157,13 +171,22 @@ class LammpsDumpWallParser(BaseParser):
         return pipeline
 
     def _compute(self, frame_index: int) -> Any:
-        """Compute a frame and validate its cell is orthogonal (once per frame)."""
+        """Compute a frame and validate its cell is orthogonal (once per frame).
+
+        Caches the most recent frame to avoid recomputing the pipeline when
+        a caller asks for ``parse`` + ``box_size_x`` + ``box_size_y`` (etc.)
+        on the same frame in sequence.
+        """
+        if frame_index == self._cached_frame:
+            return self._cached_data
         data = self.pipeline.compute(frame_index)
         if frame_index not in self._orthogonal_validated:
             assert_orthogonal_cell(
                 ovito_cell_vectors(data), context=f"Frame {frame_index}"
             )
             self._orthogonal_validated.add(frame_index)
+        self._cached_frame = frame_index
+        self._cached_data = data
         return data
 
     def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
