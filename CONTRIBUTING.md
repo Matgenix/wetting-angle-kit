@@ -7,7 +7,7 @@ project follows, and how to report problems.
 ## Reporting issues and asking for help
 
 - **Bugs and feature requests:** open an issue at
-  [github.com/Matgenix/wetting_angle_kit/issues](https://github.com/Matgenix/wetting_angle_kit/issues).
+  [github.com/Matgenix/wetting-angle-kit/issues](https://github.com/Matgenix/wetting-angle-kit/issues).
   Please include a minimal reproducer (trajectory snippet or code) when
   possible, the Python version, and the package version (the git commit
   if you installed from source).
@@ -21,8 +21,8 @@ recommend using conda to manage the environment, as OVITO is distributed
 through its own conda channel and is awkward to install otherwise.
 
 ```bash
-git clone https://github.com/Matgenix/wetting_angle_kit.git
-cd wetting_angle_kit
+git clone https://github.com/Matgenix/wetting-angle-kit.git
+cd wetting-angle-kit
 conda create -n wetting-angle-kit python=3.11
 conda activate wetting-angle-kit
 conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forge ovito=3.11.3

@@ -1,4 +1,4 @@
-# wetting_angle_kit
+# wetting-angle-kit
 
 [![tests](https://img.shields.io/github/actions/workflow/status/Matgenix/wetting-angle-kit/testing.yml?branch=main&label=tests)](https://github.com/Matgenix/wetting-angle-kit/actions/workflows/testing.yml)
 [![code coverage](https://codecov.io/gh/Matgenix/wetting-angle-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/Matgenix/wetting-angle-kit)
@@ -7,7 +7,7 @@
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-matgenix.github.io-blue)](https://matgenix.github.io/wetting-angle-kit)
 
-wetting_angle_kit provides modular tools to parse MD trajectories (LAMMPS dump, XYZ, ASE) and compute droplet contact angles using two complementary approaches:
+wetting-angle-kit provides modular tools to parse MD trajectories (LAMMPS dump, XYZ, ASE) and compute droplet contact angles using two complementary approaches:
 
 1. Slicing Method (per-frame circle fit) – robust against transient shape changes.
 2. Binning Density Method – averages frames into a density field for a single representative angle.
@@ -18,7 +18,7 @@ The documentation is available [here](https://matgenix.github.io/wetting-angle-k
 
 ### Prerequisites
 
-Before installing wetting_angle_kit, ensure you have the following prerequisites:
+Before installing wetting-angle-kit, ensure you have the following prerequisites:
 
 1. **Python 3.10 or higher**: Make sure you have Python 3.10 or higher installed on your system.
 2. **Conda**: Ensure you have Conda installed. If not, you can install it from [here](https://docs.conda.io/en/latest/miniconda.html).
@@ -26,20 +26,20 @@ Before installing wetting_angle_kit, ensure you have the following prerequisites
 Core (only to analyse simple xyz trajectories):
 
 ```bash
-pip install wetting_angle_kit
+pip install wetting-angle-kit
 ```
 
 With OVITO:
 ```bash
-pip install wetting_angle_kit[ovito]
+pip install wetting-angle-kit[ovito]
 ```
 With ASE:
 ```bash
-pip install wetting_angle_kit[ase]
+pip install wetting-angle-kit[ase]
 ```
 All optional:
 ```bash
-pip install wetting_angle_kit[all]
+pip install wetting-angle-kit[all]
 ```
 
 #### Install OVITO

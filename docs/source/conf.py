@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath("../../src"))
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "wetting_angle_kit"  # Capitalized for proper naming conventions
+project = "wetting-angle-kit"
 copyright = "2025, Gabriel"
 author = "Gabriel"
 release = "0.1.2"
@@ -52,7 +52,7 @@ html_theme = "sphinx_rtd_theme"
 html_static_path = ["_static"]
 
 # Path to GitHub repo {group}/{project}
-issues_github_path = "Matgenix/wetting_angle_kit"
+issues_github_path = "Matgenix/wetting-angle-kit"
 
 # which is the equivalent to:
 issues_uri = "https://github.com/{group}/{project}/issues/{issue}"

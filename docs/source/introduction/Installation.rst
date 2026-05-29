@@ -4,7 +4,7 @@ Installation
 Prerequisites
 -------------
 
-Before installing wetting_angle_kit, ensure you have the following prerequisites:
+Before installing wetting-angle-kit, ensure you have the following prerequisites:
 
 1. **Python 3.10 or higher**: Make sure you have Python 3.10 or higher installed on your system.
 2. **Conda**: Ensure you have Conda installed. If not, you can install it from `here <https://docs.conda.io/en/latest/miniconda.html>`_.
@@ -24,28 +24,28 @@ Core (only for xyz file analysis)
 
 .. code-block:: bash
 
-   pip install wetting_angle_kit
+   pip install wetting-angle-kit
 
 With OVITO
 ^^^^^^^^^^
 
 .. code-block:: bash
 
-   pip install wetting_angle_kit[ovito]
+   pip install wetting-angle-kit[ovito]
 
 With ASE
 ^^^^^^^^
 
 .. code-block:: bash
 
-   pip install wetting_angle_kit[ase]
+   pip install wetting-angle-kit[ase]
 
 All optional dependencies
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code-block:: bash
 
-   pip install wetting_angle_kit[all]
+   pip install wetting-angle-kit[all]
 
 Install OVITO
 ^^^^^^^^^^^^^

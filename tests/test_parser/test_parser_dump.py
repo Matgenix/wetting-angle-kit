@@ -23,7 +23,7 @@ def dump_parser():
     "ovito.io.import_file",
     side_effect=ImportError(
         "The 'ovito' package is required for LammpsDumpParser. Install with: "
-        "pip install wetting_angle_kit[ovito]"
+        "pip install wetting-angle-kit[ovito]"
     ),
 )
 def test_dump_parser_no_ovito(mock_import_file):

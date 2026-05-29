@@ -1,5 +1,5 @@
 [project]
-name = "wetting_angle_kit"
+name = "wetting-angle-kit"
 description = "A Python library to parse MD trajectories from LAMMPS and ASE and measure the contact through different methods"
 authors = [
     { name = "Gabriel", email = "gabriel.taillandier@matgenix.com" },
@@ -56,8 +56,8 @@ ovito = ["ovito~=3.11.3"]
 all = ["ase>=3.23.0", "ovito~=3.11.3", "ipython>=8.0.0"]
 
 [project.urls]
-"Homepage" = "https://github.com/Matgenix/wetting_angle_kit"
-"Bug Tracker" = "https://github.com/Matgenix/wetting_angle_kit/issues"
+"Homepage" = "https://github.com/Matgenix/wetting-angle-kit"
+"Bug Tracker" = "https://github.com/Matgenix/wetting-angle-kit/issues"
 "Documentation" = "https://matgenix.github.io/wetting-angle-kit"
 
 [build-system]

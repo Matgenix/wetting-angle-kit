@@ -3,7 +3,7 @@ message: "If you use wetting-angle-kit in your research, please cite it using th
 title: "wetting-angle-kit: a Python package to streamline the computation of wetting contact angles of nanodroplets on surfaces"
 type: software
 license: BSD-3-Clause
-repository-code: "https://github.com/Matgenix/wetting_angle_kit"
+repository-code: "https://github.com/Matgenix/wetting-angle-kit"
 url: "https://matgenix.github.io/wetting-angle-kit"
 authors:
   - family-names: Taillandier

@@ -20,7 +20,7 @@ Before running the example, ensure you have installed:
 
 .. code-block:: bash
 
-   pip install wetting_angle_kit ase numpy
+   pip install wetting-angle-kit ase numpy
 
 Example trajectory::
 

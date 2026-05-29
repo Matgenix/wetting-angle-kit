@@ -15,7 +15,7 @@ This is ideal for study the evolution of the angles among a trajectory.
 
 Before running the example, ensure you have installed:
 ````bash
-pip install wetting_angle_kit ase numpy
+pip install wetting-angle-kit ase numpy
 ````
 
 Example trajectory:
