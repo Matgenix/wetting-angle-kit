@@ -102,14 +102,16 @@ def test_calculate_y_axis_spherical():
 # --- ContactAngleSlicingParallel internals ---
 
 
-def test_create_batches_few_frames(tmp_path):
-    parallel = ContactAngleSlicingParallel(filename="ignored")
+def test_create_batches_few_frames():
+    # filename only needs a recognized extension; the file does not have to exist
+    # for _create_batches, which is pure logic on the requested frame list.
+    parallel = ContactAngleSlicingParallel(filename="ignored.lammpstrj")
     # num_batches >= len(frames) → one frame per batch
     assert parallel._create_batches([1, 2, 3], num_batches=4) == [[1], [2], [3]]
 
 
-def test_create_batches_many_frames(tmp_path):
-    parallel = ContactAngleSlicingParallel(filename="ignored")
+def test_create_batches_many_frames():
+    parallel = ContactAngleSlicingParallel(filename="ignored.lammpstrj")
     batches = parallel._create_batches(list(range(10)), num_batches=3)
     flat = [f for batch in batches for f in batch]
     assert flat == list(range(10))
@@ -137,15 +139,14 @@ def test_process_batch_worker_invokes_pipeline_on_real_lammps(tmp_path):
     assert results[0].frame_num == 0
 
 
-def test_process_batch_worker_unsupported_extension(tmp_path):
-    """Unknown trajectory extension → worker returns failed results."""
+def test_unsupported_extension_raises_at_construction(tmp_path):
+    """Unknown trajectory extension must fail fast at construction, not later in
+    subprocesses where the error would be silently swallowed."""
     fake = tmp_path / "trajectory.bogus"
     fake.write_text("not a real trajectory\n")
-    parallel = ContactAngleSlicingParallel(
-        filename=str(fake),
-        droplet_geometry="spherical",
-        delta_gamma=20.0,
-    )
-    results = parallel._process_batch_worker(batch_frames=[0, 1])
-    assert len(results) == 2
-    assert all(r.mean_angle is None for r in results)
+    with pytest.raises(ValueError, match="Unsupported trajectory file format"):
+        ContactAngleSlicingParallel(
+            filename=str(fake),
+            droplet_geometry="spherical",
+            delta_gamma=20.0,
+        )

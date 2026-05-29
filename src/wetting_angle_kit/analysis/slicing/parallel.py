@@ -7,7 +7,7 @@ from typing import NamedTuple
 import numpy as np
 
 from wetting_angle_kit.analysis.slicing.results import SlicingResults
-from wetting_angle_kit.io_utils import recenter_droplet_pbc
+from wetting_angle_kit.io_utils import detect_parser_type, recenter_droplet_pbc
 from wetting_angle_kit.parsers import BaseParser
 
 # "spawn" is required because parser instances may hold un-picklable handles
@@ -87,6 +87,10 @@ class ContactAngleSlicingParallel:
             associated overhead. Setting this on a trajectory that does NOT
             satisfy the precondition will produce wrong results.
         """
+        # Fail fast on an unrecognized trajectory file: workers re-detect the
+        # parser type inside their subprocesses and would otherwise swallow the
+        # error, returning empty results for every frame.
+        detect_parser_type(filename)
         self.filename = filename
         self.delta_gamma = delta_gamma
         self.delta_cylinder = delta_cylinder
@@ -161,6 +165,12 @@ class ContactAngleSlicingParallel:
             f"Successfully processed {len(sorted_frames)}/{len(frames_to_process)} "
             "frames"
         )
+        if frames_to_process and not sorted_frames:
+            raise RuntimeError(
+                f"None of the {len(frames_to_process)} requested frames produced "
+                "any contact-angle slices. Check the worker logs above for the "
+                "underlying parser, geometry, or fit errors."
+            )
         return SlicingResults(
             frames=sorted_frames,
             angles=[np.asarray(all_angles[f]) for f in sorted_frames],
