@@ -27,7 +27,6 @@ parser = LammpsDumpParser(filename)
 analyzer = contact_angle_analyzer(
     method="slicing",
     parser=parser,
-    output_dir="results_slicing_example",
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",
     delta_gamma=20,  # Azimuthal step for spherical slicing (degrees)
@@ -35,5 +34,5 @@ analyzer = contact_angle_analyzer(
 
 # --- Step 4: Run analysis for a frame range ---
 results = analyzer.analyze([1])
-print("Mean contact angle (°):", results["mean_angle"])
-print("Frames analyzed:", results["frames_analyzed"])
+print("Frames analyzed:", results.frames)
+print("Mean contact angle (°):", results.mean_angle)

@@ -120,21 +120,17 @@ def test_hyperbolic_tangent_compute_isoline_raises_for_unphysical_fit():
 # --- Factory rejects unknown methods ---
 
 
-def test_contact_angle_analyzer_factory_rejects_unknown_method(tmp_path):
+def test_contact_angle_analyzer_factory_rejects_unknown_method():
     from wetting_angle_kit.analysis import contact_angle_analyzer
 
     with pytest.raises(ValueError, match="Unknown method"):
-        contact_angle_analyzer(
-            method="not-a-method",
-            parser=object(),
-            output_dir=str(tmp_path),
-        )
+        contact_angle_analyzer(method="not-a-method", parser=object())
 
 
 # --- ContactAngleBinning.get_profile_coordinates ---
 
 
-def _make_binning_analyzer(parser, tmp_path):
+def _make_binning_analyzer(parser):
     from wetting_angle_kit.analysis.binning import ContactAngleBinning
 
     return ContactAngleBinning(
@@ -149,12 +145,10 @@ def _make_binning_analyzer(parser, tmp_path):
             "zi_f": 10.0,
             "nbins_zi": 5,
         },
-        output_dir=str(tmp_path),
-        plot_graphs=False,
     )
 
 
-def test_binning_get_profile_coordinates_empty_frame_list(tmp_path):
+def test_binning_get_profile_coordinates_empty_frame_list():
     """Empty frame_indices must return empty arrays and zero frames."""
     from wetting_angle_kit.parsers.base import BaseParser
 
@@ -165,14 +159,14 @@ def test_binning_get_profile_coordinates_empty_frame_list(tmp_path):
         def frame_count(self):
             return 0
 
-    analyzer = _make_binning_analyzer(_StubParser(), tmp_path)
+    analyzer = _make_binning_analyzer(_StubParser())
     r, z, n = analyzer.get_profile_coordinates(frame_indices=[])
     assert r.shape == (0,)
     assert z.shape == (0,)
     assert n == 0
 
 
-def test_binning_get_profile_coordinates_concatenates_frames(tmp_path):
+def test_binning_get_profile_coordinates_concatenates_frames():
     """r and z arrays are concatenated across requested frames; z stays in lab frame."""
     from wetting_angle_kit.parsers.base import BaseParser
 
@@ -186,7 +180,7 @@ def test_binning_get_profile_coordinates_concatenates_frames(tmp_path):
         def frame_count(self):
             return 2
 
-    analyzer = _make_binning_analyzer(_StubParser(), tmp_path)
+    analyzer = _make_binning_analyzer(_StubParser())
     r, z, n = analyzer.get_profile_coordinates(frame_indices=[0, 1])
     assert n == 2
     # Spherical r is non-negative and the per-frame center-of-mass projection
@@ -196,7 +190,7 @@ def test_binning_get_profile_coordinates_concatenates_frames(tmp_path):
     np.testing.assert_array_equal(z, np.array([5.0, 6.0, 7.0, 8.0, 9.0, 10.0]))
 
 
-def test_binning_warns_and_falls_back_when_parser_has_no_box(tmp_path):
+def test_binning_warns_and_falls_back_when_parser_has_no_box():
     """Parsers that don't expose box_size_x/y (plain XYZ without a Lattice=
     line, custom stubs) must trigger the fallback warning and still produce
     results via the legacy arithmetic-mean centering."""
@@ -213,7 +207,7 @@ def test_binning_warns_and_falls_back_when_parser_has_no_box(tmp_path):
 
         # box_size_x / box_size_y inherited from BaseParser raise NotImplementedError.
 
-    analyzer = _make_binning_analyzer(_StubParser(), tmp_path)
+    analyzer = _make_binning_analyzer(_StubParser())
     with pytest.warns(UserWarning, match="does not expose lateral box sizes"):
         r, z, n = analyzer.get_profile_coordinates(frame_indices=[0])
     assert n == 1
@@ -221,7 +215,7 @@ def test_binning_warns_and_falls_back_when_parser_has_no_box(tmp_path):
     np.testing.assert_array_equal(z, np.array([5.0, 6.0, 7.0]))
 
 
-def test_binning_precentered_skips_box_probe_and_warning(tmp_path):
+def test_binning_precentered_skips_box_probe_and_warning():
     """precentered=True must bypass the box probe entirely so a parser
     that lacks box_size_x/y is accepted silently, no warning is issued,
     and the result matches the legacy arithmetic-mean path."""
@@ -251,8 +245,6 @@ def test_binning_precentered_skips_box_probe_and_warning(tmp_path):
             "zi_f": 10.0,
             "nbins_zi": 5,
         },
-        output_dir=str(tmp_path),
-        plot_graphs=False,
         precentered=True,
     )
     with warnings.catch_warnings():
@@ -262,7 +254,7 @@ def test_binning_precentered_skips_box_probe_and_warning(tmp_path):
     np.testing.assert_allclose(r, np.array([1.0, 1.0, 0.0]))
 
 
-def test_binning_no_warning_when_parser_exposes_box(tmp_path):
+def test_binning_no_warning_when_parser_exposes_box():
     """The fallback warning must NOT fire when the parser exposes box info;
     otherwise it would spam every real run."""
     import warnings
@@ -284,7 +276,7 @@ def test_binning_no_warning_when_parser_exposes_box(tmp_path):
         def box_size_y(self, frame_index):
             return 100.0
 
-    analyzer = _make_binning_analyzer(_StubParserWithBox(), tmp_path)
+    analyzer = _make_binning_analyzer(_StubParserWithBox())
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
         analyzer.get_profile_coordinates(frame_indices=[0])

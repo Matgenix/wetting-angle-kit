@@ -60,7 +60,6 @@ Example trajectory::
    analyzer = contact_angle_analyzer(
        method="slicing",
        parser=parser,
-       output_dir="result_dump_spherical_slicing",
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",  # Geometry fitting model
        delta_gamma=20,  # Azimuthal step (deg) for spherical slicing
@@ -70,7 +69,9 @@ Example trajectory::
    results = analyzer.analyze([1])  # Analyze frame 1
 
    # --- Step 7: Display results ---
-   print("Analysis results:", results)
+   print("Mean contact angle (°):", results.mean_angle)
+   print("Std contact angle (°):", results.std_angle)
+   print("Frames analyzed:", results.frames)
 
 ----
 
@@ -80,25 +81,22 @@ Example trajectory::
 After running the example, you'll see something like::
 
    Number of water molecules: 1320
-   Analysis results: {
-       'mean_angle': 94.46,
-       'std_angle': 0.0,
-       'angles': {1: 94.46},
-       'frames_analyzed': [1],
-       'method_metadata': {'frames_per_angle': 1},
-   }
+   Mean contact angle (°): 94.46
+   Std contact angle (°): 0.0
+   Frames analyzed: [1]
 
-The ``analyze`` return dict has these keys:
+``analyze`` returns a :class:`SlicingResults` dataclass with the
+following convenience attributes:
 
 * ``mean_angle`` — mean contact angle (°) across the analyzed frames.
 * ``std_angle`` — standard deviation across frames.
-* ``angles`` — mapping ``frame_index -> mean angle for that frame``.
-* ``frames_analyzed`` — list of frame indices that were processed.
+* ``per_frame_mean_angles`` — array of per-frame mean angles (one per slice
+  aggregated to a single number).
+* ``frames`` — list of frame indices that were processed.
+* ``angles`` / ``surfaces`` / ``popts`` — raw per-frame data passed
+  directly to :class:`SlicingTrajectoryPlotter` for visualization.
 * ``method_metadata`` — method-specific info (e.g. number of frames per
   angle value).
-
-Per-frame raw outputs (alfas, surfaces, popt) are saved as ``.npy`` files
-inside the output directory.
 
 ----
 
@@ -156,7 +154,6 @@ inside the output directory.
    analyzer = contact_angle_analyzer(
        method="slicing",
        parser=parser,
-       output_dir="result_dump_spherical_slicing",
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",  # Fitting model
        delta_gamma=20,  # Azimuthal step (deg) for spherical slicing
@@ -166,4 +163,5 @@ inside the output directory.
    results = analyzer.analyze([1])  # Analyze frame 1
 
    # --- Step 6: Display results ---
-   print("Analysis results:", results)
+   print("Mean contact angle (°):", results.mean_angle)
+   print("Std contact angle (°):", results.std_angle)

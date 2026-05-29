@@ -74,17 +74,15 @@ Example trajectory::
    analyzer = contact_angle_analyzer(
        method="binning",
        parser=parser,
-       output_dir="results_binned_example",
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",  # Interface fitting model
        width_cylinder=21,  # Width parameter for interface fit
        binning_params=binning_params,
-       plot_graphs=False,  # Disable plotting for automated runs
    )
 
    # --- Step 7: Run analysis for a frame range ---
    results = analyzer.analyze([1])  # Analyze frame 1
-   print("Analysis results:", results)
+   print("Mean contact angle (°):", results.mean_angle)
 
 ----
 
@@ -93,39 +91,30 @@ Example trajectory::
 
 Running this example will:
 
-- Parse the trajectory
-- Compute the interface shape and local contact angle
-- Save results (if enabled) under ``results_binned_example/``
+- Parse the trajectory.
+- Compute the interface shape and local contact angle for each batch.
+- Return a :class:`BinningResults` dataclass holding angles, density fields
+  and fitted isolines for every batch (no files written).
 
 Example printed output::
 
    Number of water molecules: 4000
+   Mean contact angle (°): 94.58987060394456
 
-   xi range:       (0.22795857644950415,41.63623606829102)
-   zi range:       (7.54989,47.3742)
+The returned ``results`` object exposes ``mean_angle``, ``std_angle``,
+``angles_per_batch`` and a ``batches`` list whose entries carry the
+density field (``xi_cc``, ``zi_cc``, ``rho_cc``) and the fitted
+droplet / wall isoline coordinates. Feed it directly to
+:class:`BinningTrajectoryPlotter` to draw the interactive density
+contour with the fitted semi-circle:
 
-   Number of fluid particles in batch:     4000.0
+.. code-block:: python
 
-   Binning with model: spherical ...
-   Advancement: 0.00%
-   Advancement: 35.71%
-   Advancement: 71.43%
+   from wetting_angle_kit.visualization import BinningTrajectoryPlotter
 
-   Fitted parameters for batch:
-   rho1:-3.387136459516587e-05
-   rho2:0.03389671977759232
-   R_eq:37.22899870907881
-   zi_c:9.244210981996149
-   zi_0:6.265045941194059
-   t1:-4.384696208816467
-   t2:0.07378719793487698
-
-   Contact angle for batch:        94.58987060394456
-
-A heat map representation of the particles density and the fitted semi-circle to get the contact angle.
-
-.. image:: ../../images/bin_plot.png
-   :alt: Heat maps density particles
+   plotter = BinningTrajectoryPlotter(results)
+   fig = plotter.plot_density_contour(batch_index=0)
+   fig.show()
 
 ----
 
@@ -134,5 +123,4 @@ A heat map representation of the particles density and the fitted semi-circle to
 
 - Adjust ``xi_f``, ``zi_f``, and the bin counts (``nbins_xi``, ``nbins_zi``) according to your simulation box dimensions.
 - If the wall surface is not flat or the system is tilted, pre-align it before analysis.
-- Use ``plot_graphs=True`` to visualize the binning density and interface fitting.
-- For multiple frames: ``analyzer.analyze(range(0, 100, 10))``.
+- Multi-batch analysis: ``analyzer.analyze(range(0, 100), split_factor=10)`` splits the frame range into batches of ten frames each.

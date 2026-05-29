@@ -75,16 +75,10 @@ def test_contact_angle_slicing_with_real_data(parser, oxygen_indices):
 # --- Integration Test for SlicingContactAngleAnalyzer ---
 @pytest.mark.integration
 @pytest.mark.slow
-def test_slicing_contact_angle_analyzer_with_real_data(
-    filename, oxygen_indices, tmp_path
-):
-    # Use a temporary directory for output
-    output_dir = tmp_path / "result_dump_spherical_slicing"
-
+def test_slicing_contact_angle_analyzer_with_real_data(filename, oxygen_indices):
     analyzer = contact_angle_analyzer(
         method="slicing",
         parser=LammpsDumpParser(filename),
-        output_dir=output_dir,
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
         delta_gamma=20,
@@ -92,14 +86,12 @@ def test_slicing_contact_angle_analyzer_with_real_data(
 
     results = analyzer.analyze([1])
 
-    # Assert results
-    assert "mean_angle" in results
-    assert "std_angle" in results
-    assert "angles" in results
-    assert len(results["angles"]) == 1
+    assert len(results) == 1
+    assert results.frames == [1]
     # The fixture is a water droplet on a graphene-like substrate, which
     # gives a contact angle around 90-100° (literature: ~93° for graphene).
     # Assert a tight physically-plausible band so regressions in the
     # slicing pipeline are caught.
-    assert 80.0 <= results["mean_angle"] <= 110.0
-    assert np.isfinite(results["std_angle"])
+    mean_angle = float(np.mean(results.angles[0]))
+    assert 80.0 <= mean_angle <= 110.0
+    assert np.isfinite(np.std(results.angles[0]))

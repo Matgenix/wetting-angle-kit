@@ -1,5 +1,3 @@
-import os
-
 import numpy as np
 import pytest
 
@@ -105,13 +103,13 @@ def test_calculate_y_axis_spherical():
 
 
 def test_create_batches_few_frames(tmp_path):
-    parallel = ContactAngleSlicingParallel(filename="ignored", output_dir=str(tmp_path))
+    parallel = ContactAngleSlicingParallel(filename="ignored")
     # num_batches >= len(frames) → one frame per batch
     assert parallel._create_batches([1, 2, 3], num_batches=4) == [[1], [2], [3]]
 
 
 def test_create_batches_many_frames(tmp_path):
-    parallel = ContactAngleSlicingParallel(filename="ignored", output_dir=str(tmp_path))
+    parallel = ContactAngleSlicingParallel(filename="ignored")
     batches = parallel._create_batches(list(range(10)), num_batches=3)
     flat = [f for batch in batches for f in batch]
     assert flat == list(range(10))
@@ -130,7 +128,6 @@ def test_process_batch_worker_invokes_pipeline_on_real_lammps(tmp_path):
 
     parallel = ContactAngleSlicingParallel(
         filename=trajectory_path("traj_spherical_drop_4k.lammpstrj"),
-        output_dir=str(tmp_path),
         droplet_geometry="spherical",
         delta_gamma=20.0,
     )
@@ -146,17 +143,9 @@ def test_process_batch_worker_unsupported_extension(tmp_path):
     fake.write_text("not a real trajectory\n")
     parallel = ContactAngleSlicingParallel(
         filename=str(fake),
-        output_dir=str(tmp_path),
         droplet_geometry="spherical",
         delta_gamma=20.0,
     )
     results = parallel._process_batch_worker(batch_frames=[0, 1])
     assert len(results) == 2
     assert all(r.mean_angle is None for r in results)
-
-
-def test_output_dir_is_created(tmp_path):
-    target = tmp_path / "nested" / "out"
-    parallel = ContactAngleSlicingParallel(filename="ignored", output_dir=str(target))
-    assert os.path.isdir(target)
-    assert parallel.output_dir == str(target)

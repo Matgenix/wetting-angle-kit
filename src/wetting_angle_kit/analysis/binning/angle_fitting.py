@@ -25,15 +25,13 @@ particles · Å⁻³, and the final contact angle is returned in degrees.
 """
 
 import logging
-import os
 import warnings
 from collections.abc import Sequence
 from typing import Any
 
-import matplotlib
-import matplotlib.pyplot as plt
 import numpy as np
 
+from wetting_angle_kit.analysis.binning.results import BinningBatch
 from wetting_angle_kit.analysis.binning.surface_definition import (
     HyperbolicTangentModel,
 )
@@ -44,14 +42,7 @@ from wetting_angle_kit.io_utils import (
 
 logger = logging.getLogger(__name__)
 
-# Force a non-interactive backend before pyplot is imported so figure
-# generation works in headless environments (CI, OVITO subprocesses).
-# Only switch if no backend is already attached to an open figure.
-if matplotlib.get_backend().lower() != "agg":
-    try:
-        matplotlib.use("Agg", force=False)
-    except (ImportError, ValueError):
-        pass
+_PARAM_NAMES = ("rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2")
 
 
 class ContactAngleBinning:
@@ -69,8 +60,6 @@ class ContactAngleBinning:
         droplet_geometry: str = "spherical",
         width_cylinder: float | None = None,
         binning_params: dict[str, Any] | None = None,
-        output_dir: str = "output_analysis/",
-        plot_graphs: bool = True,
         precentered: bool = False,
     ) -> None:
         """
@@ -87,10 +76,6 @@ class ContactAngleBinning:
         binning_params : dict, optional
             Grid definition with keys ``xi_0``, ``xi_f``, ``nbins_xi``,
             ``zi_0``, ``zi_f``, ``nbins_zi``. A heuristic default is used if None.
-        output_dir : str, default "output_analysis/"
-            Directory for log files and density field CSVs.
-        plot_graphs : bool, default True
-            Whether to generate density contour plots.
         precentered : bool, default False
             Set True to declare that the trajectory already recenters the
             droplet at every frame and atoms are not wrapped across periodic
@@ -104,8 +89,6 @@ class ContactAngleBinning:
         self.atom_indices = atom_indices
         self.droplet_geometry = droplet_geometry
         self.width_cylinder = width_cylinder
-        self.output_dir = output_dir
-        self.plot_graphs = plot_graphs
         self.precentered = precentered
         if binning_params is None:
             max_dist = int(
@@ -146,7 +129,6 @@ class ContactAngleBinning:
                     self.width_cylinder = self.parser.box_size_x(frame_index=0)
                 elif self.droplet_geometry == "cylinder_y":
                     self.width_cylinder = self.parser.box_size_y(frame_index=0)
-        os.makedirs(self.output_dir, exist_ok=True)
 
     def _initialize_grid(self) -> None:
         """Initialize bin edges, centers and cell sizes from parameters."""
@@ -295,126 +277,30 @@ class ContactAngleBinning:
             rho_cc /= len_frames
         return rho_cc
 
-    def plot_density_with_isoline(
-        self,
-        xi_cc: np.ndarray,
-        zi_cc: np.ndarray,
-        rho_cc: np.ndarray,
-        circle_xi: np.ndarray,
-        circle_zi: np.ndarray,
-        wall_line_xi: np.ndarray,
-        wall_line_zi: np.ndarray,
-        batch_index: int | None = None,
-        clevels: int = 20,
-        scale: float = 0.75,
-        close: bool = True,
-    ) -> None:
-        """Plot density contour with fitted iso-surface approximations.
-
-        Parameters
-        ----------
-        xi_cc, zi_cc : ndarray
-            Cell center coordinates.
-        rho_cc : ndarray
-            Density field.
-        circle_xi, circle_zi : ndarray
-            Fitted circle isoline coordinates.
-        wall_line_xi, wall_line_zi : ndarray
-            Wall line coordinates.
-        batch_index : int, optional
-            Batch identifier for file naming.
-        clevels : int, default 20
-            Number of contour levels.
-        scale : float, default 0.75
-            Figure size scaling factor.
-        close : bool, default True
-            If True, close figure after saving.
-        """
-        name = (
-            f"bin_plot_batch_{batch_index}.png"
-            if batch_index is not None
-            else "bin_plot.png"
-        )
-        plt.figure(dpi=300, figsize=(4 * scale, 3 * scale))
-        plt.contourf(xi_cc, zi_cc, np.transpose(rho_cc), levels=clevels, cmap="jet")
-        plt.colorbar()
-        plt.plot(circle_xi, circle_zi, "--", color="black")
-        plt.plot(wall_line_xi, wall_line_zi, "--", color="black")
-        plt.savefig(os.path.join(self.output_dir, name))
-        if close:
-            plt.close()
-
-    def save_logfile(
-        self,
-        n_particles: float,
-        param_strings: list[str],
-        theta: float,
-        xi_cc: np.ndarray,
-        zi_cc: np.ndarray,
-        rho_cc: np.ndarray,
-        batch_index: int | None = None,
-    ) -> None:
-        """Write fitted parameters and density field CSV for a batch.
-
-        Parameters
-        ----------
-        n_particles : float
-            Average number of particles per frame in batch.
-        param_strings : list[str]
-            Formatted parameter lines from model.
-        theta : float
-            Contact angle in degrees.
-        xi_cc, zi_cc : ndarray
-            Cell centers.
-        rho_cc : ndarray
-            Density field.
-        batch_index : int, optional
-            Batch identifier for file naming.
-        """
-        batch_str = f"_batch_{batch_index}" if batch_index is not None else ""
-        with open(os.path.join(self.output_dir, f"log_data{batch_str}.txt"), "w") as f:
-            f.write("Simulation parameters:\n")
-            f.write(f"reduced_particles_number:{n_particles}\n")
-            f.write(f"model_type:{self.droplet_geometry}\n")
-            if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
-                f.write(f"width_cylinder:{self.width_cylinder}\n")
-            f.write("Fitted parameters:\n")
-            for param in param_strings:
-                f.write(param)
-            f.write(f"\n\nContact angle:{theta}")
-        msh_zi_cc_grid, msh_xi_cc_grid = np.meshgrid(zi_cc, xi_cc)
-        msh_zi_cc = msh_zi_cc_grid.reshape((len(xi_cc) * len(zi_cc)), order="F")
-        msh_xi_cc = msh_xi_cc_grid.reshape((len(xi_cc) * len(zi_cc)), order="F")
-        msh_rho_cc = rho_cc.reshape((len(xi_cc) * len(zi_cc)), order="F")
-        csv_data = np.c_[msh_xi_cc, msh_zi_cc, msh_rho_cc]
-        np.savetxt(
-            os.path.join(self.output_dir, f"rho_field{batch_str}.csv"),
-            csv_data,
-            delimiter=",",
-            header=(f"x_{len(xi_cc)},y_{len(zi_cc)},rho_{len(xi_cc) * len(zi_cc)}"),
-        )
-
     def process_batch(
         self,
         frame_list: list[int],
         model: Any | None = None,
         batch_index: int | None = None,
-    ) -> tuple[float, Any]:
-        """Process a batch of frames and compute contact angle.
+    ) -> BinningBatch:
+        """Process a batch of frames and return its fitted contact-angle data.
 
         Parameters
         ----------
         frame_list : sequence[int]
             Frame indices in the batch.
         model : SurfaceModel, optional
-            Pre-existing fitted model instance; new model created if None.
+            Pre-existing fitted model instance; a new
+            :class:`HyperbolicTangentModel` is created if None.
         batch_index : int, optional
-            Identifier appended to output filenames.
+            Sequential identifier copied into the returned :class:`BinningBatch`
+            (defaults to 1 when not supplied).
 
         Returns
         -------
-        tuple(float, SurfaceModel)
-            (contact_angle_degrees, fitted_model).
+        BinningBatch
+            Per-batch container with contact angle, density field, fitted
+            isoline coordinates and fitted parameters.
         """
         xi_par, zi_par, len_frames = self.get_profile_coordinates(
             frame_indices=frame_list,
@@ -437,80 +323,37 @@ class ContactAngleBinning:
         msh_rho_cc = rho_cc.reshape((len(self.xi_cc) * len(self.zi_cc)), order="F")
         x_data = (msh_xi_cc, msh_zi_cc)
         model.fit(x_data, msh_rho_cc)
-        param_strings = model.get_parameter_strings()
         logger.info(
-            f"Fitted parameters for batch{batch_label}:\n{''.join(param_strings)}"
+            f"Fitted parameters for batch{batch_label}:\n"
+            f"{''.join(model.get_parameter_strings())}"
         )
         contact_angle = model.compute_contact_angle()
         logger.info(f"Contact angle for batch{batch_label}: {contact_angle}")
-        if self.plot_graphs:
-            try:
-                (
-                    circle_xi,
-                    circle_zi,
-                    wall_line_xi,
-                    wall_line_zi,
-                ) = model.compute_isoline()
-            except ValueError as exc:
-                warnings.warn(
-                    f"Skipping isoline plot for batch {batch_index}: {exc}",
-                    RuntimeWarning,
-                    stacklevel=2,
-                )
-            else:
-                self.plot_density_with_isoline(
-                    self.xi_cc,
-                    self.zi_cc,
-                    rho_cc,
-                    circle_xi,
-                    circle_zi,
-                    wall_line_xi,
-                    wall_line_zi,
-                    batch_index,
-                )
-        self.save_logfile(
-            n_particles,
-            param_strings,
-            contact_angle,
-            self.xi_cc,
-            self.zi_cc,
-            rho_cc,
-            batch_index,
+        try:
+            circle_xi, circle_zi, wall_line_xi, wall_line_zi = model.compute_isoline()
+        except ValueError as exc:
+            warnings.warn(
+                f"Isoline unavailable for batch {batch_index}: {exc}",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            circle_xi = circle_zi = wall_line_xi = wall_line_zi = None
+        params = model.params
+        if params is None:
+            raise RuntimeError(
+                f"Hyperbolic tangent fit did not set model parameters for batch "
+                f"{batch_index}; cannot build BinningBatch."
+            )
+        return BinningBatch(
+            batch_index=batch_index if batch_index is not None else 1,
+            angle=float(contact_angle),
+            n_particles=float(n_particles),
+            xi_cc=self.xi_cc.copy(),
+            zi_cc=self.zi_cc.copy(),
+            rho_cc=rho_cc,
+            circle_xi=circle_xi,
+            circle_zi=circle_zi,
+            wall_line_xi=wall_line_xi,
+            wall_line_zi=wall_line_zi,
+            fitted_params=dict(zip(_PARAM_NAMES, params, strict=False)),
         )
-        return contact_angle, model
-
-    def process_all_batches(
-        self, batch_size: int = 100, save_angles: bool = True
-    ) -> list[float]:
-        """Process all frames in batches returning list of contact angles.
-
-        Parameters
-        ----------
-        batch_size : int, default 100
-            Number of frames per batch.
-        save_angles : bool, default True
-            If True, save angle list as numpy file.
-
-        Returns
-        -------
-        list[float]
-            Contact angles per processed batch.
-        """
-        frames_tot = self.parser.frame_count()
-        logger.info(f"Total frames: {frames_tot}")
-        angles: list[float] = []
-        for batch_index, start_frame in enumerate(range(0, frames_tot, batch_size)):
-            frame_list = list(
-                range(start_frame, min(start_frame + batch_size, frames_tot))
-            )
-            angle, _ = self.process_batch(frame_list, batch_index=batch_index + 1)
-            angles.append(angle)
-        if save_angles:
-            np.save(
-                os.path.join(
-                    self.output_dir, f"all_angles_{self.droplet_geometry}.npy"
-                ),
-                np.array(angles),
-            )
-        logger.info(f"List of contact angles by batch: {angles}")
-        return angles

@@ -1,12 +1,12 @@
 import logging
 import math
 import multiprocessing as mp
-import os
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import NamedTuple
 
 import numpy as np
 
+from wetting_angle_kit.analysis.slicing.results import SlicingResults
 from wetting_angle_kit.io_utils import recenter_droplet_pbc
 from wetting_angle_kit.parsers import BaseParser
 
@@ -56,7 +56,6 @@ class ContactAngleSlicingParallel:
     def __init__(
         self,
         filename: str,
-        output_dir: str,
         droplet_geometry: str = "spherical",
         atom_indices: np.ndarray | None = None,
         delta_gamma: float | None = None,
@@ -69,8 +68,6 @@ class ContactAngleSlicingParallel:
         ----------
         filename : str
             Path to trajectory file.
-        output_dir : str
-            Directory to write per-frame results.
         droplet_geometry : str, default "spherical"
             Geometric model identifier (e.g. "cylinder_x", "cylinder_y", "spherical").
         atom_indices : ndarray, optional
@@ -91,22 +88,20 @@ class ContactAngleSlicingParallel:
             satisfy the precondition will produce wrong results.
         """
         self.filename = filename
-        self.output_dir = output_dir
         self.delta_gamma = delta_gamma
         self.delta_cylinder = delta_cylinder
         self.droplet_geometry = droplet_geometry
         self.points_per_angstrom = points_per_angstrom
         self.atom_indices = atom_indices if atom_indices is not None else np.array([])
         self.precentered = precentered
-        os.makedirs(self.output_dir, exist_ok=True)
 
     def process_frames_parallel(
         self,
         frames_to_process: list[int],
         num_batches: int = 4,
         max_workers: int | None = None,
-    ) -> dict[int, float]:
-        """Process many frames in parallel batches.
+    ) -> SlicingResults:
+        """Process many frames in parallel batches and return the in-memory results.
 
         Parameters
         ----------
@@ -119,8 +114,10 @@ class ContactAngleSlicingParallel:
 
         Returns
         -------
-        dict[int, float]
-            Mapping frame number -> mean contact angle (failed frames excluded).
+        SlicingResults
+            Per-frame angles, surface contours, fit parameters and method
+            metadata. Frames whose worker failed to produce a mean angle are
+            omitted.
         """
         if max_workers is None:
             max_workers = num_batches
@@ -129,7 +126,9 @@ class ContactAngleSlicingParallel:
             f"Processing {len(frames_to_process)} frames in {len(batches)} batches "
             f"with {max_workers} workers"
         )
-        results: dict[int, float] = {}
+        all_angles: dict[int, list] = {}
+        all_surfaces: dict[int, list] = {}
+        all_popts: dict[int, list] = {}
         with ProcessPoolExecutor(
             max_workers=max_workers, mp_context=_MP_CONTEXT
         ) as executor:
@@ -138,16 +137,12 @@ class ContactAngleSlicingParallel:
                 for batch_frames in batches
             }
             completed_batches = 0
-            all_angles: dict[int, list] = {}
-            all_surfaces: dict[int, list] = {}
-            all_popts: dict[int, list] = {}
             for future in as_completed(future_to_batch):
                 batch_frames = future_to_batch[future]
                 try:
                     batch_results = future.result()
                     for frame_num, mean_angle, angles, surfaces, popts in batch_results:
                         if mean_angle is not None:
-                            results[frame_num] = mean_angle
                             all_angles[frame_num] = angles
                             all_surfaces[frame_num] = surfaces
                             all_popts[frame_num] = popts
@@ -162,29 +157,17 @@ class ContactAngleSlicingParallel:
                         exc_info=True,
                     )
         sorted_frames = sorted(all_angles.keys())
-
-        angles_with_frames = [(f, all_angles[f]) for f in sorted_frames]
-        np.save(
-            f"{self.output_dir}/all_angles.npy",
-            np.array(angles_with_frames, dtype=object),
-        )
-
-        surfaces_with_frames = [(f, all_surfaces[f]) for f in sorted_frames]
-        np.save(
-            f"{self.output_dir}/all_surfaces.npy",
-            np.array(surfaces_with_frames, dtype=object),
-        )
-
-        popts_with_frames = [(f, all_popts[f]) for f in sorted_frames]
-        np.save(
-            f"{self.output_dir}/all_popts.npy",
-            np.array(popts_with_frames, dtype=object),
-        )
         logger.info(
-            f"Successfully processed {len(results)}/{len(frames_to_process)} frames"
+            f"Successfully processed {len(sorted_frames)}/{len(frames_to_process)} "
+            "frames"
         )
-
-        return results
+        return SlicingResults(
+            frames=sorted_frames,
+            angles=[np.asarray(all_angles[f]) for f in sorted_frames],
+            surfaces=[all_surfaces[f] for f in sorted_frames],
+            popts=[np.asarray(all_popts[f]) for f in sorted_frames],
+            method_metadata={"frames_per_angle": 1},
+        )
 
     def _create_batches(self, frames: list[int], num_batches: int) -> list[list[int]]:
         """Return frame batches of near-equal size."""

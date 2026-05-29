@@ -17,10 +17,6 @@ The visualization workflow involves the following steps:
 
 ## 2. Import Required Modules
 ```python
-import matplotlib
-
-matplotlib.use("Agg")  # Required to prevent Qt conflicts with Ovito
-
 import numpy as np
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,
@@ -84,20 +80,20 @@ print("Mean contact angles (°):", list_alfas)
 
 ## 7. Visualize the Droplet
 ```python
-plotter = DropletSlicePlotter(center=True, show_wall=True, molecule_view=True)
+plotter = DropletSlicePlotter(center=True)
 
-plotter.plot_surface_points(
+fig = plotter.plot_surface_points(
     oxygen_position=oxygen_position,
     surface_data=array_surfaces,
     popt=array_popt[0],
     wall_coords=wall_coords,
-    output_filename="droplet_plot.png",
     alpha=list_alfas[0],
 )
 
-print(" Plot saved as 'droplet_plot.png'")
+# Interactive view in a notebook:
+fig.show()
+
+# Or save a standalone HTML page:
+fig.write_html("droplet_plot.html")
+print("Plot saved as 'droplet_plot.html'")
 ```
-## Outputs
-
-
-![Droplet slicing method visualization](../images/droplet_plot.png)

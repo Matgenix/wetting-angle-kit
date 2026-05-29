@@ -35,13 +35,12 @@ parser = LammpsDumpParser(filename)
 analyzer = contact_angle_analyzer(
     method="binning",
     parser=parser,
-    output_dir="results_binning_example",
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",  # Interface fitting model
     binning_params=binning_params,
-    plot_graphs=True,  # Enable plotting for automated runs
 )
 
 # --- Step 7: Run analysis for a frame range ---
 results = analyzer.analyze([1])  # Analyze frame 1
-print("Analysis results:", results)
+print("Mean contact angle (°):", results.mean_angle)
+print("Std contact angle (°):", results.std_angle)
