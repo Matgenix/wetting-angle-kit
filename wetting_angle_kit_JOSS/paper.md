@@ -115,17 +115,26 @@ The parser module provides a unified interface for reading trajectory data
 from multiple formats, ensuring consistent handling of atomic coordinates,
 simulation boxes, and frame information.
 This abstraction ensures that analyses are independent of the input format,
-enabling consistent workflows across different simulation engines.
-The parser also consistently handles periodic boundary conditions,
-ensuring that droplet shapes are correctly reconstructed across simulation boundaries
-and avoiding artifacts in interface detection.
+enabling consistent workflows across different simulation engines.The parser relies on
+established trajectory-reading tools when available, while extended XYZ parsing is
+implemented directly within the package.The parser also consistently handles periodic
+boundary conditions, ensuring that droplet shapes are correctly reconstructed across
+simulation boundaries and avoiding artifacts in interface detection.
 
 This consistency facilitates seamless integration with downstream analysis methods
 and ensures the system's scalability, enabling researchers to easily
 incorporate support for additional file formats or simulation engines.
 
 The contact angle computation methods (analysis) module implements
-two complementary approaches for contact angle estimation.
+two complementary approaches for contact angle estimation (Fig. \ref{analysis_methods}).
+
+\begin{figure}[h!]
+\centering
+\includegraphics[width=0.8\textwidth, trim=1.5cm 6cm 2.5cm 1cm, clip ]{schema_methods_analysis.pdf}
+\caption{Schema of the two contact angle analysis methods.}
+\label{analysis_methods}
+\end{figure}
+
 The slicing method performs frame-by-frame geometric analysis,
 enabling detailed temporal resolution at the cost of higher computational expense.
 In practice, this approach provides a local characterization of
@@ -142,8 +151,12 @@ However, this temporal averaging may obscure short-lived fluctuations and
 local deviations from ideal geometries.
 These two approaches reflect a trade-off between temporal resolution and statistical
 robustness, allowing users to select the method best suited to their system.
-Additionally, two geometric models are considered in wetting-angle-kit,
-as illustrated in Fig. \ref{geometries}: spherical and cylindrical [@Scocchi2011].
+
+Additionally, wetting-angle-kit supports two geometric models commonly used
+in the literature: spherical and cylindrical [@Scocchi2011] (Fig. \ref{geometries}).
+While spherical droplets provide a more direct representation of droplet curvature,
+cylindrical geometries reduce curvature effects and computational cost,
+at the expense of relying on an idealized geometry.
 
 \begin{figure}[h!]
 \centering
@@ -175,23 +188,22 @@ Wetting-angle-kit provides a reproducible framework for contact angle analysis
 in molecular simulations, addressing a common need in studies of nanoscale wetting.
 The package has been validated using MD simulations of water droplets on graphene
 and polymer substrates, yielding contact angle values consistent
-with literature results (e.g., ~93° for graphene, ~110° for PTFE), see Fig.~\ref{results}.
+with literature results (e.g., ~93° for graphene, ~110° for PTFE), see Fig. \ref{results}.
+The reported contact angles were obtained by analyzing droplets of increasing size
+and extrapolating to the macroscopic limit using the Modified Young’s relation,
+where the contact angle is related to droplet size through a line-tension correction
+term, enabling estimation of the infinite-droplet contact angle.
 These results are consistent with literature values obtained using
 similar carbon-oxygen LJ parameters [@Jorgensen1996].
 
 \begin{figure}[h!]
 \centering
-\begin{minipage}{0.48\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{mean_cos_angle_vs_surface_graphite.pdf}
-    \caption{Graphite}
-\end{minipage}
-\hfill
-\begin{minipage}{0.48\textwidth}
-    \centering
-    \includegraphics[width=\linewidth]{mean_cos_angle_vs_surface_ptfe.pdf}
-    \caption{PTFE}
-\end{minipage}
+\includegraphics[width=0.8\textwidth]{mean_cos_angle_vs_surface_graphite_ptfe.pdf}
+\caption{Figure 4: Size-dependent contact angle analysis for water droplets on graphite
+ and PTFE substrates. Values of $\cos(\theta)$ are plotted as a function of the inverse square
+ root of the droplet surface area for droplets containing between 500 and 6000 water molecules.
+ Linear extrapolation following the Modified Young’s relation is used
+ to estimate the macroscopic (infinite-droplet) contact angle.}
 \label{results}
 \end{figure}
 
