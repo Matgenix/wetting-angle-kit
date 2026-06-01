@@ -59,11 +59,11 @@ def test_contact_angle_slicing_copies_geometric_center():
     np.testing.assert_array_equal(center, np.array([1.0, 2.0, 3.0]))
 
 
-# --- Cylindrical mode without delta_cylinder/width_cylinder warns ---
+# --- Cylindrical mode without delta_cylinder/width_cylinder raises ---
 
 
-def test_slicing_cylinder_without_width_warns():
-    with pytest.warns(UserWarning, match="width_cylinder and delta_cylinder"):
+def test_slicing_cylinder_without_width_raises():
+    with pytest.raises(ValueError, match="delta_cylinder and width_cylinder"):
         ContactAngleSlicing(
             liquid_coordinates=np.zeros((3, 3)),
             max_dist=10,
@@ -115,16 +115,6 @@ def test_hyperbolic_tangent_compute_isoline_raises_for_unphysical_fit():
     model.params = [1.0, 0.0, 5.0, 10.0, -50.0, 1.0, 1.0]
     with pytest.raises(ValueError, match="wall is outside"):
         model.compute_isoline()
-
-
-# --- Factory rejects unknown methods ---
-
-
-def test_contact_angle_analyzer_factory_rejects_unknown_method():
-    from wetting_angle_kit.analysis import contact_angle_analyzer
-
-    with pytest.raises(ValueError, match="Unknown method"):
-        contact_angle_analyzer(method="not-a-method", parser=object())
 
 
 # --- ContactAngleBinning.get_profile_coordinates ---

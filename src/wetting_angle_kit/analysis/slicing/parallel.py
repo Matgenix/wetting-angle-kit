@@ -7,7 +7,11 @@ from typing import NamedTuple
 import numpy as np
 
 from wetting_angle_kit.analysis.slicing.results import SlicingResults
-from wetting_angle_kit.io_utils import detect_parser_type, recenter_droplet_pbc
+from wetting_angle_kit.io_utils import (
+    detect_parser_type,
+    recenter_droplet_pbc,
+    validate_droplet_geometry,
+)
 from wetting_angle_kit.parsers import BaseParser
 
 # "spawn" is required because parser instances may hold un-picklable handles
@@ -91,6 +95,25 @@ class ContactAngleSlicingParallel:
         # parser type inside their subprocesses and would otherwise swallow the
         # error, returning empty results for every frame.
         detect_parser_type(filename)
+        validate_droplet_geometry(droplet_geometry)
+        if droplet_geometry == "spherical":
+            if delta_gamma is None:
+                raise ValueError("delta_gamma must be provided for spherical analysis")
+            if delta_cylinder is not None:
+                raise ValueError(
+                    "delta_cylinder must not be set for spherical analysis "
+                    "(it is only valid for cylinder_x / cylinder_y)."
+                )
+        elif droplet_geometry in ("cylinder_x", "cylinder_y"):
+            if delta_cylinder is None:
+                raise ValueError(
+                    f"delta_cylinder must be provided for {droplet_geometry}."
+                )
+            if delta_gamma is not None:
+                raise ValueError(
+                    f"delta_gamma must not be set for {droplet_geometry} "
+                    "(it is only valid for spherical)."
+                )
         self.filename = filename
         self.delta_gamma = delta_gamma
         self.delta_cylinder = delta_cylinder

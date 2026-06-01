@@ -1,4 +1,3 @@
-import warnings
 from collections.abc import Sequence
 
 import numpy as np
@@ -67,6 +66,26 @@ class ContactAngleSlicing:
             Azimuthal spacing (degrees) between radial lines.
         """
         validate_droplet_geometry(droplet_geometry)
+        if droplet_geometry == "spherical":
+            if delta_gamma is None:
+                raise ValueError("delta_gamma must be provided for spherical analysis")
+            if delta_cylinder is not None or width_cylinder is not None:
+                raise ValueError(
+                    "delta_cylinder and width_cylinder must not be set for "
+                    "spherical analysis (they are only valid for "
+                    "cylinder_x / cylinder_y)."
+                )
+        else:  # cylinder_x / cylinder_y
+            if delta_gamma is not None:
+                raise ValueError(
+                    f"delta_gamma must not be set for {droplet_geometry} "
+                    "(it is only valid for spherical)."
+                )
+            if delta_cylinder is None or width_cylinder is None:
+                raise ValueError(
+                    "delta_cylinder and width_cylinder must be provided for "
+                    f"{droplet_geometry}."
+                )
         self.liquid_coordinates = liquid_coordinates
         self.max_dist = max_dist
         # Store a copy: predict_contact_angle mutates this in-place per slice
@@ -87,17 +106,6 @@ class ContactAngleSlicing:
         # at room temperature by default; adjust for other liquids.
         self.density_sigma = density_sigma
         self.delta_angle = delta_angle
-        if self.droplet_geometry in ("cylinder_y", "cylinder_x") and (
-            width_cylinder is None or delta_cylinder is None
-        ):
-            warnings.warn(
-                "width_cylinder and delta_cylinder recommended for "
-                f"{self.droplet_geometry}",
-                UserWarning,
-                stacklevel=2,
-            )
-        if self.droplet_geometry == "spherical" and delta_gamma is None:
-            raise ValueError("delta_gamma must be provided for spherical analysis")
 
     def calculate_y_axis_list(self) -> list[float]:
         """Return axis position list for the chosen droplet geometry.

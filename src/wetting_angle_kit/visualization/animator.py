@@ -122,6 +122,11 @@ class ContactAngleAnimator:
                 width_cylinder=self.width_cylinder,
             )
             angles, surfaces, popt_arrays = processor.predict_contact_angle()
+            if not angles:
+                # No slice in this frame produced a usable contact angle
+                # (e.g. fitting failed everywhere). Skip the frame rather
+                # than letting the median lookup crash on an empty list.
+                continue
             median_idx = np.argsort(angles)[len(angles) // 2]
             alpha = angles[median_idx]
             popt = popt_arrays[median_idx]
@@ -152,6 +157,10 @@ class ContactAngleAnimator:
             )
             frames_list.append(frame)
             frame_labels.append(f"Frame {frame_idx}")
+        if not frames_list:
+            raise RuntimeError(
+                "No frame produced a usable contact angle; cannot build animation."
+            )
         fig.frames = frames_list
         fig.add_traces(frames_list[0].data)
         fig.update_layout(

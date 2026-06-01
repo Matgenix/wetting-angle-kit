@@ -33,7 +33,7 @@ tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj
 ```python
 # Import necessary modules
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
-from wetting_angle_kit.analysis import contact_angle_analyzer
+from wetting_angle_kit.analysis import BinningContactAngleAnalyzer
 
 # --- Step 1: Define the trajectory file ---
 filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
@@ -65,15 +65,12 @@ binning_params = {
 parser = LammpsDumpParser(filename)
 
 # --- Step 6: Create the contact angle analyzer ---
-analyzer = contact_angle_analyzer(
-    method="binning",
+analyzer = BinningContactAngleAnalyzer(
     parser=parser,
-    output_dir="results_binning_example",
     atom_indices=oxygen_indices,
     droplet_geometry="cylinder_y",  # Interface fitting model
     width_cylinder=21,  # Width parameter for interface fit
     binning_params=binning_params,
-    plot_graphs=False,  # Disable plotting for automated runs
 )
 
 # --- Step 7: Run analysis for a frame range ---
@@ -125,7 +122,6 @@ A heat map representation of the particles density and the fitted semi-circle to
 
 - Adjust `xi_f`, `zi_f`, and the bin counts (`nbins_xi`, `nbins_zi`) according to your simulation box dimensions.
 - If the wall surface is not flat or the system is tilted, pre-align it before analysis.
-- Use `plot_graphs=True` to visualize the binning density and interface fitting.
 - For multiple frames: `analyzer.analyze(range(0, 100, 10))`.
 
 ---

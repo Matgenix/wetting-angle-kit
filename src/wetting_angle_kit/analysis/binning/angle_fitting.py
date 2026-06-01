@@ -85,6 +85,11 @@ class ContactAngleBinning:
             satisfy the precondition will produce wrong results.
         """
         validate_droplet_geometry(droplet_geometry)
+        if droplet_geometry == "spherical" and width_cylinder is not None:
+            raise ValueError(
+                "width_cylinder must not be set for spherical analysis "
+                "(it is only valid for cylinder_x / cylinder_y)."
+            )
         self.parser = parser
         self.atom_indices = atom_indices
         self.droplet_geometry = droplet_geometry

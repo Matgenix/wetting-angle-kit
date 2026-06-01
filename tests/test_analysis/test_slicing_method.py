@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis import contact_angle_analyzer
+from wetting_angle_kit.analysis import SlicingContactAngleAnalyzer
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 
@@ -76,8 +76,7 @@ def test_contact_angle_slicing_with_real_data(parser, oxygen_indices):
 @pytest.mark.integration
 @pytest.mark.slow
 def test_slicing_contact_angle_analyzer_with_real_data(filename, oxygen_indices):
-    analyzer = contact_angle_analyzer(
-        method="slicing",
+    analyzer = SlicingContactAngleAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",

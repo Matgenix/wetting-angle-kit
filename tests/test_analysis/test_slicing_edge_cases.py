@@ -54,8 +54,8 @@ def test_spherical_constructor_requires_delta_gamma():
         _simple_predictor(droplet_geometry="spherical")
 
 
-def test_cylinder_constructor_warns_without_widths():
-    with pytest.warns(UserWarning, match="recommended"):
+def test_cylinder_constructor_raises_without_widths():
+    with pytest.raises(ValueError, match="delta_cylinder and width_cylinder"):
         _simple_predictor(droplet_geometry="cylinder_y")
 
 
@@ -105,13 +105,21 @@ def test_calculate_y_axis_spherical():
 def test_create_batches_few_frames():
     # filename only needs a recognized extension; the file does not have to exist
     # for _create_batches, which is pure logic on the requested frame list.
-    parallel = ContactAngleSlicingParallel(filename="ignored.lammpstrj")
+    parallel = ContactAngleSlicingParallel(
+        filename="ignored.lammpstrj",
+        droplet_geometry="spherical",
+        delta_gamma=20.0,
+    )
     # num_batches >= len(frames) → one frame per batch
     assert parallel._create_batches([1, 2, 3], num_batches=4) == [[1], [2], [3]]
 
 
 def test_create_batches_many_frames():
-    parallel = ContactAngleSlicingParallel(filename="ignored.lammpstrj")
+    parallel = ContactAngleSlicingParallel(
+        filename="ignored.lammpstrj",
+        droplet_geometry="spherical",
+        delta_gamma=20.0,
+    )
     batches = parallel._create_batches(list(range(10)), num_batches=3)
     flat = [f for batch in batches for f in batch]
     assert flat == list(range(10))

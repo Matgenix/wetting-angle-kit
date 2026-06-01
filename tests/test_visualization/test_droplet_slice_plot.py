@@ -122,11 +122,11 @@ def test_contact_angle_animator_init_loads_fixture():
 
 @pytest.mark.slow
 def test_contact_angle_animator_generates_html(tmp_path):
-    """Smoke-test ContactAngleAnimator on the LAMMPS fixture via cylinder_y geometry."""
+    """Smoke-test ContactAngleAnimator on the cylindrical LAMMPS fixture."""
     pytest.importorskip("ovito")
     output = tmp_path / "animation.html"
     animator = ContactAngleAnimator(
-        filename=trajectory_path("traj_spherical_drop_4k.lammpstrj"),
+        filename=trajectory_path("traj_10_3_330w_nve_4k_reajust.lammpstrj"),
         particle_type_wall={3},
         oxygen_type=1,
         hydrogen_type=2,
@@ -135,7 +135,7 @@ def test_contact_angle_animator_generates_html(tmp_path):
         droplet_geometry="cylinder_y",
         delta_cylinder=20,
         max_dist=50,
-        width_cylinder=20,
+        width_cylinder=21,
     )
     animator.generate_animation(output_filename=str(output))
     assert output.exists()
