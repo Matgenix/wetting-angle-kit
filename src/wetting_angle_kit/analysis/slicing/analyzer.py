@@ -5,6 +5,7 @@ import multiprocessing as mp
 from typing import Any, NamedTuple
 
 import numpy as np
+from tqdm.auto import tqdm
 
 from wetting_angle_kit.analysis.analyzer import BaseTrajectoryAnalyzer
 from wetting_angle_kit.analysis.slicing.angle_fitting import (
@@ -161,14 +162,23 @@ class SlicingTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         )
         logger.info(f"Processing {len(frame_range)} frames with n_jobs={n_jobs}")
         results_by_frame: dict[int, _SlicingFrameResult] = {}
-        with _MP_CONTEXT.Pool(
-            processes=n_jobs,
-            initializer=self._init_worker,
-            initargs=init_args,
-        ) as pool:
+        running_sum = 0.0
+        running_count = 0
+        with (
+            _MP_CONTEXT.Pool(
+                processes=n_jobs,
+                initializer=self._init_worker,
+                initargs=init_args,
+            ) as pool,
+            tqdm(total=len(frame_range), desc="Slicing frames", unit="frame") as pbar,
+        ):
             for result in pool.imap_unordered(self._run_one_frame, frame_range):
                 if result.mean_angle is not None:
                     results_by_frame[result.frame_num] = result
+                    running_sum += result.mean_angle
+                    running_count += 1
+                    pbar.set_postfix(mean_angle=f"{running_sum / running_count:.2f}°")
+                pbar.update(1)
         sorted_frames = sorted(results_by_frame)
         logger.info(
             f"Successfully processed {len(sorted_frames)}/{len(frame_range)} frames"
@@ -287,7 +297,6 @@ class SlicingTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 logger.warning(f"Frame {frame_num}: No angles computed (empty list).")
                 return _SlicingFrameResult(frame_num, None, [], [], [])
             mean_angle = float(np.mean(angles))
-            logger.info(f"Frame {frame_num} - mean angle: {mean_angle:.2f}°")
             return _SlicingFrameResult(
                 frame_num, mean_angle, angles, surfaces, popt_arrays
             )
