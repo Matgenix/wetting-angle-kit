@@ -155,7 +155,30 @@ class SurfaceDefinition:
         float
             Fitted ``zd`` value (interface location).
         """
-        popt, _ = curve_fit(self.density_profile, z_data, density, bounds=param_bounds)
+        # For rho(s) = d * tanh(zd - s) + h:
+        #   h ~ midpoint of the density signal,
+        #   d ~ half-amplitude (positive, since density is high near center
+        #       and low past the interface, so tanh(zd - s) goes +1 -> -1),
+        #   zd ~ position where density crosses the midpoint h.
+        rho_max = float(np.max(density))
+        rho_min = float(np.min(density))
+        h0 = 0.5 * (rho_max + rho_min)
+        d0 = 0.5 * (rho_max - rho_min)
+        zd0 = float(z_data[int(np.argmin(np.abs(density - h0)))])
+        lower, upper = param_bounds
+        p0 = [
+            float(np.clip(zd0, lower[0], upper[0])),
+            float(np.clip(d0, lower[1], upper[1])),
+            float(np.clip(h0, lower[2], upper[2])),
+        ]
+        popt, _ = curve_fit(
+            self.density_profile,
+            z_data,
+            density,
+            p0=p0,
+            bounds=param_bounds,
+            maxfev=5000,
+        )
         zd, d, h = popt
         return zd
 
