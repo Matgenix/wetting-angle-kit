@@ -33,7 +33,7 @@ tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj
 ```python
 # Import necessary modules
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
-from wetting_angle_kit.analysis import BinningContactAngleAnalyzer
+from wetting_angle_kit.analysis import BinningTrajectoryAnalyzer
 
 # --- Step 1: Define the trajectory file ---
 filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
@@ -65,7 +65,7 @@ binning_params = {
 parser = LammpsDumpParser(filename)
 
 # --- Step 6: Create the contact angle analyzer ---
-analyzer = BinningContactAngleAnalyzer(
+analyzer = BinningTrajectoryAnalyzer(
     parser=parser,
     atom_indices=oxygen_indices,
     droplet_geometry="cylinder_y",  # Interface fitting model

@@ -30,7 +30,7 @@ tests/trajectories/traj_spherical_drop_4k.lammpstrj
 ````python
 # Import necessary modules
 from wetting_angle_kit.parsers import LammpsDumpParser,     LammpsDumpWaterFinder
-from wetting_angle_kit.analysis import SlicingContactAngleAnalyzer
+from wetting_angle_kit.analysis import SlicingTrajectoryAnalyzer
 
 # --- Step 1: Define the trajectory file ---
 filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
@@ -51,7 +51,7 @@ parser = LammpsDumpParser(filename)
 
 # --- Step 5: Create the contact angle analyzer ---
 # Using the slicing method with a spherical model
-analyzer = SlicingContactAngleAnalyzer(
+analyzer = SlicingTrajectoryAnalyzer(
     parser=parser,
     atom_indices=oxygen_indices,
     droplet_geometry='spherical',   # Geometry fitting model
@@ -112,7 +112,7 @@ using the 'slicing' method on a spherical droplet from a LAMMPS dump trajectory.
 """
 
 from wetting_angle_kit.parsers import LammpsDumpParser,     LammpsDumpWaterFinder
-from wetting_angle_kit.analysis import SlicingContactAngleAnalyzer
+from wetting_angle_kit.analysis import SlicingTrajectoryAnalyzer
 
 # --- Step 1: Define input trajectory ---
 filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
@@ -132,7 +132,7 @@ print(f"Number of water molecules: {len(oxygen_indices)}")
 parser = LammpsDumpParser(filename)
 
 # --- Step 4: Create analyzer for the slicing method ---
-analyzer = SlicingContactAngleAnalyzer(
+analyzer = SlicingTrajectoryAnalyzer(
     parser=parser,
     atom_indices=oxygen_indices,
     droplet_geometry='spherical',

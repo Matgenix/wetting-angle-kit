@@ -1,18 +1,18 @@
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis.slicing.angle_fitting import (
-    ContactAngleSlicing,
+from wetting_angle_kit.analysis.slicing.analyzer import (
+    SlicingTrajectoryAnalyzer,
+    _SlicingFrameResult,
 )
-from wetting_angle_kit.analysis.slicing.parallel import (
-    ContactAngleSlicingParallel,
-    SlicingFrameResult,
+from wetting_angle_kit.analysis.slicing.angle_fitting import (
+    SlicingFrameFitter,
 )
 
 
 def _simple_predictor(droplet_geometry="cylinder_y", **kwargs):
-    """Return a minimally-initialised ContactAngleSlicing with required attrs."""
-    return ContactAngleSlicing(
+    """Return a minimally-initialised SlicingFrameFitter with required attrs."""
+    return SlicingFrameFitter(
         liquid_coordinates=np.zeros((10, 3)),
         max_dist=20,
         liquid_geom_center=np.array([0.0, 0.0, 0.0]),
@@ -99,52 +99,34 @@ def test_calculate_y_axis_spherical():
     assert all(g >= 0 for g in gammas)
 
 
-# --- ContactAngleSlicingParallel internals ---
+# --- SlicingTrajectoryAnalyzer worker internals ---
 
 
-def test_create_batches_few_frames():
-    # filename only needs a recognized extension; the file does not have to exist
-    # for _create_batches, which is pure logic on the requested frame list.
-    parallel = ContactAngleSlicingParallel(
-        filename="ignored.lammpstrj",
-        droplet_geometry="spherical",
-        delta_gamma=20.0,
-    )
-    # num_batches >= len(frames) → one frame per batch
-    assert parallel._create_batches([1, 2, 3], num_batches=4) == [[1], [2], [3]]
+def test_run_one_frame_invokes_pipeline_on_real_lammps():
+    """Drive ``_run_one_frame`` on a real LAMMPS fixture in the current process.
 
-
-def test_create_batches_many_frames():
-    parallel = ContactAngleSlicingParallel(
-        filename="ignored.lammpstrj",
-        droplet_geometry="spherical",
-        delta_gamma=20.0,
-    )
-    batches = parallel._create_batches(list(range(10)), num_batches=3)
-    flat = [f for batch in batches for f in batch]
-    assert flat == list(range(10))
-    # Approximately equal split; each batch is ≤ ceil(10/3) = 4.
-    assert all(len(b) <= 4 for b in batches)
-
-
-def test_process_batch_worker_invokes_pipeline_on_real_lammps(tmp_path):
-    """Run _process_batch_worker on a real LAMMPS fixture in the current process.
-
-    Goes through detect_parser_type → LammpsDumpParser → predict_contact_angle,
-    so it exercises the worker code paths that subprocess execution otherwise
-    hides from coverage.
+    The worker static methods normally run inside child processes, so this
+    test initialises ``_WORKER_STATE`` manually and then calls
+    ``_run_one_frame`` to exercise the parser → ``predict_contact_angle``
+    path that subprocess execution otherwise hides from coverage.
     """
     from tests.conftest import trajectory_path
 
-    parallel = ContactAngleSlicingParallel(
+    SlicingTrajectoryAnalyzer._init_worker(
         filename=trajectory_path("traj_spherical_drop_4k.lammpstrj"),
         droplet_geometry="spherical",
+        atom_indices=np.array([]),
         delta_gamma=20.0,
+        delta_cylinder=None,
+        points_per_angstrom=1.0,
+        precentered=False,
     )
-    results = parallel._process_batch_worker(batch_frames=[0])
-    assert len(results) == 1
-    assert isinstance(results[0], SlicingFrameResult)
-    assert results[0].frame_num == 0
+    try:
+        result = SlicingTrajectoryAnalyzer._run_one_frame(0)
+    finally:
+        SlicingTrajectoryAnalyzer._WORKER_STATE.clear()
+    assert isinstance(result, _SlicingFrameResult)
+    assert result.frame_num == 0
 
 
 def test_unsupported_extension_raises_at_construction(tmp_path):
@@ -152,9 +134,13 @@ def test_unsupported_extension_raises_at_construction(tmp_path):
     subprocesses where the error would be silently swallowed."""
     fake = tmp_path / "trajectory.bogus"
     fake.write_text("not a real trajectory\n")
+
+    class _FakeParser:
+        filepath = str(fake)
+
     with pytest.raises(ValueError, match="Unsupported trajectory file format"):
-        ContactAngleSlicingParallel(
-            filename=str(fake),
+        SlicingTrajectoryAnalyzer(
+            parser=_FakeParser(),
             droplet_geometry="spherical",
             delta_gamma=20.0,
         )

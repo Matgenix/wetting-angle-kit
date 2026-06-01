@@ -1,5 +1,5 @@
 # Import necessary modules
-from wetting_angle_kit.analysis import BinningContactAngleAnalyzer
+from wetting_angle_kit.analysis import BinningTrajectoryAnalyzer
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 # --- Step 1: Define the trajectory file ---
@@ -32,7 +32,7 @@ binning_params = {
 parser = LammpsDumpParser(filename)
 
 # --- Step 6: Create the contact angle analyzer ---
-analyzer = BinningContactAngleAnalyzer(
+analyzer = BinningTrajectoryAnalyzer(
     parser=parser,
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",  # Interface fitting model

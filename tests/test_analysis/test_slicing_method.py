@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis import SlicingContactAngleAnalyzer
+from wetting_angle_kit.analysis import SlicingTrajectoryAnalyzer
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 
@@ -35,7 +35,7 @@ def parser(filename):
     return LammpsDumpParser(filename)
 
 
-# --- Unit Tests for ContactAngleSlicing ---
+# --- Unit Tests for SlicingFrameFitter ---
 @pytest.mark.integration
 @pytest.mark.slow
 def test_contact_angle_slicing_with_real_data(parser, oxygen_indices):
@@ -51,12 +51,12 @@ def test_contact_angle_slicing_with_real_data(parser, oxygen_indices):
     )
     mean_liquid_position = np.mean(liquid_positions, axis=0)
 
-    # Initialize ContactAngleSlicing
+    # Initialize SlicingFrameFitter
     from wetting_angle_kit.analysis.slicing import (
-        ContactAngleSlicing,
+        SlicingFrameFitter,
     )
 
-    predictor = ContactAngleSlicing(
+    predictor = SlicingFrameFitter(
         liquid_coordinates=liquid_positions,
         liquid_geom_center=mean_liquid_position,
         droplet_geometry="spherical",
@@ -72,11 +72,11 @@ def test_contact_angle_slicing_with_real_data(parser, oxygen_indices):
     assert len(angles) > 0
 
 
-# --- Integration Test for SlicingContactAngleAnalyzer ---
+# --- Integration Test for SlicingTrajectoryAnalyzer ---
 @pytest.mark.integration
 @pytest.mark.slow
 def test_slicing_contact_angle_analyzer_with_real_data(filename, oxygen_indices):
-    analyzer = SlicingContactAngleAnalyzer(
+    analyzer = SlicingTrajectoryAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",

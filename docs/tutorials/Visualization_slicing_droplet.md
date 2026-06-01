@@ -23,7 +23,7 @@ from wetting_angle_kit.parsers import (
     LammpsDumpWaterFinder,
     LammpsDumpWallParser,
 )
-from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
+from wetting_angle_kit.analysis.slicing import SlicingFrameFitter
 from wetting_angle_kit.visualization import DropletSlicePlotter
 ```
 
@@ -63,7 +63,7 @@ wall_coords = coord_wall.parse(frame_index=1)
 
 ## 6. Compute Contact Angles
 ```python
-processor = ContactAngleSlicing(
+processor = SlicingFrameFitter(
     liquid_coordinates=oxygen_position,
     liquid_geom_center=np.mean(oxygen_position, axis=0),
     droplet_geometry="cylinder_y",

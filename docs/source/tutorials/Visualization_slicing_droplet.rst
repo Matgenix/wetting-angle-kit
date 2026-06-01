@@ -28,7 +28,7 @@ The visualization workflow involves the following steps:
        LammpsDumpWaterFinder,
        LammpsDumpWallParser,
    )
-   from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
+   from wetting_angle_kit.analysis.slicing import SlicingFrameFitter
    from wetting_angle_kit.visualization import DropletSlicePlotter
 
 ----
@@ -78,7 +78,7 @@ The visualization workflow involves the following steps:
 
 .. code-block:: python
 
-   processor = ContactAngleSlicing(
+   processor = SlicingFrameFitter(
        liquid_coordinates=oxygen_position,
        liquid_geom_center=np.mean(oxygen_position, axis=0),
        droplet_geometry="cylinder_y",

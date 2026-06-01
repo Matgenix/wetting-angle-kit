@@ -7,7 +7,7 @@ from wetting_angle_kit.analysis.binning.surface_definition import (
     HyperbolicTangentModel,
 )
 from wetting_angle_kit.analysis.slicing.angle_fitting import (
-    ContactAngleSlicing,
+    SlicingFrameFitter,
 )
 
 # --- Invalid droplet_geometry should be rejected by both analyzers ---
@@ -16,7 +16,7 @@ from wetting_angle_kit.analysis.slicing.angle_fitting import (
 def test_contact_angle_slicing_rejects_invalid_geometry():
     coords = np.array([[0.0, 0.0, 0.0]])
     with pytest.raises(ValueError, match="Unknown droplet_geometry"):
-        ContactAngleSlicing(
+        SlicingFrameFitter(
             liquid_coordinates=coords,
             max_dist=10,
             liquid_geom_center=np.zeros(3),
@@ -33,7 +33,7 @@ def test_predict_contact_angle_returns_aligned_lists():
     length. This guards against the historical bug where median_idx into
     angles would address a different slice in popt_arrays/surfaces."""
     coords = np.array([[0.0, 0.0, 10.0]])  # single atom = no tanh interface
-    predictor = ContactAngleSlicing(
+    predictor = SlicingFrameFitter(
         liquid_coordinates=coords,
         max_dist=10,
         liquid_geom_center=np.zeros(3),
@@ -47,7 +47,7 @@ def test_predict_contact_angle_returns_aligned_lists():
 def test_contact_angle_slicing_copies_geometric_center():
     """Constructor must not retain a reference to the caller's array."""
     center = np.array([1.0, 2.0, 3.0])
-    predictor = ContactAngleSlicing(
+    predictor = SlicingFrameFitter(
         liquid_coordinates=np.zeros((1, 3)),
         max_dist=10,
         liquid_geom_center=center,
@@ -64,7 +64,7 @@ def test_contact_angle_slicing_copies_geometric_center():
 
 def test_slicing_cylinder_without_width_raises():
     with pytest.raises(ValueError, match="delta_cylinder and width_cylinder"):
-        ContactAngleSlicing(
+        SlicingFrameFitter(
             liquid_coordinates=np.zeros((3, 3)),
             max_dist=10,
             liquid_geom_center=np.zeros(3),
@@ -74,7 +74,7 @@ def test_slicing_cylinder_without_width_raises():
 
 def test_slicing_spherical_requires_delta_gamma():
     with pytest.raises(ValueError, match="delta_gamma must be provided"):
-        ContactAngleSlicing(
+        SlicingFrameFitter(
             liquid_coordinates=np.zeros((3, 3)),
             max_dist=10,
             liquid_geom_center=np.zeros(3),
@@ -117,13 +117,13 @@ def test_hyperbolic_tangent_compute_isoline_raises_for_unphysical_fit():
         model.compute_isoline()
 
 
-# --- ContactAngleBinning.get_profile_coordinates ---
+# --- BinningBatchFitter.get_profile_coordinates ---
 
 
 def _make_binning_analyzer(parser):
-    from wetting_angle_kit.analysis.binning import ContactAngleBinning
+    from wetting_angle_kit.analysis.binning import BinningBatchFitter
 
-    return ContactAngleBinning(
+    return BinningBatchFitter(
         parser=parser,
         atom_indices=None,
         droplet_geometry="spherical",
@@ -211,7 +211,7 @@ def test_binning_precentered_skips_box_probe_and_warning():
     and the result matches the legacy arithmetic-mean path."""
     import warnings
 
-    from wetting_angle_kit.analysis.binning import ContactAngleBinning
+    from wetting_angle_kit.analysis.binning import BinningBatchFitter
     from wetting_angle_kit.parsers.base import BaseParser
 
     frame = np.array([[1.0, 0.0, 5.0], [-1.0, 0.0, 6.0], [0.0, 0.0, 7.0]])
@@ -223,7 +223,7 @@ def test_binning_precentered_skips_box_probe_and_warning():
         def frame_count(self):
             return 1
 
-    analyzer = ContactAngleBinning(
+    analyzer = BinningBatchFitter(
         parser=_StubParser(),
         atom_indices=None,
         droplet_geometry="spherical",

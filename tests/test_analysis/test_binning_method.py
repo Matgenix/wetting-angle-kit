@@ -3,7 +3,7 @@ import pathlib
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis import BinningContactAngleAnalyzer
+from wetting_angle_kit.analysis import BinningTrajectoryAnalyzer
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 
@@ -47,12 +47,12 @@ def binning_params():
     }
 
 
-# --- Unit Test for BinningContactAngleAnalyzer ---
+# --- Unit Test for BinningTrajectoryAnalyzer ---
 @pytest.mark.integration
 def test_binning_contact_angle_analyzer_with_real_data(
     filename, oxygen_indices, binning_params
 ):
-    analyzer = BinningContactAngleAnalyzer(
+    analyzer = BinningTrajectoryAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
@@ -76,7 +76,7 @@ def test_binning_contact_angle_analyzer_with_real_data(
 def test_binning_contact_angle_analyzer_per_frame_with_split_factor(
     filename, oxygen_indices, binning_params
 ):
-    analyzer = BinningContactAngleAnalyzer(
+    analyzer = BinningTrajectoryAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",

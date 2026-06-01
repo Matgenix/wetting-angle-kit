@@ -28,7 +28,7 @@ Slicing Method
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: ContactAngleSlicing, ContactAngleSlicingParallel
+   :exclude-members: SlicingFrameFitter
 
 Binning Method
 ^^^^^^^^^^^^^
@@ -37,7 +37,7 @@ Binning Method
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: ContactAngleBinning
+   :exclude-members: BinningBatchFitter
 
 Visualization and Statistics
 -----------------------------

@@ -1,7 +1,7 @@
 import numpy as np
 import plotly.graph_objects as go
 
-from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
+from wetting_angle_kit.analysis.slicing import SlicingFrameFitter
 from wetting_angle_kit.io_utils import recenter_droplet_pbc
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,
@@ -44,7 +44,7 @@ class ContactAngleAnimator:
         n_frames : int, default 10
             Number of frames to include in the animation.
         droplet_geometry : str, default "cylinder_y"
-            Droplet geometry passed to ContactAngleSlicing.
+            Droplet geometry passed to SlicingFrameFitter.
         delta_cylinder : int, default 5
             Step size along the slicing axis (Å).
         max_dist : int, default 100
@@ -113,7 +113,7 @@ class ContactAngleAnimator:
                 oxygen_position, liquid_geom_center = recenter_droplet_pbc(
                     oxygen_position, self.droplet_geometry, box_size=box_size_xy
                 )
-            processor = ContactAngleSlicing(
+            processor = SlicingFrameFitter(
                 liquid_coordinates=oxygen_position,
                 liquid_geom_center=liquid_geom_center,
                 droplet_geometry=self.droplet_geometry,

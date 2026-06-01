@@ -45,7 +45,7 @@ logger = logging.getLogger(__name__)
 _PARAM_NAMES = ("rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2")
 
 
-class ContactAngleBinning:
+class BinningBatchFitter:
     """Binning-based contact angle estimator using density field fitting.
 
     Frames aggregated in spatial bins form a time-averaged density field.

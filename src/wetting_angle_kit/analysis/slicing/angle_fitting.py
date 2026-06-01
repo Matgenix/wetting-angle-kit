@@ -9,7 +9,7 @@ from wetting_angle_kit.analysis.slicing.surface_definition import (
 from wetting_angle_kit.io_utils import validate_droplet_geometry
 
 
-class ContactAngleSlicing:
+class SlicingFrameFitter:
     """Slicing radial line method to estimate contact angle via circle fitting.
 
     Depending on ``droplet_geometry`` the droplet is analyzed by sweeping in y

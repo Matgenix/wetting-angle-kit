@@ -7,7 +7,7 @@ contact point.
 
 import numpy as np
 
-from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
+from wetting_angle_kit.analysis.slicing import SlicingFrameFitter
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,
     LammpsDumpWallParser,
@@ -36,7 +36,7 @@ coord_wall = LammpsDumpWallParser(filename, liquid_particle_types=[1, 2])
 wall_coords = coord_wall.parse(frame_index=10)
 
 # --- 4. Compute Contact Angles ---
-processor = ContactAngleSlicing(
+processor = SlicingFrameFitter(
     liquid_coordinates=oxygen_position,
     liquid_geom_center=np.mean(oxygen_position, axis=0),
     droplet_geometry="cylinder_y",

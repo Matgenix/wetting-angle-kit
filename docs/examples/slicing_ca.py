@@ -4,7 +4,7 @@ Runs the per-frame slicing (circle-fitting) analyzer on a LAMMPS dump
 file and prints the resulting mean contact angle.
 """
 
-from wetting_angle_kit.analysis import SlicingContactAngleAnalyzer
+from wetting_angle_kit.analysis import SlicingTrajectoryAnalyzer
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 # --- Step 1: Define the trajectory file ---
@@ -24,7 +24,7 @@ print("Number of water molecules:", len(oxygen_indices))
 
 # --- Step 3: Build the slicing analyzer ---
 parser = LammpsDumpParser(filename)
-analyzer = SlicingContactAngleAnalyzer(
+analyzer = SlicingTrajectoryAnalyzer(
     parser=parser,
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",
