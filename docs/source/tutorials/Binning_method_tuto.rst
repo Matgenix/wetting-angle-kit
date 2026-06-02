@@ -21,10 +21,10 @@ The **binning method** works by:
 2. Prerequisites
 ----------------
 
-Your trajectory file (e.g., a LAMMPS dump file) contain:
+Your trajectory file (e.g., a LAMMPS dump file) should contain:
 
 - Atom IDs, types, and positions
-- Liquid particles (in this cas Water molecules: O and H atoms)
+- Liquid particles (in this case, water molecules: O and H atoms)
 
 Example trajectory::
 

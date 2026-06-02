@@ -9,7 +9,7 @@ This tutorial explains how to compute the contact angle of a droplet using the *
 -----------
 
 The **slicing method** divides the droplet into slices (along the z-axis) and fits a geometric model (e.g. spherical) to the liquid–solid interface profile.
-This is ideal for study the evolution of the angles among a trajectory.
+This is ideal for studying the evolution of the angle along a trajectory.
 
 ----
 
@@ -83,6 +83,11 @@ After running the example, you'll see something like::
    Mean contact angle (°): 94.46
    Std contact angle (°): 0.0
    Frames analyzed: [1]
+
+The standard deviation is reported as ``0.0`` because the example only
+analyzes a single frame. ``std_angle`` is computed across frames — pass a
+multi-frame ``frame_range`` (e.g. ``range(0, 50)``) to see a non-zero
+spread.
 
 ``analyze`` returns a :class:`SlicingResults` dataclass with the
 following convenience attributes:

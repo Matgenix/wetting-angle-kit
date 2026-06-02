@@ -98,12 +98,16 @@ The visualization workflow involves the following steps:
 
    plotter = DropletSlicePlotter(center=True)
 
+   # ``predict_contact_angle`` returns three parallel lists (one entry per
+   # slice that produced a usable angle); pick a single index across all
+   # three so the overlay refers to one and the same slice.
+   slice_idx = 0
    fig = plotter.plot_surface_points(
        oxygen_position=oxygen_position,
-       surface_data=array_surfaces,
-       popt=array_popt[0],
+       surface_data=[array_surfaces[slice_idx]],
+       popt=array_popt[slice_idx],
        wall_coords=wall_coords,
-       alpha=list_alfas[0],
+       alpha=list_alfas[slice_idx],
    )
 
    # Interactive view in a notebook

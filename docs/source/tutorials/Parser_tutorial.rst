@@ -5,7 +5,7 @@ This tutorial shows how to load different trajectory formats using the ``wetting
 
 The parser provides a unified interface to read atomic coordinates from:
 
-- LAMMPS dump files (``LammpsDumpParser``, ``    LammpsDumpWaterFinder``)
+- LAMMPS dump files (``LammpsDumpParser``, ``LammpsDumpWaterFinder``)
 - ASE ``.traj`` files (``AseParser``, ``AseWaterFinder``)
 - XYZ files (``XYZParser``)
 
@@ -74,7 +74,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
    wat_find = AseWaterFinder(
        filename,
        particle_type_wall=["C"],  # Wall elements (e.g., carbon)
-       oh_cutoff=0.4,  # O–H bond cutoff distance
+       oh_cutoff=1.2,  # O–H bond cutoff distance (Å)
    )
 
    # --- Step 3: Identify water oxygens for frame 0 ---
