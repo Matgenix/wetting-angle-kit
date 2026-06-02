@@ -7,7 +7,7 @@ Step-by-step guides for using wetting_angle_kit.
    :maxdepth: 1
    :caption: Available Tutorials:
 
-   Parser_tutorial
-   Binning_method_tuto
-   Slicing_method_tuto
-   Visualization_slicing_droplet
+   parser_tutorial
+   binning_method_tuto
+   slicing_method_tuto
+   visualization_slicing_droplet
