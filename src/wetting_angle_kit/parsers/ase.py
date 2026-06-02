@@ -114,7 +114,6 @@ class AseWaterFinder:
     def __init__(
         self,
         filepath: str,
-        particle_type_wall: list[str],
         oxygen_type: str = "O",
         hydrogen_type: str = "H",
         oh_cutoff: float = 1.2,
@@ -124,9 +123,6 @@ class AseWaterFinder:
         ----------
         filepath : str
             Path to ASE-readable trajectory.
-        particle_type_wall : sequence[str]
-            Symbols representing wall particles (unused presently, reserved for
-            filtering).
         oxygen_type : str, default "O"
             Oxygen atom symbol.
         hydrogen_type : str, default "H"
@@ -146,7 +142,6 @@ class AseWaterFinder:
         self._NeighborList = NeighborList
         self.trajectory = self._ase_read(filepath, index=":")
         _validate_ase_trajectory_orthogonal(self.trajectory)
-        self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type
         self.hydrogen_type = hydrogen_type
         self.oh_cutoff = oh_cutoff

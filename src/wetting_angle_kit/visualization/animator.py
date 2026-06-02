@@ -17,7 +17,6 @@ class ContactAngleAnimator:
     def __init__(
         self,
         filename: str,
-        particle_type_wall: set,
         oxygen_type: int,
         hydrogen_type: int,
         liquid_particle_types: set,
@@ -33,8 +32,6 @@ class ContactAngleAnimator:
         ----------
         filename : str
             Path to LAMMPS dump trajectory file.
-        particle_type_wall : set
-            LAMMPS particle type IDs for wall atoms.
         oxygen_type : int
             LAMMPS particle type ID for oxygen atoms.
         hydrogen_type : int
@@ -79,7 +76,6 @@ class ContactAngleAnimator:
                     "(it is only valid for spherical)."
                 )
         self.filename = filename
-        self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type
         self.hydrogen_type = hydrogen_type
         self.liquid_particle_types = liquid_particle_types
@@ -93,7 +89,6 @@ class ContactAngleAnimator:
         # Initialize objects
         self.wat_find = LammpsDumpWaterFinder(
             self.filename,
-            particle_type_wall=self.particle_type_wall,
             oxygen_type=self.oxygen_type,
             hydrogen_type=self.hydrogen_type,
         )

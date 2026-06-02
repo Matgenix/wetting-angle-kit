@@ -20,9 +20,7 @@ def filename():
 
 @pytest.fixture
 def wat_find(filename):
-    return LammpsDumpWaterFinder(
-        filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2
-    )
+    return LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
 
 
 @pytest.fixture

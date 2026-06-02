@@ -104,7 +104,6 @@ def test_contact_angle_animator_init_loads_fixture():
     pytest.importorskip("ovito")
     animator = ContactAngleAnimator(
         filename=trajectory_path("traj_spherical_drop_4k.lammpstrj"),
-        particle_type_wall={3},
         oxygen_type=1,
         hydrogen_type=2,
         liquid_particle_types={1, 2},
@@ -126,7 +125,6 @@ def test_contact_angle_animator_generates_html(tmp_path):
     output = tmp_path / "animation.html"
     animator = ContactAngleAnimator(
         filename=trajectory_path("traj_10_3_330w_nve_4k_reajust.lammpstrj"),
-        particle_type_wall={3},
         oxygen_type=1,
         hydrogen_type=2,
         liquid_particle_types={1, 2},
