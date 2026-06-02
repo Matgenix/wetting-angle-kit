@@ -9,7 +9,6 @@ filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
 # This identifies O and H atoms in water molecules
 wat_find = LammpsDumpWaterFinder(
     filename,
-    particle_type_wall={3},  # Wall atom types
     oxygen_type=1,  # Oxygen atom type
     hydrogen_type=2,  # Hydrogen atom type
 )

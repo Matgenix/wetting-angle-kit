@@ -13,7 +13,6 @@ filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
 # --- Step 2: Identify the water molecules (oxygen-bonded-to-two-H) ---
 wat_find = LammpsDumpWaterFinder(
     filename,
-    particle_type_wall={3},  # Wall atom types
     oxygen_type=1,
     hydrogen_type=2,
 )

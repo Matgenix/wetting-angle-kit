@@ -20,9 +20,7 @@ from wetting_angle_kit.visualization import DropletSlicePlotter
 filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
 
 # --- 2. Identify Water Molecules ---
-wat_find = LammpsDumpWaterFinder(
-    filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2
-)
+wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
 
 oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
 print("Number of water molecules detected:", len(oxygen_indices))

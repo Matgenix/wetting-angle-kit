@@ -20,7 +20,6 @@ filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
 # --- Initialize water molecule finder ---
 wat_find = LammpsDumpWaterFinder(
     filename,
-    particle_type_wall={3},  # atom type for wall
     oxygen_type=1,  # atom type for oxygen
     hydrogen_type=2,  # atom type for hydrogen
 )
@@ -57,7 +56,6 @@ filename = "../../tests/trajectories/slice_10_mace_mlips_cylindrical_2_5.traj"
 # --- Initialize water molecule finder ---
 wat_find = AseWaterFinder(
     filename,
-    particle_type_wall=["C"],  # element name for wall
     oh_cutoff=1.2,  # O–H bond cutoff (Å); ASE NeighborList handles the
     # per-atom splitting internally now.
 )
