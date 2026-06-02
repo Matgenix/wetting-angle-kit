@@ -161,7 +161,7 @@ class LammpsDumpWallParser(BaseParser):
         pipeline = import_file(self.filepath)
         pipeline.modifiers.append(
             SelectTypeModifier(
-                property="Particle Type", types=self.liquid_particle_types
+                property="Particle Type", types=set(self.liquid_particle_types)
             )
         )
         pipeline.modifiers.append(DeleteSelectedModifier())
@@ -297,6 +297,10 @@ class LammpsDumpWaterFinder:
         """
         try:
             from ovito.io import import_file
+
+            # OVITO's type stubs omit ``CoordinationAnalysisModifier`` even
+            # though it exists at runtime; silence the spurious attr-defined
+            # error rather than blanket-ignoring the whole import block.
             from ovito.modifiers import (
                 ComputePropertyModifier,
                 CoordinationAnalysisModifier,

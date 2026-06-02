@@ -167,7 +167,7 @@ class XYZWaterFinder:
 
     def load_xyz_file(self) -> list[dict[str, Any]]:
         """Load frames including the lattice matrix for box-size queries."""
-        frames: list[dict[str, np.ndarray]] = []
+        frames: list[dict[str, np.ndarray | None]] = []
         with open(self.filepath) as file:
             lines = file.readlines()
         frame_start = 0

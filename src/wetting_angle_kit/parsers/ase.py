@@ -166,7 +166,7 @@ class AseWaterFinder:
         # ASE's NeighborList uses pairwise cutoff = cutoffs[i] + cutoffs[j].
         # Use half the bond cutoff per atom so the effective pair cutoff
         # equals self.oh_cutoff.
-        cutoffs = [self.oh_cutoff / 2.0] * len(frame)  # type: ignore[arg-type]
+        cutoffs = [self.oh_cutoff / 2.0] * len(frame)
         nl = self._NeighborList(cutoffs, self_interaction=False, bothways=True)
         nl.update(frame)
         water_oxygens = []
