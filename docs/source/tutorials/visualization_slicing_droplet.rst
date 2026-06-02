@@ -86,8 +86,8 @@ The visualization workflow involves the following steps:
        max_dist=100,
    )
 
-   list_alfas, array_surfaces, array_popt = processor.predict_contact_angle()
-   print("Mean contact angles (°):", list_alfas)
+   list_angles, array_surfaces, array_popt = processor.predict_contact_angle()
+   print("Mean contact angles (°):", list_angles)
 
 ----
 
@@ -107,7 +107,7 @@ The visualization workflow involves the following steps:
        surface_data=[array_surfaces[slice_idx]],
        popt=array_popt[slice_idx],
        wall_coords=wall_coords,
-       alpha=list_alfas[slice_idx],
+       alpha=list_angles[slice_idx],
    )
 
    # Interactive view in a notebook
