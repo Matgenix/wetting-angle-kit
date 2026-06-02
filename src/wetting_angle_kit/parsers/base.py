@@ -42,17 +42,6 @@ class BaseParser(ABC):
     def frame_count(self) -> int:
         """Return the total number of frames in the trajectory."""
 
-    def frame_tot(self) -> int:
-        """Return the total number of frames available. (Legacy name)."""
-        import warnings
-
-        warnings.warn(
-            "frame_tot is deprecated, use frame_count instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.frame_count()
-
     def box_size_x(self, frame_index: int) -> float:
         """Return the x-dimension of the simulation box for a frame.
 

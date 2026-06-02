@@ -75,13 +75,6 @@ def test_frame_count(dump_parser):
     assert total_frames > 0
 
 
-# --- frame_tot is a deprecated alias for frame_count ---
-def test_frame_tot_emits_deprecation_warning(dump_parser):
-    with pytest.warns(DeprecationWarning, match="frame_tot is deprecated"):
-        total = dump_parser.frame_tot()
-    assert total == dump_parser.frame_count()
-
-
 # --- Test non-orthogonal cell rejection ---
 def _write_triclinic_dump(path):
     path.write_text(
