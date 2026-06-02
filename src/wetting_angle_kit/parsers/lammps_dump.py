@@ -266,8 +266,8 @@ class LammpsDumpWaterFinder:
     def __init__(
         self,
         filepath: str,
-        oxygen_type: int = 3,
-        hydrogen_type: int = 2,
+        oxygen_type: int,
+        hydrogen_type: int,
         oh_cutoff: float = 1.2,
     ):
         """
@@ -275,10 +275,12 @@ class LammpsDumpWaterFinder:
         ----------
         filepath : str
             Path to LAMMPS dump file.
-        oxygen_type : int, default 3
-            LAMMPS particle type ID for oxygen atoms.
-        hydrogen_type : int, default 2
-            LAMMPS particle type ID for hydrogen atoms.
+        oxygen_type : int
+            LAMMPS particle type ID for oxygen atoms (required; LAMMPS
+            type numbering is system-specific so there is no safe default).
+        hydrogen_type : int
+            LAMMPS particle type ID for hydrogen atoms (required; LAMMPS
+            type numbering is system-specific so there is no safe default).
         oh_cutoff : float, default 1.2
             O-H distance cutoff (Å) for water molecule detection.
         """
