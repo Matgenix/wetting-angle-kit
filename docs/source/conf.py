@@ -9,13 +9,18 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../../src"))
 
+from wetting_angle_kit._version import __version__  # noqa: E402
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "wetting-angle-kit"
-copyright = "2025, Gabriel"
-author = "Gabriel"
-release = "0.1.2"
+copyright = "2025, Matgenix (Gabriel Taillandier)"
+author = "Gabriel Taillandier"
+# Pull the release from the package's auto-generated version file so the
+# docs always advertise the same version as the wheel.
+release = __version__
+version = __version__.split("+", 1)[0]
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -39,7 +44,6 @@ extensions = [
 # Autosummary settings
 autosummary_generate = True
 
-templates_path = ["_templates"]
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # Exclude input prompts from copybutton
@@ -49,7 +53,6 @@ copybutton_exclude = ".linenos, .gp, .go"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
 
 # Path to GitHub repo {group}/{project}
 issues_github_path = "Matgenix/wetting-angle-kit"

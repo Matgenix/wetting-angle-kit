@@ -66,7 +66,7 @@ Both methods are capable of analyzing:
 *   **Cylindrical Droplets**: Cylindrical droplets (e.g., water on a nanowire or with periodic boundary conditions), analyzed along the cylinder's axis (x or y).
 
 **Slicing Method**
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 The **Slicing Method** is ideal for analyzing the evolution of the contact angle over time or for symmetric droplets.
 

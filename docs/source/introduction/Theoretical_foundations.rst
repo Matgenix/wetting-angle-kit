@@ -1,5 +1,5 @@
 Theoretical foundations
-======================
+=======================
 
 The contact angle is defined as the angle between the tangent to the liquid-vapor interface and the normal to the substrate. It is a measure of the wetting properties of a droplet on a surface.
 
@@ -9,7 +9,7 @@ The contact angle is defined as the angle between the tangent to the liquid-vapo
 
 
 The slicing method
-----------------
+------------------
 
 .. image:: ../../images/wetting_angle_kit_3d_droplet.jpg
    :align: center

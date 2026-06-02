@@ -108,7 +108,7 @@ jobs:
 
       - name: Build Sphinx docs
         working-directory: docs
-        run: |
-          # cannot use sphinx build directly as the makefile handles generation
-          # of some rst files
-          make html
+        # ``-W`` promotes warnings to errors so doc regressions break CI
+        # rather than slipping through silently; ``--keep-going`` reports
+        # every offender in one run instead of stopping at the first.
+        run: python -m sphinx -W --keep-going -b html source build/html
