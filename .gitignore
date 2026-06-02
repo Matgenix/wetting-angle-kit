@@ -78,7 +78,7 @@ docs/build/generate-stamp
 
 docs/source/changelog.rst
 docs/build_log.txt
-docs/tutorials/result_dump_spherical_slicing
+docs/tutorials
 
 # PyBuilder
 .pybuilder/
