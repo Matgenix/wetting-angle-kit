@@ -100,11 +100,12 @@ class SurfaceModel(ABC):
         ndarray, shape (len(xi_grid), len(zi_grid))
             2D array of evaluated density values.
         """
-        out_fitted = np.zeros((len(xi_grid), len(zi_grid)))
-        for i in range(len(xi_grid)):
-            for j in range(len(zi_grid)):
-                out_fitted[i, j] = self.evaluate((xi_grid[i], zi_grid[j]))
-        return out_fitted
+        # ``evaluate`` is expected to broadcast over its inputs, so the grid
+        # is evaluated in a single call instead of a nested Python loop.
+        xi_mesh, zi_mesh = np.meshgrid(
+            np.asarray(xi_grid), np.asarray(zi_grid), indexing="ij"
+        )
+        return np.asarray(self.evaluate((xi_mesh, zi_mesh)))
 
 
 class HyperbolicTangentModel(SurfaceModel):
@@ -277,10 +278,20 @@ class HyperbolicTangentModel(SurfaceModel):
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Compute an iso-surface circle and wall line approximation.
 
+        Notes
+        -----
+        ``scale_factor`` shrinks the fitted equivalent radius before tracing
+        the iso-line. It is a **visualization-only** parameter: the contact
+        angle reported by :meth:`compute_contact_angle` is derived from the
+        unscaled fit. The default of 0.95 makes the overlaid circle sit
+        slightly inside the density isosurface so the underlying contour
+        plot stays visible — it is not meant to encode anything physical.
+
         Parameters
         ----------
         scale_factor : float, default 0.95
-            Factor applied to fitted radius for visualization.
+            Visualization-only scaling applied to the fitted equivalent
+            radius before computing the iso-line traces.
 
         Returns
         -------

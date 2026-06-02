@@ -171,33 +171,16 @@ class BinningBatchFitter:
         validate_droplet_geometry(self.droplet_geometry)
         r_chunks: list[np.ndarray] = []
         z_chunks: list[np.ndarray] = []
-        # If the user has declared the trajectory pre-centered, skip the
-        # box probe entirely and use the legacy arithmetic-mean path.
-        # Otherwise probe the parser once for lateral box info (skip if no
-        # frames were requested). If unavailable -- e.g. plain XYZ without
-        # a Lattice= line, or a custom parser that doesn't expose
-        # box_size_x/y -- fall back to the legacy centering. That is
-        # correct only when the trajectory already recenters the droplet
-        # at every frame and atoms are not wrapped across periodic
-        # boundaries.
+        # ``precentered=True`` skips the box probe and uses arithmetic-mean
+        # centering; otherwise box_size is queried per-frame for PBC-aware
+        # recentering. The parser ABC enforces box_size_x/y, so no fallback
+        # is needed.
         box_size: tuple[float, float] | None = None
         if frame_indices and not self.precentered:
-            try:
-                box_size = (
-                    self.parser.box_size_x(frame_index=frame_indices[0]),
-                    self.parser.box_size_y(frame_index=frame_indices[0]),
-                )
-            except (NotImplementedError, ValueError):
-                warnings.warn(
-                    "Parser does not expose lateral box sizes; falling back "
-                    "to arithmetic-mean droplet centering. This is correct "
-                    "only if the trajectory already recenters the droplet at "
-                    "every frame and atoms are not wrapped across periodic "
-                    "boundaries. Provide lattice information in the "
-                    "trajectory to enable PBC-aware recentering.",
-                    UserWarning,
-                    stacklevel=2,
-                )
+            box_size = (
+                self.parser.box_size_x(frame_index=frame_indices[0]),
+                self.parser.box_size_y(frame_index=frame_indices[0]),
+            )
         for frame_idx in frame_indices:
             positions = self.parser.parse(frame_idx, self.atom_indices)
             if box_size is not None:

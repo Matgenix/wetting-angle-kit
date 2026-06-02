@@ -1,8 +1,8 @@
 [project]
 name = "wetting-angle-kit"
-description = "A Python library to parse MD trajectories from LAMMPS and ASE and measure the contact through different methods"
+description = "A Python library to parse MD trajectories from LAMMPS and ASE and measure the contact angle through different methods"
 authors = [
-    { name = "Gabriel", email = "gabriel.taillandier@matgenix.com" },
+    { name = "Gabriel Taillandier", email = "gabriel.taillandier@matgenix.com" },
     { name = "Matgenix", email = "info@matgenix.com" },
 ]
 license = "BSD-3-Clause"

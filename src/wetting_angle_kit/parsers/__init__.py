@@ -12,6 +12,7 @@ from wetting_angle_kit.parsers.lammps_dump import (
 )
 from wetting_angle_kit.parsers.xyz import (
     XYZParser,
+    XYZWallParser,
     XYZWaterFinder,
 )
 
@@ -24,6 +25,7 @@ __all__ = [
     "LammpsDumpWallParser",
     "LammpsDumpWaterFinder",
     "XYZParser",
+    "XYZWallParser",
     "XYZWaterFinder",
     "get_water_finder",
 ]

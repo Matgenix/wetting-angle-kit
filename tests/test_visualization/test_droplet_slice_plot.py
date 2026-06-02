@@ -5,8 +5,10 @@ import plotly.graph_objects as go
 import pytest
 
 from tests.conftest import trajectory_path
-from wetting_angle_kit.visualization import DropletSlicePlotter
-from wetting_angle_kit.visualization.animator import ContactAngleAnimator
+from wetting_angle_kit.visualization import (
+    DropletSlicePlotter,
+    LammpsContactAngleAnimator,
+)
 
 
 def _synthetic_droplet(seed=0):
@@ -96,13 +98,14 @@ def test_droplet_slice_plotter_layers_can_be_disabled():
     assert len(fig.data) == 0
 
 
-# --- ContactAngleAnimator (not re-exported; import from submodule) ---
+# --- LammpsContactAngleAnimator ---
 
 
 def test_contact_angle_animator_init_loads_fixture():
-    """ContactAngleAnimator.__init__ wires up parsers and finders for a real fixture."""
+    """LammpsContactAngleAnimator.__init__ wires up parsers
+    and finders for a real fixture."""
     pytest.importorskip("ovito")
-    animator = ContactAngleAnimator(
+    animator = LammpsContactAngleAnimator(
         filename=trajectory_path("traj_spherical_drop_4k.lammpstrj"),
         oxygen_type=1,
         hydrogen_type=2,
@@ -120,10 +123,10 @@ def test_contact_angle_animator_init_loads_fixture():
 
 @pytest.mark.slow
 def test_contact_angle_animator_generates_html(tmp_path):
-    """Smoke-test ContactAngleAnimator on the cylindrical LAMMPS fixture."""
+    """Smoke-test LammpsContactAngleAnimator on the cylindrical LAMMPS fixture."""
     pytest.importorskip("ovito")
     output = tmp_path / "animation.html"
-    animator = ContactAngleAnimator(
+    animator = LammpsContactAngleAnimator(
         filename=trajectory_path("traj_10_3_330w_nve_4k_reajust.lammpstrj"),
         oxygen_type=1,
         hydrogen_type=2,

@@ -75,11 +75,16 @@ class DropletSlicePlotter:
         else:
             mask = np.abs(oxygen_position[:, 1] - y_com) <= 3
         oxygen_selected = oxygen_position[mask]
-        # Recenter if needed
+        # Recenter if needed. ``oxygen_selected`` is already a fresh copy
+        # from the boolean mask; ``wall_coords`` is the caller's array and
+        # must be copied before in-place shifting so the plotter remains
+        # side-effect-free.
         if self.center:
             z_shift = np.mean(wall_coords[:, 2])
-            oxygen_selected[:, 2] -= z_shift
+            wall_coords = wall_coords.copy()
             wall_coords[:, 2] -= z_shift
+            oxygen_selected = oxygen_selected.copy()
+            oxygen_selected[:, 2] -= z_shift
             surface_data = [
                 np.column_stack([surf[:, 0], surf[:, 1] - z_shift])
                 for surf in surface_data
@@ -157,12 +162,19 @@ class DropletSlicePlotter:
             if discriminant > 0:
                 x_contact = x_center + np.sqrt(discriminant)  # Right side
                 z_contact = z_line
-                m_tangent = -(x_contact - x_center) / (z_contact - z_center)
-                # Tangent line
                 z_top = z_center + radius * 1.1
-                x_top = x_contact + (z_top - z_contact) / m_tangent
-                x_line = np.linspace(x_contact, x_top, 100)
-                z_line_tan = m_tangent * (x_line - x_contact) + z_contact
+                # When the contact point sits at the circle's equator
+                # (``z_contact == z_center``) the tangent is vertical and
+                # the closed-form slope diverges; draw a vertical segment
+                # of the same z-extent instead so the overlay still renders.
+                if np.isclose(z_contact, z_center):
+                    x_line = np.full(100, x_contact)
+                    z_line_tan = np.linspace(z_contact, z_top, 100)
+                else:
+                    m_tangent = -(x_contact - x_center) / (z_contact - z_center)
+                    x_top = x_contact + (z_top - z_contact) / m_tangent
+                    x_line = np.linspace(x_contact, x_top, 100)
+                    z_line_tan = m_tangent * (x_line - x_contact) + z_contact
                 fig.add_trace(
                     go.Scatter(
                         x=x_line,

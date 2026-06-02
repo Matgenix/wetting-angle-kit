@@ -11,8 +11,17 @@ from wetting_angle_kit.parsers import (
 from wetting_angle_kit.visualization.droplet_slice_plot import DropletSlicePlotter
 
 
-class ContactAngleAnimator:
-    """Generate interactive Plotly slider animation of median slice angle per frame."""
+class LammpsContactAngleAnimator:
+    """Plotly slider animation of the median per-frame slice angle.
+
+    This class is **LAMMPS-specific**: it instantiates
+    :class:`~wetting_angle_kit.parsers.LammpsDumpParser`,
+    :class:`~wetting_angle_kit.parsers.LammpsDumpWallParser` and
+    :class:`~wetting_angle_kit.parsers.LammpsDumpWaterFinder` directly. A
+    parser-agnostic version would have to dispatch all three from a
+    factory; the rename makes the current coupling explicit rather than
+    promising generality that the implementation does not deliver.
+    """
 
     def __init__(
         self,
