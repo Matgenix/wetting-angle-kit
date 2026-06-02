@@ -1,6 +1,7 @@
 # wetting-angle-kit
 
 [![tests](https://img.shields.io/github/actions/workflow/status/Matgenix/wetting-angle-kit/testing.yml?branch=main&label=tests)](https://github.com/Matgenix/wetting-angle-kit/actions/workflows/testing.yml)
+[![docs](https://img.shields.io/github/actions/workflow/status/Matgenix/wetting-angle-kit/deploy-docs.yml?branch=main&label=docs)](https://github.com/Matgenix/wetting-angle-kit/actions/workflows/deploy-docs.yml)
 [![code coverage](https://codecov.io/gh/Matgenix/wetting-angle-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/Matgenix/wetting-angle-kit)
 [![pypi version](https://img.shields.io/pypi/v/wetting-angle-kit?color=blue)](https://pypi.org/project/wetting-angle-kit/)
 [![Python versions](https://img.shields.io/pypi/pyversions/wetting-angle-kit)](https://pypi.org/project/wetting-angle-kit/)

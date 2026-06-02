@@ -4,7 +4,11 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser
+# LAMMPS dump parsing goes through OVITO; skip the whole module when the
+# optional dependency is unavailable (typically on macOS CI).
+pytest.importorskip("ovito")
+
+from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser  # noqa: E402
 
 # Path to the test trajectory file (LAMMPS dump format)
 TRAJECTORY_PATH = os.path.join(

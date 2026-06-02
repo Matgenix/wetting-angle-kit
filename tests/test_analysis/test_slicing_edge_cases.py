@@ -87,6 +87,7 @@ def test_run_one_frame_invokes_pipeline_on_real_lammps():
     ``_run_one_frame`` to exercise the parser → ``predict_contact_angle``
     path that subprocess execution otherwise hides from coverage.
     """
+    pytest.importorskip("ovito")
     from tests.conftest import trajectory_path
 
     SlicingTrajectoryAnalyzer._init_worker(

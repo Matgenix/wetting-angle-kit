@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
           cache: pip
@@ -36,7 +36,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
@@ -50,7 +50,7 @@ jobs:
           pip install .[dev,all]
 
       - name: Test
-        run: pytest --cov=wetting_angle_kit --cov-report=xml --cov-fail-under=70
+        run: pytest --cov=wetting_angle_kit --cov-report=xml --cov-fail-under=80
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11'
@@ -70,7 +70,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
@@ -81,11 +81,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev,ase]
 
-      - name: Test (skip OVITO-dependent tests)
-        run: |
-          pytest \
-            --ignore=tests/test_parser/test_parser_dump.py \
-            --ignore=tests/test_analysis
+      - name: Test
+        # OVITO-dependent test modules call ``pytest.importorskip("ovito")``
+        # at import time, so the full suite can run on macOS: those modules
+        # are skipped automatically and the ASE-backed tests still execute.
+        run: pytest
 
   docs:
     runs-on: ubuntu-latest
@@ -93,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip

@@ -3,8 +3,16 @@ import pathlib
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis import SlicingTrajectoryAnalyzer
-from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
+# The slicing integration tests run on a LAMMPS dump fixture parsed through
+# OVITO; skip the whole module when the optional dependency is unavailable
+# (typically on macOS CI).
+pytest.importorskip("ovito")
+
+from wetting_angle_kit.analysis import SlicingTrajectoryAnalyzer  # noqa: E402
+from wetting_angle_kit.parsers import (  # noqa: E402
+    LammpsDumpParser,
+    LammpsDumpWaterFinder,
+)
 
 
 # --- Fixtures ---
