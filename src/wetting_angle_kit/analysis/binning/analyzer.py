@@ -17,7 +17,6 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         parser: Any,
         atom_indices: Any,
         droplet_geometry: str = "spherical",
-        width_cylinder: float | None = None,
         binning_params: dict[str, Any] | None = None,
         precentered: bool = False,
     ) -> None:
@@ -30,8 +29,6 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             Indices (or IDs) of liquid atoms to include in the density field.
         droplet_geometry : str, default "spherical"
             One of ``"spherical"``, ``"cylinder_x"``, ``"cylinder_y"``.
-        width_cylinder : float, optional
-            Box length along the cylinder axis; inferred from the parser if None.
         binning_params : dict, optional
             Grid definition with keys ``xi_0``, ``xi_f``, ``nbins_xi``,
             ``zi_0``, ``zi_f``, ``nbins_zi``. A heuristic default is used if None.
@@ -45,7 +42,6 @@ class BinningTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             parser=parser,
             atom_indices=atom_indices,
             droplet_geometry=droplet_geometry,
-            width_cylinder=width_cylinder,
             binning_params=binning_params,
             precentered=precentered,
         )

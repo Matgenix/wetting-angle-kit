@@ -112,7 +112,6 @@ def test_contact_angle_animator_init_loads_fixture():
         droplet_geometry="cylinder_y",
         delta_cylinder=20,
         max_dist=50,
-        width_cylinder=20,
     )
     assert animator.wall_coords.shape[1] == 3
     assert animator.oxygen_indices.size > 0
@@ -135,7 +134,6 @@ def test_contact_angle_animator_generates_html(tmp_path):
         droplet_geometry="cylinder_y",
         delta_cylinder=20,
         max_dist=50,
-        width_cylinder=21,
     )
     animator.generate_animation(output_filename=str(output))
     assert output.exists()

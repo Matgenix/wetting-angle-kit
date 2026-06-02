@@ -23,9 +23,9 @@ class ContactAngleAnimator:
         liquid_particle_types: set,
         n_frames: int = 10,
         droplet_geometry: str = "cylinder_y",
-        delta_cylinder: int = 5,
+        delta_cylinder: float | None = None,
+        delta_gamma: float | None = None,
         max_dist: int = 100,
-        width_cylinder: int = 21,
         precentered: bool = False,
     ):
         """
@@ -45,12 +45,14 @@ class ContactAngleAnimator:
             Number of frames to include in the animation.
         droplet_geometry : str, default "cylinder_y"
             Droplet geometry passed to SlicingFrameFitter.
-        delta_cylinder : int, default 5
-            Step size along the slicing axis (Å).
+        delta_cylinder : float, optional
+            Step size along the slicing axis (Å); required for
+            ``cylinder_x`` / ``cylinder_y`` modes, must be None for spherical.
+        delta_gamma : float, optional
+            Azimuthal step (degrees) for spherical droplet geometry;
+            required for spherical, must be None for cylinder modes.
         max_dist : int, default 100
             Maximum radial distance for line sampling (Å).
-        width_cylinder : int, default 21
-            Box extent along the cylinder axis (Å).
         precentered : bool, default False
             Set True if the trajectory already recenters the droplet at
             every frame and atoms are not wrapped across periodic
@@ -58,6 +60,24 @@ class ContactAngleAnimator:
             skipped. Setting this on a trajectory that does NOT satisfy the
             precondition will misplace the contact-angle overlay.
         """
+        if droplet_geometry == "spherical":
+            if delta_gamma is None:
+                raise ValueError("delta_gamma must be provided for spherical analysis")
+            if delta_cylinder is not None:
+                raise ValueError(
+                    "delta_cylinder must not be set for spherical analysis "
+                    "(it is only valid for cylinder_x / cylinder_y)."
+                )
+        elif droplet_geometry in ("cylinder_x", "cylinder_y"):
+            if delta_cylinder is None:
+                raise ValueError(
+                    f"delta_cylinder must be provided for {droplet_geometry}."
+                )
+            if delta_gamma is not None:
+                raise ValueError(
+                    f"delta_gamma must not be set for {droplet_geometry} "
+                    "(it is only valid for spherical)."
+                )
         self.filename = filename
         self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type
@@ -66,8 +86,8 @@ class ContactAngleAnimator:
         self.n_frames = n_frames
         self.droplet_geometry = droplet_geometry
         self.delta_cylinder = delta_cylinder
+        self.delta_gamma = delta_gamma
         self.max_dist = max_dist
-        self.width_cylinder = width_cylinder
         self.precentered = precentered
 
         # Initialize objects
@@ -118,8 +138,8 @@ class ContactAngleAnimator:
                 liquid_geom_center=liquid_geom_center,
                 droplet_geometry=self.droplet_geometry,
                 delta_cylinder=self.delta_cylinder,
+                delta_gamma=self.delta_gamma,
                 max_dist=self.max_dist,
-                width_cylinder=self.width_cylinder,
             )
             angles, surfaces, popt_arrays = processor.predict_contact_angle()
             if not angles:

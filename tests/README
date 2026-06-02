@@ -14,14 +14,20 @@ Layout
     │                                     (covers spherical / cylinder_x / cylinder_y)
     ├── test_edge_cases.py                Validation errors, deprecation paths,
     │                                     NaN guards, factory rejections
-    ├── test_visualization.py             Smoke tests for the plotting helpers
+    ├── test_visualization/               Smoke tests for the plotting helpers
+    │   ├── test_droplet_slice_plot.py
+    │   └── test_trajectory_plotters.py
     ├── test_parser/                      Per-format parser tests (LAMMPS dump,
     │   ├── test_parser_dump.py           XYZ, ASE)
     │   ├── test_parser_xyz.py
-    │   └── test_parser_ase.py
-    ├── test_contact_angle_methods/       Integration tests for the sliced and
-    │   ├── test_sliced_method.py         binning analyzers on real fixtures
-    │   └── test_binning_method.py
+    │   ├── test_parser_ase.py
+    │   ├── test_water_finders.py
+    │   └── test_parser_factory.py
+    ├── test_analysis/                    Integration tests for the sliced and
+    │   ├── test_slicing_method.py        binning analyzers on real fixtures
+    │   ├── test_slicing_edge_cases.py
+    │   ├── test_binning_method.py
+    │   ├── test_binning_surface_definition.py
     └── trajectories/                     Fixture trajectories used by integration
                                           tests (LAMMPS dump and XYZ/ASE samples)
 

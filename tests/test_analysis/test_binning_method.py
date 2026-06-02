@@ -56,7 +56,6 @@ def test_binning_contact_angle_analyzer_with_real_data(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
-        width_cylinder=21,
         binning_params=binning_params,
     )
 
@@ -80,7 +79,6 @@ def test_binning_contact_angle_analyzer_per_frame_with_split_factor(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
-        width_cylinder=21,
         binning_params=binning_params,
     )
 

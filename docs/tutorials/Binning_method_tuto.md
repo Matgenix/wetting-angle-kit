@@ -69,7 +69,6 @@ analyzer = BinningTrajectoryAnalyzer(
     parser=parser,
     atom_indices=oxygen_indices,
     droplet_geometry="cylinder_y",  # Interface fitting model
-    width_cylinder=21,  # Width parameter for interface fit
     binning_params=binning_params,
 )
 

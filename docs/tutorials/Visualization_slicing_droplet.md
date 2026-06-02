@@ -69,7 +69,6 @@ processor = SlicingFrameFitter(
     droplet_geometry="cylinder_y",
     delta_cylinder=5,
     max_dist=100,
-    width_cylinder=21,
 )
 
 list_alfas, array_surfaces, array_popt = processor.predict_contact_angle()

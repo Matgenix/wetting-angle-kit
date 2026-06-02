@@ -23,7 +23,7 @@ authors:
     affiliation: "2"
   - name: Gian-Marco Rignanese
     orcid: 0000-0002-1422-1205
-    affiliation: "1 ,3"
+    affiliation: "1, 3"
   - name: David Waroquiers
     orcid: 0000-0001-8943-9762
     affiliation: "1"
@@ -203,12 +203,12 @@ and encourages community-driven extensions. The package is expected to be partic
 useful for researchers using various types of force fields (classical and MLIPs)
 or investigating nanoscale interfacial phenomena.
 
-# AI usage  disclosure
+# AI usage disclosure
 
 Generative AI tools were used in the development of the software,
 for drafting and assisting debugging.
 Generative AI was used to assist in refining the language,
-traduction and clarity of the manuscript and docstring.
+translation and clarity of the manuscript and docstring.
 All AI-assisted contributions were verified and approved by the authors.
 
 # Acknowledgements

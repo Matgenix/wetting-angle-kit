@@ -59,11 +59,11 @@ def test_contact_angle_slicing_copies_geometric_center():
     np.testing.assert_array_equal(center, np.array([1.0, 2.0, 3.0]))
 
 
-# --- Cylindrical mode without delta_cylinder/width_cylinder raises ---
+# --- Cylindrical mode without delta_cylinder raises ---
 
 
-def test_slicing_cylinder_without_width_raises():
-    with pytest.raises(ValueError, match="delta_cylinder and width_cylinder"):
+def test_slicing_cylinder_without_delta_cylinder_raises():
+    with pytest.raises(ValueError, match="delta_cylinder"):
         SlicingFrameFitter(
             liquid_coordinates=np.zeros((3, 3)),
             max_dist=10,

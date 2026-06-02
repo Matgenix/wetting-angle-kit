@@ -29,7 +29,6 @@ class SlicingFrameFitter:
         liquid_geom_center: np.ndarray,
         droplet_geometry: str = "cylinder_y",
         delta_gamma: float | None = None,
-        width_cylinder: float | None = None,
         delta_cylinder: float | None = None,
         surface_filter_offset: float = 2.0,
         points_per_angstrom: float = 1.0,
@@ -52,10 +51,9 @@ class SlicingFrameFitter:
         delta_gamma : float, optional
             Angular step (degrees) for spherical droplet geometry
             (required if spherical).
-        width_cylinder : float, optional
-            Extent in slicing axis direction (y or x) for cylindrical droplet geometry.
         delta_cylinder : float, optional
-            Step size along slicing axis.
+            Step size along the slicing axis for cylindrical droplet geometry
+            (required if cylinder_x / cylinder_y).
         surface_filter_offset : float, default 2.0
             Offset added to minimum droplet height for interface point filtering.
         points_per_angstrom : float, default 1.0
@@ -69,22 +67,20 @@ class SlicingFrameFitter:
         if droplet_geometry == "spherical":
             if delta_gamma is None:
                 raise ValueError("delta_gamma must be provided for spherical analysis")
-            if delta_cylinder is not None or width_cylinder is not None:
+            if delta_cylinder is not None:
                 raise ValueError(
-                    "delta_cylinder and width_cylinder must not be set for "
-                    "spherical analysis (they are only valid for "
-                    "cylinder_x / cylinder_y)."
+                    "delta_cylinder must not be set for spherical analysis "
+                    "(it is only valid for cylinder_x / cylinder_y)."
                 )
         else:  # cylinder_x / cylinder_y
+            if delta_cylinder is None:
+                raise ValueError(
+                    f"delta_cylinder must be provided for {droplet_geometry}."
+                )
             if delta_gamma is not None:
                 raise ValueError(
                     f"delta_gamma must not be set for {droplet_geometry} "
                     "(it is only valid for spherical)."
-                )
-            if delta_cylinder is None or width_cylinder is None:
-                raise ValueError(
-                    "delta_cylinder and width_cylinder must be provided for "
-                    f"{droplet_geometry}."
                 )
         self.liquid_coordinates = liquid_coordinates
         self.max_dist = max_dist
@@ -93,7 +89,6 @@ class SlicingFrameFitter:
         self.liquid_geom_center = np.array(liquid_geom_center, copy=True)
         self.droplet_geometry = droplet_geometry
         self.delta_gamma = delta_gamma
-        self.width_cylinder = width_cylinder
         self.delta_cylinder = delta_cylinder
         self.surface_filter_offset = surface_filter_offset
         # Sampling density along each radial ray; raise this (e.g. 2.0 or
@@ -108,65 +103,41 @@ class SlicingFrameFitter:
         self.delta_angle = delta_angle
 
     def calculate_y_axis_list(self) -> list[float]:
-        """Return axis position list for the chosen droplet geometry.
+        """Return the per-slice center position along the slicing axis.
 
-        For cylindrical droplets the slice positions sweep from 0 to
-        ``width_cylinder`` in steps of ``delta_cylinder``. This assumes the
-        simulation box origin is at 0 along the slicing axis (the LAMMPS
-        convention). If your box uses a non-zero origin, supply
-        ``liquid_geom_center`` already shifted into a 0-based frame, or
-        pre-translate the trajectory before analysis.
+        For cylindrical droplets the slice positions sweep across the
+        extent of ``liquid_coordinates`` along the slicing axis (axis 1
+        after any caller-applied ``cylinder_x`` rotation) in steps of
+        ``delta_cylinder``. Because cylindrical droplets are designed to
+        span the periodic box along their cylinder axis, this is equivalent
+        to scanning the full box length while avoiding empty slices.
 
         Returns
         -------
         list[float]
-            Y (or X if 'cylinder_x') positions; spherical returns repeated center y.
+            Y positions of slice centers; for spherical, the droplet center
+            y is repeated ``180 / delta_gamma`` times.
         """
         if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
-            if self.width_cylinder is None or self.delta_cylinder is None:
-                raise ValueError(
-                    "width_cylinder and delta_cylinder are required for "
-                    f"droplet_geometry={self.droplet_geometry!r}"
-                )
-            return list(np.arange(0, self.width_cylinder, self.delta_cylinder))
-        if self.droplet_geometry == "spherical":
-            if self.delta_gamma is None:
-                raise ValueError(
-                    "delta_gamma is required for droplet_geometry='spherical'"
-                )
-            return [self.liquid_geom_center[1]] * int(180 / self.delta_gamma)
-        return []
-
-    def calculate_gammas_list(self) -> list[float]:
-        """Return the gamma tilt angle (degrees) for each slice
-        of the chosen droplet geometry."""
-        if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
-            if self.width_cylinder is None or self.delta_cylinder is None:
-                raise ValueError(
-                    "width_cylinder and delta_cylinder are required for "
-                    f"droplet_geometry={self.droplet_geometry!r}"
-                )
-            return [
-                0.0
-                for _ in np.arange(
-                    0,
-                    self.width_cylinder,
+            axis_values = self.liquid_coordinates[:, 1]
+            return list(
+                np.arange(
+                    float(axis_values.min()),
+                    float(axis_values.max()),
                     self.delta_cylinder,
                 )
-            ]
-        if self.droplet_geometry == "spherical":
-            if self.delta_gamma is None:
-                raise ValueError(
-                    "delta_gamma is required for droplet_geometry='spherical'"
-                )
-            return list(
-                np.linspace(
-                    0.0,
-                    180.0,
-                    int(180 / self.delta_gamma),
-                )
             )
-        return []
+        if self.delta_gamma is None:
+            raise ValueError("delta_gamma is required for droplet_geometry='spherical'")
+        return [self.liquid_geom_center[1]] * int(180 / self.delta_gamma)
+
+    def calculate_gammas_list(self) -> list[float]:
+        """Return the gamma tilt angle (degrees) for each slice."""
+        if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
+            return [0.0] * len(self.calculate_y_axis_list())
+        if self.delta_gamma is None:
+            raise ValueError("delta_gamma is required for droplet_geometry='spherical'")
+        return list(np.linspace(0.0, 180.0, int(180 / self.delta_gamma)))
 
     def surface_definition(self, v_gamma: float) -> tuple[np.ndarray, np.ndarray]:
         """Sample interface lines for a given gamma.

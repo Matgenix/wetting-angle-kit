@@ -55,8 +55,8 @@ conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forg
 
 ```python
 from wetting_angle_kit.analysis import (
-    BinningContactAngleAnalyzer,
-    SlicingContactAngleAnalyzer,
+    BinningTrajectoryAnalyzer,
+    SlicingTrajectoryAnalyzer,
 )
 from wetting_angle_kit.parsers import XYZParser, XYZWaterFinder
 
@@ -69,7 +69,7 @@ oxygen_ids = finder.get_water_oxygen_indices(frame_index=0)
 
 parser = XYZParser(trajectory_file)
 
-slicing = SlicingContactAngleAnalyzer(
+slicing = SlicingTrajectoryAnalyzer(
     parser,
     atom_indices=oxygen_ids,
     droplet_geometry="spherical",
@@ -78,7 +78,7 @@ slicing = SlicingContactAngleAnalyzer(
 results = slicing.analyze(frame_range=range(0, 50))
 print(results.mean_angle, results.std_angle)
 
-binning = BinningContactAngleAnalyzer(
+binning = BinningTrajectoryAnalyzer(
     parser,
     atom_indices=oxygen_ids,
     droplet_geometry="spherical",

@@ -12,9 +12,10 @@ last bin closed on both ends).
 
 Per-bin volume elements:
 
-* ``cylinder_x`` / ``cylinder_y``: ``dV = 2 * width_cylinder * dxi * dzi``.
-  The factor of 2 accounts for folding the symmetric distribution into
-  positive ``xi`` via ``|x_centered|``.
+* ``cylinder_x`` / ``cylinder_y``: ``dV = 2 * box_dimension * dxi * dzi``,
+  where ``box_dimension`` is the box length along the cylinder axis read
+  from the parser. The factor of 2 accounts for folding the symmetric
+  distribution into positive ``xi`` via ``|x_centered|``.
 * ``spherical``: ``dV = 2 * pi * xi_cc * dxi * dzi`` — the annular shell
   volume of cylindrical coordinates.
 
@@ -58,7 +59,6 @@ class BinningBatchFitter:
         parser: Any,
         atom_indices: Any,
         droplet_geometry: str = "spherical",
-        width_cylinder: float | None = None,
         binning_params: dict[str, Any] | None = None,
         precentered: bool = False,
     ) -> None:
@@ -71,8 +71,6 @@ class BinningBatchFitter:
             Indices (or IDs) of liquid atoms to include in the density field.
         droplet_geometry : str, default "spherical"
             One of ``"spherical"``, ``"cylinder_x"``, ``"cylinder_y"``.
-        width_cylinder : float, optional
-            Box length along the cylinder axis; inferred from the parser if None.
         binning_params : dict, optional
             Grid definition with keys ``xi_0``, ``xi_f``, ``nbins_xi``,
             ``zi_0``, ``zi_f``, ``nbins_zi``. A heuristic default is used if None.
@@ -85,15 +83,9 @@ class BinningBatchFitter:
             satisfy the precondition will produce wrong results.
         """
         validate_droplet_geometry(droplet_geometry)
-        if droplet_geometry == "spherical" and width_cylinder is not None:
-            raise ValueError(
-                "width_cylinder must not be set for spherical analysis "
-                "(it is only valid for cylinder_x / cylinder_y)."
-            )
         self.parser = parser
         self.atom_indices = atom_indices
         self.droplet_geometry = droplet_geometry
-        self.width_cylinder = width_cylinder
         self.precentered = precentered
         if binning_params is None:
             max_dist = int(
@@ -128,12 +120,12 @@ class BinningBatchFitter:
         else:
             self.binning_params = binning_params
         self._initialize_grid()
-        if self.width_cylinder is None:
-            if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
-                if self.droplet_geometry == "cylinder_x":
-                    self.width_cylinder = self.parser.box_size_x(frame_index=0)
-                elif self.droplet_geometry == "cylinder_y":
-                    self.width_cylinder = self.parser.box_size_y(frame_index=0)
+        if self.droplet_geometry == "cylinder_x":
+            self.box_dimension = self.parser.box_size_x(frame_index=0)
+        elif self.droplet_geometry == "cylinder_y":
+            self.box_dimension = self.parser.box_size_y(frame_index=0)
+        else:
+            self.box_dimension = None
 
     def _initialize_grid(self) -> None:
         """Initialize bin edges, centers and cell sizes from parameters."""
@@ -268,12 +260,7 @@ class BinningBatchFitter:
             bins=(self.xi, self.zi),
         )
         if self.droplet_geometry in ("cylinder_x", "cylinder_y"):
-            if self.width_cylinder is None:
-                raise ValueError(
-                    "width_cylinder is required for "
-                    f"droplet_geometry={self.droplet_geometry!r}"
-                )
-            dV = 2.0 * self.width_cylinder * self.dxi * self.dzi
+            dV = 2.0 * self.box_dimension * self.dxi * self.dzi
             rho_cc = counts / dV
         else:  # spherical droplet geometry
             dV_per_row = 2.0 * np.pi * self.xi_cc * self.dxi * self.dzi

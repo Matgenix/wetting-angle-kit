@@ -277,18 +277,12 @@ class SlicingTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
             if droplet_geometry == "cylinder_x":
                 liquid_positions = liquid_positions[:, [1, 0, 2]]
                 mean_liquid_position = mean_liquid_position[[1, 0, 2]]
-                box_dimensions = parser.box_size_x(frame_index=frame_num)
-            elif droplet_geometry == "cylinder_y":
-                box_dimensions = parser.box_size_y(frame_index=frame_num)
-            else:
-                box_dimensions = None
             predictor = SlicingFrameFitter(
                 liquid_coordinates=liquid_positions,
                 max_dist=max_dist,
                 liquid_geom_center=mean_liquid_position,
                 droplet_geometry=droplet_geometry,
                 delta_gamma=delta_gamma,
-                width_cylinder=box_dimensions,
                 delta_cylinder=delta_cylinder,
                 points_per_angstrom=points_per_angstrom,
             )
