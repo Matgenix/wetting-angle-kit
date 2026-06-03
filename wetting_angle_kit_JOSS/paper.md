@@ -105,7 +105,7 @@ This modular organization separates data handling, analysis,
 and visualization, allowing components to evolve independently
 while simplifying the integration of new features.
 
-![Wetting-angle-kit package structure.](package_overviewDiagram.drawio.pdf){width=90%}
+![Wetting-angle-kit package structure. The package is composed of three main modules: parsers, analysis, and visualization.](package_overviewDiagram.drawio.pdf){width=90%}
 
 The parser module provides a unified interface for reading trajectory data
 from multiple formats, ensuring consistent handling of atomic coordinates,
@@ -139,7 +139,7 @@ expensive computationnally than its binning counterpart.
 These two approaches reflect a trade-off between temporal resolution and statistical
 robustness, allowing users to select the method best suited to their system.
 
-![Schema of the two contact angle analysis methods.](schema_methods_analysis.pdf){width=80%}
+![Schematic representation of the two methods developed in wetting-angle-kit to compute contact angle from a MD trajectory. In the slicing method (left), all trajectory frames are analyzed and a circle is fitted on each of those, providing a time evolution of the contact angle. In the binning method (right), all frames are concatenated to fictitiously increase the molecular density of the droplet, allowing for smoother statistics at the cost of losing the time dependence of the contact angle.](schema_methods_analysis.pdf){width=80%}
 
 Additionally, wetting-angle-kit supports two geometric models commonly used
 in the literature for droplets: spherical and cylindrical [@Scocchi2011] (see Figure 3).
@@ -169,12 +169,12 @@ The package has been validated using MD simulations of water droplets on graphen
 and polymer substrates, yielding contact angle values consistent
 with literature results (e.g., ~93° for graphene, ~110° for PTFE), see Figure 4.
 The reported contact angles were obtained by analyzing droplets of increasing sizes
-and extrapolating to the macroscopic limit using the modified Young’s relation **ref**,
+and extrapolating to the macroscopic limit using the modified Young’s equation **ref**,
 where the contact angle is related to droplet size, enabling the estimation of the infinite-droplet contact angle through linear extrapolation.
 These results are consistent with values reported in the literature, obtained using
 similar interatomic potential parameters [@Jorgensen1996] for the MD simulation.
 
-![Size-dependent contact angle analysis for water droplets on graphite and PTFE substrates. Values of $\cos(\theta)$ are plotted as a function of the inverse square root of the droplet surface area for droplets containing between 500 and 6000 water molecules. Linear extrapolation following the Modified Young’s relation is used to estimate the macroscopic (infinite-droplet) contact angle.](mean_cos_angle_vs_surface_graphite_ptfe.pdf)
+![Size-dependent contact angle analysis for water droplets on graphite and PTFE substrates. Values of $\cos(\theta)$ are plotted as a function of the inverse square root of the droplet surface area for droplets containing between 500 and 6000 water molecules. A linear extrapolation following the modified Young’s equation is used to estimate the macroscopic (infinite-droplet) contact angle.](mean_cos_angle_vs_surface_graphite_ptfe.pdf)
 
 By enabling systematic comparison of analysis methods
 and providing standardized workflows, wetting-angle-kit supports more robust and
