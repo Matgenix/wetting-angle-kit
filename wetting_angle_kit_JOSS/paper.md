@@ -199,7 +199,7 @@ similar carbon-oxygen LJ parameters [@Jorgensen1996].
 \begin{figure}[h!]
 \centering
 \includegraphics[width=0.8\textwidth]{mean_cos_angle_vs_surface_graphite_ptfe.pdf}
-\caption{Figure 4: Size-dependent contact angle analysis for water droplets on graphite
+\caption{Size-dependent contact angle analysis for water droplets on graphite
  and PTFE substrates. Values of $\cos(\theta)$ are plotted as a function of the inverse square
  root of the droplet surface area for droplets containing between 500 and 6000 water molecules.
  Linear extrapolation following the Modified Young’s relation is used
