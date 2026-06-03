@@ -1,4 +1,3 @@
-from wetting_angle_kit.visualization.animator import LammpsContactAngleAnimator
 from wetting_angle_kit.visualization.base_trajectory_plotter import (
     BaseTrajectoryPlotter,
 )
@@ -15,7 +14,6 @@ __all__ = [
     "BaseTrajectoryPlotter",
     "BinningTrajectoryPlotter",
     "DropletSlicePlotter",
-    "LammpsContactAngleAnimator",
     "SlicingTrajectoryPlotter",
     "TrajectoryStats",
 ]

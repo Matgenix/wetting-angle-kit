@@ -1,14 +1,9 @@
-"""Smoke tests for the plotly droplet-slice plotter and the animator."""
+"""Smoke tests for the plotly droplet-slice plotter."""
 
 import numpy as np
 import plotly.graph_objects as go
-import pytest
 
-from tests.conftest import trajectory_path
-from wetting_angle_kit.visualization import (
-    DropletSlicePlotter,
-    LammpsContactAngleAnimator,
-)
+from wetting_angle_kit.visualization import DropletSlicePlotter
 
 
 def _synthetic_droplet(seed=0):
@@ -96,46 +91,3 @@ def test_droplet_slice_plotter_layers_can_be_disabled():
         show_wall=False,
     )
     assert len(fig.data) == 0
-
-
-# --- LammpsContactAngleAnimator ---
-
-
-def test_contact_angle_animator_init_loads_fixture():
-    """LammpsContactAngleAnimator.__init__ wires up parsers
-    and finders for a real fixture."""
-    pytest.importorskip("ovito")
-    animator = LammpsContactAngleAnimator(
-        filename=trajectory_path("traj_spherical_drop_4k.lammpstrj"),
-        oxygen_type=1,
-        hydrogen_type=2,
-        liquid_particle_types={1, 2},
-        n_frames=1,
-        droplet_geometry="cylinder_y",
-        delta_cylinder=20,
-        max_dist=50,
-    )
-    assert animator.wall_coords.shape[1] == 3
-    assert animator.oxygen_indices.size > 0
-    assert animator.parser is not None
-    assert animator.plotter is not None
-
-
-@pytest.mark.slow
-def test_contact_angle_animator_generates_html(tmp_path):
-    """Smoke-test LammpsContactAngleAnimator on the cylindrical LAMMPS fixture."""
-    pytest.importorskip("ovito")
-    output = tmp_path / "animation.html"
-    animator = LammpsContactAngleAnimator(
-        filename=trajectory_path("traj_10_3_330w_nve_4k_reajust.lammpstrj"),
-        oxygen_type=1,
-        hydrogen_type=2,
-        liquid_particle_types={1, 2},
-        n_frames=1,
-        droplet_geometry="cylinder_y",
-        delta_cylinder=20,
-        max_dist=50,
-    )
-    animator.generate_animation(output_filename=str(output))
-    assert output.exists()
-    assert output.stat().st_size > 0
