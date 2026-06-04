@@ -105,9 +105,12 @@ class DropletGeometry:
         return coords
 
     def to_user_coords(self, coords: np.ndarray) -> np.ndarray:
-        """Inverse of :meth:`to_internal_coords`.
+        """Map coordinates from the internal frame back to the user frame.
 
-        The ``[1, 0, 2]`` swap is self-inverse, so this delegates back
-        to :meth:`to_internal_coords`.
+        Mirror of :meth:`to_internal_coords`: applies the ``[1, 0, 2]``
+        swap for ``cylinder_x`` (which is its own inverse), and returns
+        the input unchanged for ``spherical`` and ``cylinder_y``.
         """
-        return self.to_internal_coords(coords)
+        if self.name == "cylinder_x":
+            return coords[..., [1, 0, 2]]
+        return coords
