@@ -8,10 +8,11 @@ depends on the :class:`SurfaceFitter` kind:
 - slicing fitters → :class:`SlicingBatchResult`
 - whole fitters   → :class:`WholeBatchResult`
 
-:class:`CoupledBinningAnalyzer` returns :class:`CoupledBinningResults`,
-which carries a different per-batch payload (the full density grid plus
-the joint-fit parameters) and is therefore not part of the
-:class:`TrajectoryResults` hierarchy.
+The two joint-fit analyzers — :class:`CoupledBinning2DAnalyzer` and
+:class:`CoupledBinning3DAnalyzer` — each return their own results type
+(:class:`CoupledBinning2DResults`, :class:`CoupledBinning3DResults`).
+They carry density grids plus joint-fit parameters and are therefore
+not part of the :class:`TrajectoryResults` hierarchy.
 """
 
 from dataclasses import dataclass, field
@@ -106,17 +107,17 @@ class WholeBatchResult(BatchResult):
 
 
 @dataclass(frozen=True, eq=False)
-class CoupledBinningBatchResult:
-    """Per-batch result from :class:`CoupledBinningAnalyzer`.
+class CoupledBinning2DBatchResult:
+    """Per-batch result from :class:`CoupledBinning2DAnalyzer`.
 
     Attributes
     ----------
     frames : list[int]
         Frame indices pooled into this batch.
     angle : float
-        Contact angle (degrees) implied by the joint tanh-model fit.
+        Contact angle (degrees) implied by the joint 2D tanh-model fit.
     model_params : dict[str, float]
-        Fitted parameters of the hyperbolic tangent model; keys are
+        Fitted parameters of the 2D hyperbolic tangent model; keys are
         ``"rho1"``, ``"rho2"``, ``"R_eq"``, ``"zi_c"``, ``"zi_0"``,
         ``"t1"``, ``"t2"``.
     xi_grid : ndarray
@@ -131,6 +132,47 @@ class CoupledBinningBatchResult:
     angle: float
     model_params: dict[str, float]
     xi_grid: np.ndarray
+    zi_grid: np.ndarray
+    density: np.ndarray
+
+
+@dataclass(frozen=True, eq=False)
+class CoupledBinning3DBatchResult:
+    """Per-batch result from :class:`CoupledBinning3DAnalyzer`.
+
+    Only meaningful for spherical droplets; cylindrical droplets carry
+    a translational symmetry along the cylinder axis that the 2D
+    analyzer already exploits, so :class:`CoupledBinning3DAnalyzer`
+    rejects non-spherical geometries at construction.
+
+    Attributes
+    ----------
+    frames : list[int]
+        Frame indices pooled into this batch.
+    angle : float
+        Contact angle (degrees) implied by the joint 3D tanh-model fit.
+    model_params : dict[str, float]
+        Fitted parameters of the 3D hyperbolic tangent model; keys are
+        ``"rho1"``, ``"rho2"``, ``"R_eq"``, ``"xi_c"``, ``"yi_c"``,
+        ``"zi_c"``, ``"zi_0"``, ``"t1"``, ``"t2"``. The droplet
+        horizontal centers ``xi_c`` / ``yi_c`` are reported even if
+        the underlying fit fixes them to zero by symmetry.
+    xi_grid : ndarray
+        x-binning grid centers (Å).
+    yi_grid : ndarray
+        y-binning grid centers (Å).
+    zi_grid : ndarray
+        Vertical binning grid centers (Å).
+    density : ndarray
+        ``(len(xi_grid), len(yi_grid), len(zi_grid))`` binned density
+        on the 3D grid.
+    """
+
+    frames: list[int]
+    angle: float
+    model_params: dict[str, float]
+    xi_grid: np.ndarray
+    yi_grid: np.ndarray
     zi_grid: np.ndarray
     density: np.ndarray
 
@@ -182,19 +224,58 @@ class TrajectoryResults:
 
 
 @dataclass
-class CoupledBinningResults:
-    """In-memory results of a :class:`CoupledBinningAnalyzer.analyze` run.
+class CoupledBinning2DResults:
+    """In-memory results of a :class:`CoupledBinning2DAnalyzer.analyze` run.
 
     Attributes
     ----------
-    batches : list[CoupledBinningBatchResult]
+    batches : list[CoupledBinning2DBatchResult]
         Per-batch results, in the order produced by the aggregator.
     method_metadata : dict
         Free-form descriptor (droplet geometry, binning params,
         initial parameters, batch size).
     """
 
-    batches: list[CoupledBinningBatchResult]
+    batches: list[CoupledBinning2DBatchResult]
+    method_metadata: dict[str, Any] = field(default_factory=dict)
+
+    def __len__(self) -> int:
+        return len(self.batches)
+
+    @property
+    def per_batch_angles(self) -> np.ndarray:
+        """Per-batch contact angle (degrees), in batch order."""
+        return np.array([b.angle for b in self.batches])
+
+    @property
+    def mean_angle(self) -> float:
+        """Mean contact angle across batches (degrees)."""
+        if not self.batches:
+            return float("nan")
+        return float(np.mean(self.per_batch_angles))
+
+    @property
+    def std_angle(self) -> float:
+        """Standard deviation of the per-batch contact angle (degrees)."""
+        if not self.batches:
+            return float("nan")
+        return float(np.std(self.per_batch_angles))
+
+
+@dataclass
+class CoupledBinning3DResults:
+    """In-memory results of a :class:`CoupledBinning3DAnalyzer.analyze` run.
+
+    Attributes
+    ----------
+    batches : list[CoupledBinning3DBatchResult]
+        Per-batch results, in the order produced by the aggregator.
+    method_metadata : dict
+        Free-form descriptor (droplet geometry — always spherical for
+        this analyzer, binning params, initial parameters, batch size).
+    """
+
+    batches: list[CoupledBinning3DBatchResult]
     method_metadata: dict[str, Any] = field(default_factory=dict)
 
     def __len__(self) -> int:
