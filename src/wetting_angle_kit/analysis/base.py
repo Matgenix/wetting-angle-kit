@@ -37,7 +37,6 @@ from tqdm.auto import tqdm
 
 from wetting_angle_kit.analysis.analyzer import BaseTrajectoryAnalyzer
 from wetting_angle_kit.analysis.geometry import DropletGeometry
-from wetting_angle_kit.analysis.results import BatchResult
 from wetting_angle_kit.analysis.temporal import TemporalAggregator
 from wetting_angle_kit.io_utils import (
     detect_parser_type,
@@ -260,7 +259,11 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         )
 
         init_args = self._init_args()
-        batch_results: list[BatchResult] = []
+        # ``Any`` here because each concrete subclass has its own
+        # per-batch result type (BatchResult / CoupledBinning2DBatchResult
+        # / CoupledBinning3DBatchResult); they share a duck-typed
+        # ``.frames`` attribute used for ordering, not a nominal base.
+        batch_results: list[Any] = []
         with (
             _MP_CONTEXT.Pool(
                 processes=n_jobs,
@@ -318,15 +321,22 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
 
     @staticmethod
     @abstractmethod
-    def _process_batch_worker(frame_indices: list[int]) -> BatchResult | None:
+    def _process_batch_worker(frame_indices: list[int]) -> Any:
         """Process one batch inside a worker process.
 
         Reads from the subclass's ``_WORKER_STATE`` populated by
-        :meth:`_init_worker`. Returns the per-batch result, or
-        ``None`` on a per-batch failure (the parent process logs and
-        skips ``None`` results, raising only if every batch fails).
+        :meth:`_init_worker`. Returns the per-batch result (a
+        :class:`BatchResult` subclass for :class:`TrajectoryAnalyzer`,
+        a :class:`CoupledBinning2DBatchResult` for the 2D coupled fit,
+        etc.) — or ``None`` on a per-batch failure. The parent process
+        logs and skips ``None`` results, raising only if every batch
+        fails.
         """
 
     @abstractmethod
-    def _build_results(self, batches: list[BatchResult]) -> Any:
-        """Wrap per-batch results into the analyzer's results dataclass."""
+    def _build_results(self, batches: list[Any]) -> Any:
+        """Wrap per-batch results into the analyzer's results dataclass.
+
+        ``batches`` carries the concrete per-batch type the subclass
+        returns from :meth:`_process_batch_worker`.
+        """
