@@ -154,6 +154,8 @@ class BinningTrajectoryPlotter(BaseTrajectoryPlotter):
             isoline traces when available.
         """
         batch = self.results[result_index].batches[batch_index]
+        dxi = batch.xi_cc[-1] - batch.xi_cc[-2]
+        xi_f = float(batch.xi_cc[-1] + dxi / 2)
         fig = go.Figure()
         fig.add_trace(
             go.Contour(
@@ -161,7 +163,14 @@ class BinningTrajectoryPlotter(BaseTrajectoryPlotter):
                 y=batch.zi_cc,
                 z=np.transpose(batch.rho_cc),
                 colorscale="Jet",
-                colorbar=dict(title="ρ"),
+                name="Liquid density",
+                colorbar=dict(
+                    title=dict(text="ρ", font=dict(size=16)),
+                    tickfont=dict(size=14),
+                    len=0.75,
+                    y=0,
+                    yanchor="bottom",
+                ),
             )
         )
         if batch.circle_xi is not None and batch.circle_zi is not None:
@@ -181,7 +190,7 @@ class BinningTrajectoryPlotter(BaseTrajectoryPlotter):
                     y=batch.wall_line_zi,
                     mode="lines",
                     name="Fitted wall",
-                    line=dict(color="black", dash="dash", width=2),
+                    line=dict(color="black", dash="dot", width=2),
                 )
             )
         fig.update_layout(
@@ -189,10 +198,26 @@ class BinningTrajectoryPlotter(BaseTrajectoryPlotter):
                 f"Density field — {self.labels[result_index]} "
                 f"(batch {batch.batch_index})"
             ),
-            xaxis_title="ξ (Å)",
-            yaxis_title="z (Å)",
             template="plotly_white",
-            yaxis=dict(scaleanchor="x", scaleratio=1),
+            xaxis=dict(
+                title=dict(text="ξ (Å)", font=dict(size=16)),
+                tickfont=dict(size=14),
+                range=[0, xi_f],
+                constrain="domain",
+            ),
+            yaxis=dict(
+                title=dict(text="z (Å)", font=dict(size=16)),
+                tickfont=dict(size=14),
+                scaleanchor="x",
+                scaleratio=1,
+                constrain="domain",
+            ),
+            legend=dict(
+                x=1.02,
+                y=1.0,
+                xanchor="left",
+                yanchor="top",
+            ),
         )
         if save_path:
             fig.write_html(save_path)

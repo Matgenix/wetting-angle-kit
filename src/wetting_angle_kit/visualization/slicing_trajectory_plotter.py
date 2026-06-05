@@ -86,6 +86,10 @@ class SlicingTrajectoryPlotter(BaseTrajectoryPlotter):
     def plot_angle_evolution(
         self,
         stat: str = "median",
+        per_frame_std: bool = True,
+        running_mean: bool = True,
+        timestep: float | None = None,
+        time_unit: str | None = None,
         save_path: str | None = None,
     ) -> go.Figure:
         """Plot per-frame contact angle as a function of time.
@@ -94,51 +98,115 @@ class SlicingTrajectoryPlotter(BaseTrajectoryPlotter):
         ----------
         stat : str, default "median"
             Per-frame aggregation across slices; one of ``"median"`` or ``"mean"``.
+        per_frame_std : bool, default True
+            If True, draw a transparent ±σ band around the per-frame curve
+            using the inter-slice spread within each frame — shows how noisy
+            the contact angle estimate is at each instant.
+        running_mean : bool, default True
+            If True, overlay the cumulative running mean of the per-frame
+            central tendency as a dashed line, plus a transparent ±σ band
+            of that cumulative series — shows how the time-averaged contact
+            angle converges as more frames are accumulated.
+        timestep : float, optional
+            Time between two consecutive frames *in the trajectory file*
+            (i.e. dump interval × MD integration timestep). Applied
+            uniformly to all trajectories, overriding the per-trajectory
+            ``time_steps`` passed at construction. This is **not** the MD
+            integration timestep — it is the spacing between frames as
+            they appear in the dump.
+        time_unit : str, optional
+            Override for the x-axis time unit label. Defaults to the
+            ``time_unit`` passed at construction.
         save_path : str, optional
             If provided, write the figure as standalone HTML.
 
         Returns
         -------
         plotly.graph_objects.Figure
-            Figure with one line (and ±σ band across slices) per trajectory.
+            Figure with one per-frame line per trajectory, optionally with
+            an inter-slice ±σ band and/or a running mean line with its
+            cumulative ±σ band.
         """
         if stat not in ("median", "mean"):
             raise ValueError(f"stat must be 'median' or 'mean', got {stat!r}")
         agg = np.median if stat == "median" else np.mean
         palette = pc.qualitative.Plotly
-        fig = go.Figure()
-        for idx, (label, result, dt) in enumerate(
+        band_traces: list[go.Scatter] = []
+        line_traces: list[go.Scatter] = []
+        effective_unit = time_unit if time_unit is not None else self.time_unit
+        for idx, (label, result, default_dt) in enumerate(
             zip(self.labels, self.results, self.time_steps, strict=False)
         ):
+            dt = timestep if timestep is not None else default_dt
             color = palette[idx % len(palette)]
             band_color = _hex_to_rgba(color, 0.2)
             times = np.array(result.frames) * dt
-            central = np.array([float(agg(a)) for a in result.angles])
-            std = np.array([float(np.std(a)) for a in result.angles])
-            fig.add_trace(
+            per_frame = np.array([float(agg(a)) for a in result.angles])
+            per_frame_group = label
+            running_group = f"{label} running mean"
+            line_traces.append(
                 go.Scatter(
                     x=times,
-                    y=central,
+                    y=per_frame,
                     mode="lines",
                     name=label,
                     line=dict(width=2, color=color),
+                    legendgroup=per_frame_group,
                 )
             )
-            fig.add_trace(
-                go.Scatter(
-                    x=np.concatenate([times, times[::-1]]),
-                    y=np.concatenate([central + std, (central - std)[::-1]]),
-                    fill="toself",
-                    fillcolor=band_color,
-                    line=dict(width=0),
-                    name=f"{label} ±σ",
-                    showlegend=False,
-                    hoverinfo="skip",
+            if per_frame_std:
+                std = np.array([float(np.std(a)) for a in result.angles])
+                band_traces.append(
+                    go.Scatter(
+                        x=np.concatenate([times, times[::-1]]),
+                        y=np.concatenate([per_frame + std, (per_frame - std)[::-1]]),
+                        fill="toself",
+                        fillcolor=band_color,
+                        line=dict(width=0),
+                        name=f"{label} ±σ",
+                        legendgroup=per_frame_group,
+                        showlegend=False,
+                        hoverinfo="skip",
+                    )
                 )
-            )
+            if running_mean:
+                counts = np.arange(1, len(per_frame) + 1)
+                cum_mean = np.cumsum(per_frame) / counts
+                sq_mean = np.cumsum(per_frame**2) / counts
+                cum_std = np.sqrt(np.maximum(sq_mean - cum_mean**2, 0.0))
+                band_traces.append(
+                    go.Scatter(
+                        x=np.concatenate([times, times[::-1]]),
+                        y=np.concatenate(
+                            [cum_mean + cum_std, (cum_mean - cum_std)[::-1]]
+                        ),
+                        fill="toself",
+                        fillcolor=band_color,
+                        line=dict(width=0),
+                        name=f"{label} running ±σ",
+                        legendgroup=running_group,
+                        showlegend=False,
+                        hoverinfo="skip",
+                    )
+                )
+                line_traces.append(
+                    go.Scatter(
+                        x=times,
+                        y=cum_mean,
+                        mode="lines",
+                        name=running_group,
+                        line=dict(width=2, color=color, dash="dash"),
+                        legendgroup=running_group,
+                    )
+                )
+        fig = go.Figure()
+        for trace in band_traces:
+            fig.add_trace(trace)
+        for trace in line_traces:
+            fig.add_trace(trace)
         fig.update_layout(
             title=f"Contact angle evolution ({stat})",
-            xaxis_title=f"Time ({self.time_unit})",
+            xaxis_title=f"Time ({effective_unit})",
             yaxis_title="Contact angle (°)",
             template="plotly_white",
         )

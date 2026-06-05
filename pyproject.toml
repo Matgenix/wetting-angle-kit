@@ -5,8 +5,7 @@ authors = [
     { name = "Gabriel Taillandier", email = "gabriel.taillandier@matgenix.com" },
     { name = "Matgenix", email = "info@matgenix.com" },
 ]
-license = "BSD-3-Clause"
-license-files = ["LICENSE"]
+license = { file = "LICENSE" }
 readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["version"]
@@ -74,7 +73,7 @@ all = [
 "Documentation" = "https://matgenix.github.io/wetting-angle-kit"
 
 [build-system]
-requires = ["setuptools>=77", "versioningit ~= 1.0", "wheel"]
+requires = ["setuptools==76.0.0", "versioningit ~= 1.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
