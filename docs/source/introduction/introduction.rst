@@ -66,7 +66,7 @@ Both methods are capable of analyzing:
 *   **Cylindrical Droplets**: Cylindrical droplets (e.g., water on a nanowire or with periodic boundary conditions), analyzed along the cylinder's axis (x or y).
 
 **Slicing Method**
-^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^
 
 The **Slicing Method** is ideal for analyzing the evolution of the contact angle over time or for symmetric droplets.
 
@@ -112,10 +112,10 @@ Examples of these visualizations can be found in the respective tutorials for ea
 Troubleshooting
 ---------------
 
-* **NaN angles**: Usually occur when the surface filter removes too many points (empty slice). Adjust ``surface_filter_offset`` (default 2.0) in ``ContactAngleSlicing`` or relax slice width. Ensure enough atoms remain after filtering (>=3) for circle fitting.
+* **NaN angles**: Usually occur when the surface filter removes too many points (empty slice). Adjust ``surface_filter_offset`` (default 2.0) in ``SlicingFrameFitter`` or relax slice width. Ensure enough atoms remain after filtering (>=3) for circle fitting.
 
-* **Empty outputs / NoneType failures**: Confirm ``width_cylinder`` and ``delta_cylinder`` are passed for cylindrical models and ``delta_gamma`` for spherical model. Parser must supply box dimensions for automatic max distance estimation.
+* **Empty outputs / NoneType failures**: Confirm ``delta_cylinder`` is passed for cylindrical models and ``delta_gamma`` for the spherical model. Parser must supply box dimensions for automatic max distance estimation.
 
-* **Multiprocessing hangs**: Use the batch-parallel wrapper (``ContactAngleSlicingParallel.process_frames_parallel``) which employs spawn start method; avoid invoking OVITO parsers inside global contexts before multiprocessing starts.
+* **Multiprocessing hangs**: ``SlicingTrajectoryAnalyzer.analyze`` uses the spawn start method; avoid invoking OVITO parsers inside global contexts before multiprocessing starts.
 
 * **OVITO ImportError**: Install with the ovito extra or via the Conda command listed above. Verify channel priority and version pin if dependency resolution fails.

@@ -4,7 +4,11 @@ from unittest.mock import patch
 import numpy as np
 import pytest
 
-from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser
+# LAMMPS dump parsing goes through OVITO; skip the whole module when the
+# optional dependency is unavailable (typically on macOS CI).
+pytest.importorskip("ovito")
+
+from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser  # noqa: E402
 
 # Path to the test trajectory file (LAMMPS dump format)
 TRAJECTORY_PATH = os.path.join(
@@ -73,13 +77,6 @@ def test_frame_count(dump_parser):
     total_frames = dump_parser.frame_count()
     assert isinstance(total_frames, int)
     assert total_frames > 0
-
-
-# --- frame_tot is a deprecated alias for frame_count ---
-def test_frame_tot_emits_deprecation_warning(dump_parser):
-    with pytest.warns(DeprecationWarning, match="frame_tot is deprecated"):
-        total = dump_parser.frame_tot()
-    assert total == dump_parser.frame_count()
 
 
 # --- Test non-orthogonal cell rejection ---

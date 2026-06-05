@@ -7,7 +7,7 @@ from wetting_angle_kit.analysis.binning.surface_definition import (
     HyperbolicTangentModel,
 )
 from wetting_angle_kit.analysis.slicing.angle_fitting import (
-    ContactAngleSlicing,
+    SlicingFrameFitter,
 )
 
 # --- Invalid droplet_geometry should be rejected by both analyzers ---
@@ -16,7 +16,7 @@ from wetting_angle_kit.analysis.slicing.angle_fitting import (
 def test_contact_angle_slicing_rejects_invalid_geometry():
     coords = np.array([[0.0, 0.0, 0.0]])
     with pytest.raises(ValueError, match="Unknown droplet_geometry"):
-        ContactAngleSlicing(
+        SlicingFrameFitter(
             liquid_coordinates=coords,
             max_dist=10,
             liquid_geom_center=np.zeros(3),
@@ -33,7 +33,7 @@ def test_predict_contact_angle_returns_aligned_lists():
     length. This guards against the historical bug where median_idx into
     angles would address a different slice in popt_arrays/surfaces."""
     coords = np.array([[0.0, 0.0, 10.0]])  # single atom = no tanh interface
-    predictor = ContactAngleSlicing(
+    predictor = SlicingFrameFitter(
         liquid_coordinates=coords,
         max_dist=10,
         liquid_geom_center=np.zeros(3),
@@ -47,7 +47,7 @@ def test_predict_contact_angle_returns_aligned_lists():
 def test_contact_angle_slicing_copies_geometric_center():
     """Constructor must not retain a reference to the caller's array."""
     center = np.array([1.0, 2.0, 3.0])
-    predictor = ContactAngleSlicing(
+    predictor = SlicingFrameFitter(
         liquid_coordinates=np.zeros((1, 3)),
         max_dist=10,
         liquid_geom_center=center,
@@ -59,12 +59,12 @@ def test_contact_angle_slicing_copies_geometric_center():
     np.testing.assert_array_equal(center, np.array([1.0, 2.0, 3.0]))
 
 
-# --- Cylindrical mode without delta_cylinder/width_cylinder warns ---
+# --- Cylindrical mode without delta_cylinder raises ---
 
 
-def test_slicing_cylinder_without_width_warns():
-    with pytest.warns(UserWarning, match="width_cylinder and delta_cylinder"):
-        ContactAngleSlicing(
+def test_slicing_cylinder_without_delta_cylinder_raises():
+    with pytest.raises(ValueError, match="delta_cylinder"):
+        SlicingFrameFitter(
             liquid_coordinates=np.zeros((3, 3)),
             max_dist=10,
             liquid_geom_center=np.zeros(3),
@@ -74,7 +74,7 @@ def test_slicing_cylinder_without_width_warns():
 
 def test_slicing_spherical_requires_delta_gamma():
     with pytest.raises(ValueError, match="delta_gamma must be provided"):
-        ContactAngleSlicing(
+        SlicingFrameFitter(
             liquid_coordinates=np.zeros((3, 3)),
             max_dist=10,
             liquid_geom_center=np.zeros(3),
@@ -117,27 +117,13 @@ def test_hyperbolic_tangent_compute_isoline_raises_for_unphysical_fit():
         model.compute_isoline()
 
 
-# --- Factory rejects unknown methods ---
+# --- BinningBatchFitter.get_profile_coordinates ---
 
 
-def test_contact_angle_analyzer_factory_rejects_unknown_method(tmp_path):
-    from wetting_angle_kit.analysis import contact_angle_analyzer
+def _make_binning_analyzer(parser):
+    from wetting_angle_kit.analysis.binning import BinningBatchFitter
 
-    with pytest.raises(ValueError, match="Unknown method"):
-        contact_angle_analyzer(
-            method="not-a-method",
-            parser=object(),
-            output_dir=str(tmp_path),
-        )
-
-
-# --- ContactAngleBinning.get_profile_coordinates ---
-
-
-def _make_binning_analyzer(parser, tmp_path):
-    from wetting_angle_kit.analysis.binning import ContactAngleBinning
-
-    return ContactAngleBinning(
+    return BinningBatchFitter(
         parser=parser,
         atom_indices=None,
         droplet_geometry="spherical",
@@ -149,44 +135,64 @@ def _make_binning_analyzer(parser, tmp_path):
             "zi_f": 10.0,
             "nbins_zi": 5,
         },
-        output_dir=str(tmp_path),
-        plot_graphs=False,
     )
 
 
-def test_binning_get_profile_coordinates_empty_frame_list(tmp_path):
+class _BoxedStubParser:
+    """Helper that supplies the abstract box-size methods of ``BaseParser``.
+
+    Subclasses only need to set ``frames`` (a list of ``(N, 3)`` arrays) and
+    use the defaults below for a 100x100x100 orthogonal cell.
+    """
+
+    box: tuple[float, float, float] = (100.0, 100.0, 100.0)
+
+    def box_size_x(self, frame_index):
+        return self.box[0]
+
+    def box_size_y(self, frame_index):
+        return self.box[1]
+
+    def box_length_max(self, frame_index):
+        return max(self.box)
+
+
+def test_binning_get_profile_coordinates_empty_frame_list():
     """Empty frame_indices must return empty arrays and zero frames."""
     from wetting_angle_kit.parsers.base import BaseParser
 
-    class _StubParser(BaseParser):
+    class _StubParser(_BoxedStubParser, BaseParser):
         def parse(self, frame_index, indices=None):
             return np.zeros((0, 3))
 
         def frame_count(self):
             return 0
 
-    analyzer = _make_binning_analyzer(_StubParser(), tmp_path)
+    analyzer = _make_binning_analyzer(_StubParser())
     r, z, n = analyzer.get_profile_coordinates(frame_indices=[])
     assert r.shape == (0,)
     assert z.shape == (0,)
     assert n == 0
 
 
-def test_binning_get_profile_coordinates_concatenates_frames(tmp_path):
+def test_binning_get_profile_coordinates_concatenates_frames():
     """r and z arrays are concatenated across requested frames; z stays in lab frame."""
     from wetting_angle_kit.parsers.base import BaseParser
 
     frame0 = np.array([[1.0, 0.0, 5.0], [-1.0, 0.0, 6.0], [0.0, 0.0, 7.0]])
     frame1 = np.array([[2.0, 0.0, 8.0], [-2.0, 0.0, 9.0], [0.0, 0.0, 10.0]])
 
-    class _StubParser(BaseParser):
+    class _StubParser(_BoxedStubParser, BaseParser):
+        # A large box so the per-frame circular mean coincides with the
+        # arithmetic mean and the asserted radii do not depend on PBC
+        # wrapping.
         def parse(self, frame_index, indices=None):
             return [frame0, frame1][frame_index]
 
         def frame_count(self):
             return 2
 
-    analyzer = _make_binning_analyzer(_StubParser(), tmp_path)
+    analyzer = _make_binning_analyzer(_StubParser())
     r, z, n = analyzer.get_profile_coordinates(frame_indices=[0, 1])
     assert n == 2
     # Spherical r is non-negative and the per-frame center-of-mass projection
@@ -196,51 +202,35 @@ def test_binning_get_profile_coordinates_concatenates_frames(tmp_path):
     np.testing.assert_array_equal(z, np.array([5.0, 6.0, 7.0, 8.0, 9.0, 10.0]))
 
 
-def test_binning_warns_and_falls_back_when_parser_has_no_box(tmp_path):
-    """Parsers that don't expose box_size_x/y (plain XYZ without a Lattice=
-    line, custom stubs) must trigger the fallback warning and still produce
-    results via the legacy arithmetic-mean centering."""
+def test_binning_precentered_skips_box_probe():
+    """``precentered=True`` must bypass the box probe entirely so the
+    box-size accessors are never invoked, even by a parser that would raise
+    if asked for box info."""
+    from wetting_angle_kit.analysis.binning import BinningBatchFitter
     from wetting_angle_kit.parsers.base import BaseParser
 
     frame = np.array([[1.0, 0.0, 5.0], [-1.0, 0.0, 6.0], [0.0, 0.0, 7.0]])
 
-    class _StubParser(BaseParser):
+    class _NoBoxParser(BaseParser):
         def parse(self, frame_index, indices=None):
             return frame
 
         def frame_count(self):
             return 1
 
-        # box_size_x / box_size_y inherited from BaseParser raise NotImplementedError.
+        def box_size_x(self, frame_index):
+            raise AssertionError("box_size_x must not be called when precentered=True")
 
-    analyzer = _make_binning_analyzer(_StubParser(), tmp_path)
-    with pytest.warns(UserWarning, match="does not expose lateral box sizes"):
-        r, z, n = analyzer.get_profile_coordinates(frame_indices=[0])
-    assert n == 1
-    np.testing.assert_allclose(r, np.array([1.0, 1.0, 0.0]))
-    np.testing.assert_array_equal(z, np.array([5.0, 6.0, 7.0]))
+        def box_size_y(self, frame_index):
+            raise AssertionError("box_size_y must not be called when precentered=True")
 
+        def box_length_max(self, frame_index):
+            raise AssertionError(
+                "box_length_max must not be called when precentered=True"
+            )
 
-def test_binning_precentered_skips_box_probe_and_warning(tmp_path):
-    """precentered=True must bypass the box probe entirely so a parser
-    that lacks box_size_x/y is accepted silently, no warning is issued,
-    and the result matches the legacy arithmetic-mean path."""
-    import warnings
-
-    from wetting_angle_kit.analysis.binning import ContactAngleBinning
-    from wetting_angle_kit.parsers.base import BaseParser
-
-    frame = np.array([[1.0, 0.0, 5.0], [-1.0, 0.0, 6.0], [0.0, 0.0, 7.0]])
-
-    class _StubParser(BaseParser):
-        def parse(self, frame_index, indices=None):
-            return frame
-
-        def frame_count(self):
-            return 1
-
-    analyzer = ContactAngleBinning(
-        parser=_StubParser(),
+    analyzer = BinningBatchFitter(
+        parser=_NoBoxParser(),
         atom_indices=None,
         droplet_geometry="spherical",
         binning_params={
@@ -251,40 +241,8 @@ def test_binning_precentered_skips_box_probe_and_warning(tmp_path):
             "zi_f": 10.0,
             "nbins_zi": 5,
         },
-        output_dir=str(tmp_path),
-        plot_graphs=False,
         precentered=True,
     )
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", UserWarning)
-        r, z, n = analyzer.get_profile_coordinates(frame_indices=[0])
+    r, z, n = analyzer.get_profile_coordinates(frame_indices=[0])
     assert n == 1
     np.testing.assert_allclose(r, np.array([1.0, 1.0, 0.0]))
-
-
-def test_binning_no_warning_when_parser_exposes_box(tmp_path):
-    """The fallback warning must NOT fire when the parser exposes box info;
-    otherwise it would spam every real run."""
-    import warnings
-
-    from wetting_angle_kit.parsers.base import BaseParser
-
-    frame = np.array([[1.0, 0.0, 5.0], [-1.0, 0.0, 6.0], [0.0, 0.0, 7.0]])
-
-    class _StubParserWithBox(BaseParser):
-        def parse(self, frame_index, indices=None):
-            return frame
-
-        def frame_count(self):
-            return 1
-
-        def box_size_x(self, frame_index):
-            return 100.0
-
-        def box_size_y(self, frame_index):
-            return 100.0
-
-    analyzer = _make_binning_analyzer(_StubParserWithBox(), tmp_path)
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", UserWarning)
-        analyzer.get_profile_coordinates(frame_indices=[0])

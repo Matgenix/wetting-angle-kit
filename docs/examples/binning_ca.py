@@ -1,5 +1,5 @@
 # Import necessary modules
-from wetting_angle_kit.analysis import contact_angle_analyzer
+from wetting_angle_kit.analysis import BinningTrajectoryAnalyzer
 from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
 # --- Step 1: Define the trajectory file ---
@@ -9,7 +9,6 @@ filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
 # This identifies O and H atoms in water molecules
 wat_find = LammpsDumpWaterFinder(
     filename,
-    particle_type_wall={3},  # Wall atom types
     oxygen_type=1,  # Oxygen atom type
     hydrogen_type=2,  # Hydrogen atom type
 )
@@ -32,16 +31,14 @@ binning_params = {
 parser = LammpsDumpParser(filename)
 
 # --- Step 6: Create the contact angle analyzer ---
-analyzer = contact_angle_analyzer(
-    method="binning",
+analyzer = BinningTrajectoryAnalyzer(
     parser=parser,
-    output_dir="results_binning_example",
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",  # Interface fitting model
     binning_params=binning_params,
-    plot_graphs=True,  # Enable plotting for automated runs
 )
 
 # --- Step 7: Run analysis for a frame range ---
 results = analyzer.analyze([1])  # Analyze frame 1
-print("Analysis results:", results)
+print("Mean contact angle (°):", results.mean_angle)
+print("Std contact angle (°):", results.std_angle)

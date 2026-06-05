@@ -4,6 +4,7 @@ from wetting_angle_kit.parsers.ase import (
     AseWaterFinder,
 )
 from wetting_angle_kit.parsers.base import BaseParser
+from wetting_angle_kit.parsers.factory import get_water_finder
 from wetting_angle_kit.parsers.lammps_dump import (
     LammpsDumpParser,
     LammpsDumpWallParser,
@@ -11,6 +12,7 @@ from wetting_angle_kit.parsers.lammps_dump import (
 )
 from wetting_angle_kit.parsers.xyz import (
     XYZParser,
+    XYZWallParser,
     XYZWaterFinder,
 )
 
@@ -23,5 +25,7 @@ __all__ = [
     "LammpsDumpWallParser",
     "LammpsDumpWaterFinder",
     "XYZParser",
+    "XYZWallParser",
     "XYZWaterFinder",
+    "get_water_finder",
 ]

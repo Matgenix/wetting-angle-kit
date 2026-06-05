@@ -1,37 +1,19 @@
-from wetting_angle_kit.visualization.base_trajectory_analyzer import (
-    BaseTrajectoryAnalyzer,
+from wetting_angle_kit.visualization.base_trajectory_plotter import (
+    BaseTrajectoryPlotter,
 )
-from wetting_angle_kit.visualization.binning_trajectory_analyzer import (
-    BinningTrajectoryAnalyzer,
+from wetting_angle_kit.visualization.binning_trajectory_plotter import (
+    BinningTrajectoryPlotter,
 )
-from wetting_angle_kit.visualization.droplet_slice_plots import (
-    ContactAngleAnimator,
-    DropletSlicePlotlyPlotter,
-    DropletSlicePlotter,
+from wetting_angle_kit.visualization.droplet_slice_plot import DropletSlicePlotter
+from wetting_angle_kit.visualization.slicing_trajectory_plotter import (
+    SlicingTrajectoryPlotter,
 )
-from wetting_angle_kit.visualization.method_comparison import MethodComparison
-from wetting_angle_kit.visualization.slicing_trajectory_analyzer import (
-    SlicingTrajectoryAnalyzer,
-)
-from wetting_angle_kit.visualization.surface_plots import (
-    plot_liquid_particles,
-    plot_slice,
-    plot_surface_and_points,
-    plot_surface_file,
-    read_surface_file,
-)
+from wetting_angle_kit.visualization.stats import TrajectoryStats
 
 __all__ = [
-    "BaseTrajectoryAnalyzer",
-    "BinningTrajectoryAnalyzer",
-    "MethodComparison",
+    "BaseTrajectoryPlotter",
+    "BinningTrajectoryPlotter",
     "DropletSlicePlotter",
-    "DropletSlicePlotlyPlotter",
-    "ContactAngleAnimator",
-    "SlicingTrajectoryAnalyzer",
-    "plot_slice",
-    "plot_surface_file",
-    "read_surface_file",
-    "plot_surface_and_points",
-    "plot_liquid_particles",
+    "SlicingTrajectoryPlotter",
+    "TrajectoryStats",
 ]

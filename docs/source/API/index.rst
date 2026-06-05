@@ -22,27 +22,26 @@ Base Analyzer
    :show-inheritance:
 
 Slicing Method
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 .. automodule:: wetting_angle_kit.analysis.slicing
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: ContactAngleSlicing, ContactAngleSlicingParallel
+   :exclude-members: SlicingFrameFitter
 
 Binning Method
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^
 
 .. automodule:: wetting_angle_kit.analysis.binning
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: ContactAngleBinning
+   :exclude-members: BinningBatchFitter
 
 Visualization and Statistics
 -----------------------------
 
 .. automodule:: wetting_angle_kit.visualization
    :members:
-   :undoc-members:
    :show-inheritance:

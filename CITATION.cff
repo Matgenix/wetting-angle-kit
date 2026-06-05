@@ -1,6 +1,8 @@
 cff-version: 1.2.0
 message: "If you use wetting-angle-kit in your research, please cite it using the metadata below."
 title: "wetting-angle-kit: a Python package to streamline the computation of wetting contact angles of nanodroplets on surfaces"
+version: 0.1.2
+date-released: "2026-06-01"
 type: software
 license: BSD-3-Clause
 repository-code: "https://github.com/Matgenix/wetting-angle-kit"

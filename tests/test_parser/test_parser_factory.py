@@ -11,7 +11,6 @@ def test_get_water_finder_lammpstrj():
     pytest.importorskip("ovito")
     finder = get_water_finder(
         trajectory_path("traj_spherical_drop_4k.lammpstrj"),
-        particle_type_wall={1},
         oxygen_type=3,
         hydrogen_type=2,
     )
@@ -21,7 +20,6 @@ def test_get_water_finder_lammpstrj():
 def test_get_water_finder_ase_traj():
     finder = get_water_finder(
         trajectory_path("slice_10_mace_mlips_cylindrical_2_5.traj"),
-        particle_type_wall=["C"],
         oxygen_type="O",
         hydrogen_type="H",
     )
@@ -31,7 +29,6 @@ def test_get_water_finder_ase_traj():
 def test_get_water_finder_xyz():
     finder = get_water_finder(
         trajectory_path("slice_10_mace_mlips_cylindrical_2_5.xyz"),
-        particle_type_wall=["C"],
         oxygen_type="O",
         hydrogen_type="H",
     )
@@ -42,7 +39,6 @@ def test_get_water_finder_unsupported_extension():
     with pytest.raises(ValueError, match="Unsupported file format"):
         get_water_finder(
             "/tmp/does_not_matter.pdb",
-            particle_type_wall=set(),
             oxygen_type="O",
             hydrogen_type="H",
         )

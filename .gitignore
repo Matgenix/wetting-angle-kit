@@ -77,6 +77,8 @@ docs/build/doctrees
 docs/build/generate-stamp
 
 docs/source/changelog.rst
+docs/build_log.txt
+docs/tutorials
 
 # PyBuilder
 .pybuilder/

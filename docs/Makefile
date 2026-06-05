@@ -3,7 +3,11 @@
 
 # You can set these variables from the command line, and also
 # from the environment for the first two.
-SPHINXOPTS    ?=
+# ``-W`` turns Sphinx warnings into errors; ``--keep-going`` finishes the
+# build so the user sees every offender rather than stopping at the first.
+# Override on the command line with ``SPHINXOPTS= make html`` for a lenient
+# local build.
+SPHINXOPTS    ?= -W --keep-going
 SPHINXBUILD   ?= sphinx-build
 SOURCEDIR     = source
 BUILDDIR      = build

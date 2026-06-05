@@ -1,6 +1,7 @@
 from typing import Any
 
 import numpy as np
+from scipy.spatial import cKDTree
 
 from wetting_angle_kit.io_utils import assert_orthogonal_cell
 from wetting_angle_kit.parsers.base import BaseParser
@@ -142,7 +143,6 @@ class XYZWaterFinder:
     def __init__(
         self,
         filepath: str,
-        particle_type_wall: Any,
         oxygen_type: str = "O",
         hydrogen_type: str = "H",
         oh_cutoff: float = 1.2,
@@ -152,8 +152,6 @@ class XYZWaterFinder:
         ----------
         filepath : str
             Path to XYZ file.
-        particle_type_wall : sequence[str]
-            Symbols that represent wall (excluded) particles.
         oxygen_type : str, default "O"
             Oxygen atom symbol.
         hydrogen_type : str, default "H"
@@ -162,7 +160,6 @@ class XYZWaterFinder:
             Distance cutoff (Å) for O-H bonding to identify water molecules.
         """
         self.filepath = filepath
-        self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type
         self.hydrogen_type = hydrogen_type
         self.oh_cutoff = oh_cutoff
@@ -170,7 +167,7 @@ class XYZWaterFinder:
 
     def load_xyz_file(self) -> list[dict[str, Any]]:
         """Load frames including the lattice matrix for box-size queries."""
-        frames: list[dict[str, np.ndarray]] = []
+        frames: list[dict[str, np.ndarray | None]] = []
         with open(self.filepath) as file:
             lines = file.readlines()
         frame_start = 0
@@ -259,10 +256,11 @@ class XYZWaterFinder:
         data = self.frames[frame_index]
         positions = data["positions"]
         symbols = data["symbols"]
+        lattice_matrix = data.get("lattice_matrix")
         oxygen_indices = np.where(symbols == self.oxygen_type)[0]
         hydrogen_indices = np.where(symbols == self.hydrogen_type)[0]
         return self._manual_water_identification(
-            positions, oxygen_indices, hydrogen_indices
+            positions, oxygen_indices, hydrogen_indices, lattice_matrix
         )
 
     def get_water_oxygen_positions(self, frame_index: int) -> np.ndarray:
@@ -289,8 +287,15 @@ class XYZWaterFinder:
         positions: np.ndarray,
         oxygen_indices: np.ndarray,
         hydrogen_indices: np.ndarray,
+        lattice_matrix: np.ndarray | None = None,
     ) -> np.ndarray:
         """Identify water oxygens by counting hydrogens within cutoff distance.
+
+        Uses a :class:`scipy.spatial.cKDTree` over the hydrogen positions.
+        When ``lattice_matrix`` is provided, the kd-tree's ``boxsize`` is
+        set from its diagonal (the cell is enforced orthogonal upstream) so
+        O–H pairs are matched under minimum-image convention; otherwise the
+        match is done in open space.
 
         Parameters
         ----------
@@ -300,20 +305,107 @@ class XYZWaterFinder:
             Candidate oxygen indices.
         hydrogen_indices : ndarray
             Hydrogen indices to check.
+        lattice_matrix : ndarray, shape (3, 3), optional
+            Orthogonal cell. If given, pairwise distances are evaluated
+            under PBC; otherwise raw Cartesian distances are used.
 
         Returns
         -------
         ndarray
             Oxygen indices with exactly two nearby hydrogens.
         """
-        water_oxygens = []
-        for o_idx in oxygen_indices:
-            o_pos = positions[o_idx]
-            h_count = 0
-            for h_idx in hydrogen_indices:
-                h_pos = positions[h_idx]
-                if np.linalg.norm(o_pos - h_pos) <= self.oh_cutoff:
-                    h_count += 1
-            if h_count == 2:
-                water_oxygens.append(o_idx)
-        return np.array(water_oxygens)
+        if oxygen_indices.size == 0 or hydrogen_indices.size == 0:
+            return np.array([], dtype=int)
+
+        o_pos = positions[oxygen_indices]
+        h_pos = positions[hydrogen_indices]
+
+        if lattice_matrix is not None:
+            # Orthogonal cell — diagonal entries are the axis-aligned box
+            # lengths. cKDTree requires coordinates inside ``[0, L)``, so
+            # wrap with a modulo before building the tree.
+            box = np.abs(np.diag(np.asarray(lattice_matrix, dtype=float)))
+            o_pos = o_pos - np.floor(o_pos / box) * box
+            h_pos = h_pos - np.floor(h_pos / box) * box
+            tree = cKDTree(h_pos, boxsize=box)
+        else:
+            tree = cKDTree(h_pos)
+
+        neighbours = tree.query_ball_point(o_pos, r=self.oh_cutoff)
+        h_counts = np.fromiter(
+            (len(n) for n in neighbours), dtype=int, count=len(o_pos)
+        )
+        return oxygen_indices[h_counts == 2]
+
+
+class XYZWallParser(BaseParser):
+    """Parser extracting wall particle coordinates from an XYZ trajectory.
+
+    Wall particles are everything *not* in ``liquid_particle_types``; the
+    mask is applied at :meth:`parse` time over the per-frame symbol array.
+    The ``indices`` argument of :meth:`parse` is treated as 0-based
+    positional indices into the wall-only positions, mirroring
+    :class:`~wetting_angle_kit.parsers.ase.AseWallParser`.
+    """
+
+    def __init__(self, filepath: str, liquid_particle_types: list[str]) -> None:
+        """
+        Parameters
+        ----------
+        filepath : str
+            Path to extended XYZ trajectory.
+        liquid_particle_types : sequence[str]
+            Atomic symbols representing liquid particles to exclude.
+        """
+        self.filepath = filepath
+        self.liquid_particle_types = liquid_particle_types
+        # Reuse ``XYZParser`` for loading: it already validates orthogonal
+        # cells and stores symbols + positions + lattice per frame.
+        self.frames = XYZParser(filepath).frames
+
+    def parse(self, frame_index: int, indices: np.ndarray | None = None) -> np.ndarray:
+        """Return wall atom positions for a frame.
+
+        Parameters
+        ----------
+        frame_index : int
+            Frame index.
+        indices : ndarray, optional
+            0-based indices into the wall-only positions to further
+            restrict the result; if None all wall atoms are returned.
+
+        Returns
+        -------
+        ndarray, shape (M, 3)
+            Wall atom coordinates.
+        """
+        frame = self.frames[frame_index]
+        mask = ~np.isin(frame["symbols"], self.liquid_particle_types)
+        x_par = frame["positions"][mask]
+        if indices is not None:
+            x_par = x_par[np.asarray(indices, dtype=int)]
+        return x_par
+
+    def find_highest_wall_particle(self, frame_index: int) -> float:
+        """Return the maximum z-coordinate among wall particles for a frame."""
+        x_wall = self.parse(frame_index)
+        return float(np.max(x_wall[:, 2]))
+
+    def box_size_x(self, frame_index: int) -> float:
+        """Return the length of the first lattice vector for a frame."""
+        lattice_matrix = self.frames[frame_index]["lattice_matrix"]
+        return float(np.linalg.norm(lattice_matrix[0]))
+
+    def box_size_y(self, frame_index: int) -> float:
+        """Return the length of the second lattice vector for a frame."""
+        lattice_matrix = self.frames[frame_index]["lattice_matrix"]
+        return float(np.linalg.norm(lattice_matrix[1]))
+
+    def box_length_max(self, frame_index: int) -> float:
+        """Return the maximum lattice vector length for a frame."""
+        lattice_matrix = self.frames[frame_index]["lattice_matrix"]
+        return float(np.max(np.linalg.norm(lattice_matrix, axis=1)))
+
+    def frame_count(self) -> int:
+        """Return the total number of frames in the trajectory."""
+        return len(self.frames)

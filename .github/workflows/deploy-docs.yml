@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@v4
       
       - name: Set up Python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: pip
@@ -36,7 +36,10 @@ jobs:
           
       - name: Build Sphinx docs
         working-directory: docs
-        run: make html
+        # ``-W`` promotes warnings to errors so doc regressions break CI
+        # rather than slipping through silently; ``--keep-going`` reports
+        # every offender in one run instead of stopping at the first.
+        run: python -m sphinx -W --keep-going -b html source build/html
         
       - name: Fix permissions
         run: |

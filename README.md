@@ -1,6 +1,7 @@
 # wetting-angle-kit
 
 [![tests](https://img.shields.io/github/actions/workflow/status/Matgenix/wetting-angle-kit/testing.yml?branch=main&label=tests)](https://github.com/Matgenix/wetting-angle-kit/actions/workflows/testing.yml)
+[![docs](https://img.shields.io/github/actions/workflow/status/Matgenix/wetting-angle-kit/deploy-docs.yml?branch=main&label=docs)](https://github.com/Matgenix/wetting-angle-kit/actions/workflows/deploy-docs.yml)
 [![code coverage](https://codecov.io/gh/Matgenix/wetting-angle-kit/branch/main/graph/badge.svg)](https://codecov.io/gh/Matgenix/wetting-angle-kit)
 [![pypi version](https://img.shields.io/pypi/v/wetting-angle-kit?color=blue)](https://pypi.org/project/wetting-angle-kit/)
 [![Python versions](https://img.shields.io/pypi/pyversions/wetting-angle-kit)](https://pypi.org/project/wetting-angle-kit/)
@@ -55,8 +56,8 @@ conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forg
 
 ```python
 from wetting_angle_kit.analysis import (
-    BinningContactAngleAnalyzer,
-    SlicingContactAngleAnalyzer,
+    BinningTrajectoryAnalyzer,
+    SlicingTrajectoryAnalyzer,
 )
 from wetting_angle_kit.parsers import XYZParser, XYZWaterFinder
 
@@ -69,22 +70,20 @@ oxygen_ids = finder.get_water_oxygen_indices(frame_index=0)
 
 parser = XYZParser(trajectory_file)
 
-slicing = SlicingContactAngleAnalyzer(
+slicing = SlicingTrajectoryAnalyzer(
     parser,
-    output_dir="out_slicing",
     atom_indices=oxygen_ids,
     droplet_geometry="spherical",
     delta_gamma=5,
 )
 results = slicing.analyze(frame_range=range(0, 50))
-print(results["mean_angle"], results["std_angle"])
+print(results.mean_angle, results.std_angle)
 
-binning = BinningContactAngleAnalyzer(
+binning = BinningTrajectoryAnalyzer(
     parser,
-    output_dir="out_binned",
     atom_indices=oxygen_ids,
     droplet_geometry="spherical",
 )
 results_binning = binning.analyze(frame_range=range(0, 200))
-print(results_binning["mean_angle"], results_binning["std_angle"])
+print(results_binning.mean_angle, results_binning.std_angle)
 ```

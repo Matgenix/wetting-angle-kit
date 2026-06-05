@@ -1,8 +1,4 @@
-import warnings
-from collections.abc import Sequence
-
 import numpy as np
-from scipy.optimize import curve_fit
 
 from wetting_angle_kit.analysis.slicing.surface_definition import (
     SurfaceDefinition,
@@ -10,7 +6,7 @@ from wetting_angle_kit.analysis.slicing.surface_definition import (
 from wetting_angle_kit.io_utils import validate_droplet_geometry
 
 
-class ContactAngleSlicing:
+class SlicingFrameFitter:
     """Slicing radial line method to estimate contact angle via circle fitting.
 
     Depending on ``droplet_geometry`` the droplet is analyzed by sweeping in y
@@ -28,9 +24,8 @@ class ContactAngleSlicing:
         liquid_coordinates: np.ndarray,
         max_dist: float,
         liquid_geom_center: np.ndarray,
-        droplet_geometry: str = "cylinder_y",
+        droplet_geometry: str = "spherical",
         delta_gamma: float | None = None,
-        width_cylinder: float | None = None,
         delta_cylinder: float | None = None,
         surface_filter_offset: float = 2.0,
         points_per_angstrom: float = 1.0,
@@ -47,16 +42,15 @@ class ContactAngleSlicing:
         liquid_geom_center : ndarray, shape (3,)
             Geometric droplet center; y component overridden per slice in cylinder
             modes.
-        droplet_geometry : str, default 'cylinder_y'
-            One of ``{'cylinder_y', 'cylinder_x', 'spherical'}`` controlling slicing
+        droplet_geometry : str, default 'spherical'
+            One of ``{'spherical', 'cylinder_x', 'cylinder_y'}`` controlling slicing
             axis.
         delta_gamma : float, optional
             Angular step (degrees) for spherical droplet geometry
             (required if spherical).
-        width_cylinder : float, optional
-            Extent in slicing axis direction (y or x) for cylindrical droplet geometry.
         delta_cylinder : float, optional
-            Step size along slicing axis.
+            Step size along the slicing axis for cylindrical droplet geometry
+            (required if cylinder_x / cylinder_y).
         surface_filter_offset : float, default 2.0
             Offset added to minimum droplet height for interface point filtering.
         points_per_angstrom : float, default 1.0
@@ -67,6 +61,24 @@ class ContactAngleSlicing:
             Azimuthal spacing (degrees) between radial lines.
         """
         validate_droplet_geometry(droplet_geometry)
+        if droplet_geometry == "spherical":
+            if delta_gamma is None:
+                raise ValueError("delta_gamma must be provided for spherical analysis")
+            if delta_cylinder is not None:
+                raise ValueError(
+                    "delta_cylinder must not be set for spherical analysis "
+                    "(it is only valid for cylinder_x / cylinder_y)."
+                )
+        else:  # cylinder_x / cylinder_y
+            if delta_cylinder is None:
+                raise ValueError(
+                    f"delta_cylinder must be provided for {droplet_geometry}."
+                )
+            if delta_gamma is not None:
+                raise ValueError(
+                    f"delta_gamma must not be set for {droplet_geometry} "
+                    "(it is only valid for spherical)."
+                )
         self.liquid_coordinates = liquid_coordinates
         self.max_dist = max_dist
         # Store a copy: predict_contact_angle mutates this in-place per slice
@@ -74,7 +86,6 @@ class ContactAngleSlicing:
         self.liquid_geom_center = np.array(liquid_geom_center, copy=True)
         self.droplet_geometry = droplet_geometry
         self.delta_gamma = delta_gamma
-        self.width_cylinder = width_cylinder
         self.delta_cylinder = delta_cylinder
         self.surface_filter_offset = surface_filter_offset
         # Sampling density along each radial ray; raise this (e.g. 2.0 or
@@ -87,78 +98,46 @@ class ContactAngleSlicing:
         # at room temperature by default; adjust for other liquids.
         self.density_sigma = density_sigma
         self.delta_angle = delta_angle
-        if self.droplet_geometry in ("cylinder_y", "cylinder_x") and (
-            width_cylinder is None or delta_cylinder is None
-        ):
-            warnings.warn(
-                "width_cylinder and delta_cylinder recommended for "
-                f"{self.droplet_geometry}",
-                UserWarning,
-                stacklevel=2,
+
+    def _slice_sweep(self) -> tuple[list[float], list[float]]:
+        """Build the per-slice ``(axis_values, gammas)`` sweep once.
+
+        Cylindrical mode sweeps the axial extent of ``liquid_coordinates``
+        in ``delta_cylinder`` steps with ``gamma = 0``. Spherical mode
+        repeats the droplet's y-center and rotates ``gamma`` from 0° to
+        180° in ``delta_gamma`` steps. The two public list accessors
+        below project this single source of truth.
+        """
+        if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
+            axis_values = self.liquid_coordinates[:, 1]
+            ys = list(
+                np.arange(
+                    float(axis_values.min()),
+                    float(axis_values.max()),
+                    self.delta_cylinder,
+                )
             )
-        if self.droplet_geometry == "spherical" and delta_gamma is None:
-            raise ValueError("delta_gamma must be provided for spherical analysis")
+            return ys, [0.0] * len(ys)
+        if self.delta_gamma is None:
+            raise ValueError("delta_gamma is required for droplet_geometry='spherical'")
+        n_slices = int(180 / self.delta_gamma)
+        gammas = list(np.linspace(0.0, 180.0, n_slices))
+        return [float(self.liquid_geom_center[1])] * n_slices, gammas
 
     def calculate_y_axis_list(self) -> list[float]:
-        """Return axis position list for the chosen droplet geometry.
-
-        For cylindrical droplets the slice positions sweep from 0 to
-        ``width_cylinder`` in steps of ``delta_cylinder``. This assumes the
-        simulation box origin is at 0 along the slicing axis (the LAMMPS
-        convention). If your box uses a non-zero origin, supply
-        ``liquid_geom_center`` already shifted into a 0-based frame, or
-        pre-translate the trajectory before analysis.
+        """Return the per-slice center position along the slicing axis.
 
         Returns
         -------
         list[float]
-            Y (or X if 'cylinder_x') positions; spherical returns repeated center y.
+            Y positions of slice centers; for spherical, the droplet center
+            y is repeated ``180 / delta_gamma`` times.
         """
-        if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
-            if self.width_cylinder is None or self.delta_cylinder is None:
-                raise ValueError(
-                    "width_cylinder and delta_cylinder are required for "
-                    f"droplet_geometry={self.droplet_geometry!r}"
-                )
-            return list(np.arange(0, self.width_cylinder, self.delta_cylinder))
-        if self.droplet_geometry == "spherical":
-            if self.delta_gamma is None:
-                raise ValueError(
-                    "delta_gamma is required for droplet_geometry='spherical'"
-                )
-            return [self.liquid_geom_center[1]] * int(180 / self.delta_gamma)
-        return []
+        return self._slice_sweep()[0]
 
     def calculate_gammas_list(self) -> list[float]:
-        """Return the gamma tilt angle (degrees) for each slice
-        of the chosen droplet geometry."""
-        if self.droplet_geometry in ("cylinder_y", "cylinder_x"):
-            if self.width_cylinder is None or self.delta_cylinder is None:
-                raise ValueError(
-                    "width_cylinder and delta_cylinder are required for "
-                    f"droplet_geometry={self.droplet_geometry!r}"
-                )
-            return [
-                0.0
-                for _ in np.arange(
-                    0,
-                    self.width_cylinder,
-                    self.delta_cylinder,
-                )
-            ]
-        if self.droplet_geometry == "spherical":
-            if self.delta_gamma is None:
-                raise ValueError(
-                    "delta_gamma is required for droplet_geometry='spherical'"
-                )
-            return list(
-                np.linspace(
-                    0.0,
-                    180.0,
-                    int(180 / self.delta_gamma),
-                )
-            )
-        return []
+        """Return the gamma tilt angle (degrees) for each slice."""
+        return self._slice_sweep()[1]
 
     def surface_definition(self, v_gamma: float) -> tuple[np.ndarray, np.ndarray]:
         """Sample interface lines for a given gamma.
@@ -202,13 +181,16 @@ class ContactAngleSlicing:
         """
         return surf[surf[:, 1] > limit_med]
 
-    def fit_circle(
-        self,
-        x_data: np.ndarray,
-        y_data: np.ndarray,
-        initial_guess: Sequence[float],
-    ) -> np.ndarray:
-        """Perform non-linear least squares circle fit.
+    @staticmethod
+    def fit_circle(x_data: np.ndarray, y_data: np.ndarray) -> np.ndarray:
+        """Algebraic (Kasa) least-squares circle fit.
+
+        Linearises ``(x - xc)^2 + (z - zc)^2 = R^2`` into
+        ``2 xc·x + 2 zc·z + c = x^2 + z^2`` with ``c = R^2 - xc^2 - zc^2``,
+        and solves the resulting overdetermined linear system in one
+        ``np.linalg.lstsq`` call. Replaces the previous SciPy non-linear
+        fit, which was the slicing hot path's main per-slice cost and
+        which depended on a sensible initial guess.
 
         Parameters
         ----------
@@ -216,24 +198,33 @@ class ContactAngleSlicing:
             X coordinates.
         y_data : ndarray
             Z coordinates.
-        initial_guess : sequence
-            Initial parameters [x_center, z_center, radius].
 
         Returns
         -------
-        ndarray
-            Optimized parameters [x_center, z_center, radius].
+        ndarray, shape (3,)
+            ``[x_center, z_center, radius]``.
+
+        Raises
+        ------
+        np.linalg.LinAlgError
+            If the input points are collinear (rank-deficient system).
+        ValueError
+            If the algebraic solution yields a non-positive squared radius
+            (degenerate sample, e.g. all points on a line).
         """
-        popt, _ = curve_fit(
-            self.circle_equation,
-            (x_data, y_data),
-            np.zeros_like(x_data),
-            p0=initial_guess,
-        )
-        # The residual sqrt((x-xc)^2 + (z-zc)^2) - R is symmetric in the sign
-        # of R, so curve_fit may converge to a negative radius. Normalize.
-        popt[2] = float(abs(popt[2]))
-        return popt
+        x = np.asarray(x_data, dtype=float)
+        y = np.asarray(y_data, dtype=float)
+        a_matrix = np.column_stack((2.0 * x, 2.0 * y, np.ones_like(x)))
+        rhs = x * x + y * y
+        sol, _, _, _ = np.linalg.lstsq(a_matrix, rhs, rcond=None)
+        xc, zc, c = float(sol[0]), float(sol[1]), float(sol[2])
+        r_sq = c + xc * xc + zc * zc
+        if r_sq <= 0.0:
+            raise ValueError(
+                f"Algebraic circle fit produced non-positive R^2 ({r_sq:.3g}); "
+                "the surface points are likely degenerate."
+            )
+        return np.array([xc, zc, float(np.sqrt(r_sq))])
 
     def find_intersection(self, popt: np.ndarray, y_line: float) -> float | None:
         """Compute contact angle from circle intersection with a baseline.
@@ -257,35 +248,6 @@ class ContactAngleSlicing:
             return None
         theta = np.arccos(delta_z / radius)
         return float(np.degrees(theta))
-
-    def circle_equation(
-        self,
-        xy_data: tuple[np.ndarray, np.ndarray],
-        x_center: float,
-        z_center: float,
-        radius: float,
-    ) -> np.ndarray:
-        """Return the residuals of the circle equation
-        used in fitting.
-
-        Parameters
-        ----------
-        xy_data : tuple(ndarray, ndarray)
-            (x_data, y_data) coordinate arrays.
-        x_center : float
-            Circle center x.
-        z_center : float
-            Circle center z.
-        radius : float
-            Circle radius.
-
-        Returns
-        -------
-        ndarray
-            Residuals sqrt((x-xc)^2+(z-zc)^2) - R.
-        """
-        x_data, y_data = xy_data
-        return np.sqrt((x_data - x_center) ** 2 + (y_data - z_center) ** 2) - radius
 
     def predict_contact_angle(
         self,
@@ -324,15 +286,9 @@ class ContactAngleSlicing:
                 continue
             x_data = surf_line[:, 0]
             y_data = surf_line[:, 1]
-            mean_rr = float(np.mean(rr[:, 0])) if rr.size else self.max_dist / 2
-            initial_guess = [
-                self.liquid_geom_center[0],
-                self.liquid_geom_center[2],
-                mean_rr,
-            ]
             try:
-                popt = self.fit_circle(x_data, y_data, initial_guess)
-            except Exception:
+                popt = self.fit_circle(x_data, y_data)
+            except (np.linalg.LinAlgError, ValueError):
                 continue
             angle = self.find_intersection(popt, min_drop)
             if angle is None:

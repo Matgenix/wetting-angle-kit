@@ -6,10 +6,12 @@ import numpy as np
 class BaseParser(ABC):
     """Abstract interface for trajectory parsers consumed by analyzers.
 
-    Subclasses must implement :meth:`parse` and :meth:`frame_count`. The
-    geometric helpers (:meth:`box_size_x`, :meth:`box_size_y`,
-    :meth:`box_length_max`) raise ``NotImplementedError`` by default and
-    can be overridden where the underlying format exposes that information.
+    Subclasses must implement :meth:`parse`, :meth:`frame_count`, and the
+    cell-geometry helpers :meth:`box_size_x`, :meth:`box_size_y`, and
+    :meth:`box_length_max`. The cell helpers are abstract because the
+    analyzers rely on per-frame box information (PBC-aware droplet
+    recentering, default sampling extent); a parser without it would
+    silently degrade their accuracy.
     """
 
     @abstractmethod
@@ -42,35 +44,17 @@ class BaseParser(ABC):
     def frame_count(self) -> int:
         """Return the total number of frames in the trajectory."""
 
-    def frame_tot(self) -> int:
-        """Return the total number of frames available. (Legacy name)."""
-        import warnings
-
-        warnings.warn(
-            "frame_tot is deprecated, use frame_count instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        return self.frame_count()
-
+    @abstractmethod
     def box_size_x(self, frame_index: int) -> float:
-        """Return the x-dimension of the simulation box for a frame.
+        """Return the length of the first lattice vector for a frame."""
 
-        Override in subclasses where the underlying format exposes it.
-        """
-        raise NotImplementedError("box_size_x not implemented for this parser.")
-
+    @abstractmethod
     def box_size_y(self, frame_index: int) -> float:
-        """Return the y-dimension of the simulation box for a frame.
+        """Return the length of the second lattice vector for a frame."""
 
-        Override in subclasses where the underlying format exposes it.
-        """
-        raise NotImplementedError("box_size_y not implemented for this parser.")
-
+    @abstractmethod
     def box_length_max(self, frame_index: int) -> float:
         """Return the maximum lattice vector length for a frame.
-
-        Override in subclasses where the underlying format exposes it.
 
         Parameters
         ----------
@@ -82,4 +66,3 @@ class BaseParser(ABC):
         float
             Max ``|a_i|`` over lattice vectors.
         """
-        raise NotImplementedError("box_length_max not implemented for this parser.")

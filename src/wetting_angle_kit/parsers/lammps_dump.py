@@ -161,7 +161,7 @@ class LammpsDumpWallParser(BaseParser):
         pipeline = import_file(self.filepath)
         pipeline.modifiers.append(
             SelectTypeModifier(
-                property="Particle Type", types=self.liquid_particle_types
+                property="Particle Type", types=set(self.liquid_particle_types)
             )
         )
         pipeline.modifiers.append(DeleteSelectedModifier())
@@ -266,9 +266,8 @@ class LammpsDumpWaterFinder:
     def __init__(
         self,
         filepath: str,
-        particle_type_wall: set,
-        oxygen_type: int = 3,
-        hydrogen_type: int = 2,
+        oxygen_type: int,
+        hydrogen_type: int,
         oh_cutoff: float = 1.2,
     ):
         """
@@ -276,18 +275,16 @@ class LammpsDumpWaterFinder:
         ----------
         filepath : str
             Path to LAMMPS dump file.
-        particle_type_wall : set
-            Particle type IDs corresponding to wall atoms (reserved for future
-            filtering).
-        oxygen_type : int, default 3
-            LAMMPS particle type ID for oxygen atoms.
-        hydrogen_type : int, default 2
-            LAMMPS particle type ID for hydrogen atoms.
+        oxygen_type : int
+            LAMMPS particle type ID for oxygen atoms (required; LAMMPS
+            type numbering is system-specific so there is no safe default).
+        hydrogen_type : int
+            LAMMPS particle type ID for hydrogen atoms (required; LAMMPS
+            type numbering is system-specific so there is no safe default).
         oh_cutoff : float, default 1.2
             O-H distance cutoff (Å) for water molecule detection.
         """
         self.filepath = filepath
-        self.particle_type_wall = particle_type_wall
         self.oxygen_type = oxygen_type
         self.hydrogen_type = hydrogen_type
         self.oh_cutoff = oh_cutoff
@@ -302,6 +299,10 @@ class LammpsDumpWaterFinder:
         """
         try:
             from ovito.io import import_file
+
+            # OVITO's type stubs omit ``CoordinationAnalysisModifier`` even
+            # though it exists at runtime; silence the spurious attr-defined
+            # error rather than blanket-ignoring the whole import block.
             from ovito.modifiers import (
                 ComputePropertyModifier,
                 CoordinationAnalysisModifier,

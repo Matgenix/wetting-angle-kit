@@ -28,7 +28,7 @@ The visualization workflow involves the following steps:
        LammpsDumpWaterFinder,
        LammpsDumpWallParser,
    )
-   from wetting_angle_kit.analysis.slicing import ContactAngleSlicing
+   from wetting_angle_kit.analysis.slicing import SlicingFrameFitter
    from wetting_angle_kit.visualization import DropletSlicePlotter
 
 ----
@@ -78,17 +78,16 @@ The visualization workflow involves the following steps:
 
 .. code-block:: python
 
-   processor = ContactAngleSlicing(
+   processor = SlicingFrameFitter(
        liquid_coordinates=oxygen_position,
        liquid_geom_center=np.mean(oxygen_position, axis=0),
        droplet_geometry="cylinder_y",
        delta_cylinder=5,
        max_dist=100,
-       width_cylinder=21,
    )
 
-   list_alfas, array_surfaces, array_popt = processor.predict_contact_angle()
-   print("Mean contact angles (°):", list_alfas)
+   list_angles, array_surfaces, array_popt = processor.predict_contact_angle()
+   print("Mean contact angles (°):", list_angles)
 
 ----
 
@@ -97,21 +96,23 @@ The visualization workflow involves the following steps:
 
 .. code-block:: python
 
-   plotter = DropletSlicePlotter(center=True, show_wall=True, molecule_view=True)
+   plotter = DropletSlicePlotter(center=True)
 
-   plotter.plot_surface_points(
+   # ``predict_contact_angle`` returns three parallel lists (one entry per
+   # slice that produced a usable angle); pick a single index across all
+   # three so the overlay refers to one and the same slice.
+   slice_idx = 0
+   fig = plotter.plot_surface_points(
        oxygen_position=oxygen_position,
-       surface_data=array_surfaces,
-       popt=array_popt[0],
+       surface_data=[array_surfaces[slice_idx]],
+       popt=array_popt[slice_idx],
        wall_coords=wall_coords,
-       output_filename="droplet_plot.png",
-       alpha=list_alfas[0],
+       alpha=list_angles[slice_idx],
    )
 
-   print(" Plot saved as 'droplet_plot.png'")
+   # Interactive view in a notebook
+   fig.show()
 
-Outputs
--------
-
-.. image:: ../../images/droplet_plot.png
-   :alt: Droplet slicing method visualization
+   # Or save a standalone HTML page
+   fig.write_html("droplet_plot.html")
+   print("Plot saved as 'droplet_plot.html'")

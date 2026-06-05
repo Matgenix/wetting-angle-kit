@@ -1,8 +1,8 @@
 [project]
 name = "wetting-angle-kit"
-description = "A Python library to parse MD trajectories from LAMMPS and ASE and measure the contact through different methods"
+description = "A Python library to parse MD trajectories from LAMMPS and ASE and measure the contact angle through different methods"
 authors = [
-    { name = "Gabriel", email = "gabriel.taillandier@matgenix.com" },
+    { name = "Gabriel Taillandier", email = "gabriel.taillandier@matgenix.com" },
     { name = "Matgenix", email = "info@matgenix.com" },
 ]
 license = "BSD-3-Clause"
@@ -21,7 +21,8 @@ dependencies = [
     "numpy>=1.26.0",
     "scipy>=1.13.0",
     "matplotlib>=3.9.0",
-    "plotly>=5.24.1"
+    "plotly>=5.24.1",
+    "tqdm>=4.66.0"
 ]
 
 [project.optional-dependencies]
@@ -57,6 +58,7 @@ all = ["ase>=3.23.0", "ovito~=3.11.3", "ipython>=8.0.0"]
 
 [project.urls]
 "Homepage" = "https://github.com/Matgenix/wetting-angle-kit"
+"Source" = "https://github.com/Matgenix/wetting-angle-kit"
 "Bug Tracker" = "https://github.com/Matgenix/wetting-angle-kit/issues"
 "Documentation" = "https://matgenix.github.io/wetting-angle-kit"
 
@@ -89,31 +91,38 @@ multi_line_output = 3
 
 [tool.mypy]
 python_version = "3.10"
+strict = true
 # NumPy reductions (np.mean, etc.) and ASE attributes (frame.positions) are
 # typed as Any in their stubs, so functions returning them legitimately trip
-# no-any-return.  Re-enable if/when those returns are wrapped in np.asarray()
-# or cast(np.ndarray, ...).
+# no-any-return under ``strict``. Re-enable if/when those returns are wrapped
+# in ``np.asarray`` or ``cast(np.ndarray, ...)``.
 warn_return_any = false
-warn_unused_configs = true
-disallow_untyped_defs = true
-disallow_incomplete_defs = true
+# NumPy's ndarray accepts shape and dtype generic parameters that almost no
+# call-site is prepared to specify (``np.ndarray[Any, np.dtype[Any]]`` is the
+# closest equivalent of a bare ``np.ndarray`` annotation). Disabling
+# disallow_any_generics keeps the rest of ``strict`` active while letting
+# arrays continue to be annotated as ``np.ndarray``. Reach for
+# ``numpy.typing.NDArray`` (or ``cast``) at the boundaries where a more
+# precise type would genuinely help readers.
+disallow_any_generics = false
 
-# scipy, mpl_toolkits and plotly have no stubs installed.  Disable only
+# scipy, mpl_toolkits and plotly have no stubs installed. Disable only
 # import-untyped (module exists but lacks py.typed / stubs); import-not-found
 # (module doesn't exist at all — catches typos and removed dependencies) stays
 # active.
 disable_error_code = ["import-untyped"]
 
 [[tool.mypy.overrides]]
-# ASE's ase.io.read() is typed as Union[Atom, Atoms]; all call-sites in
-# parsers/ase.py receive Atoms in practice, so suppress only the union-attr
-# cascade rather than silencing the entire file.
+# ASE's ase.io.read(index=":") is typed as Union[Atoms, list[Atoms]] even
+# though it always returns a list when ``index=":"``; suppress only the
+# resulting union-attr / arg-type cascade in parsers/ase.py rather than
+# silencing the whole module. ``no-untyped-call`` covers ase.neighborlist's
+# NeighborList API, which has no inline type information in current stubs.
 module = ["ase.*", "wetting_angle_kit.parsers.ase"]
-disable_error_code = ["union-attr"]
+disable_error_code = ["union-attr", "arg-type", "no-untyped-call"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["."]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"

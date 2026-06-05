@@ -43,16 +43,14 @@ def water_xyz(tmp_path):
 
 
 def test_xyz_water_finder_identifies_oxygens(water_xyz):
-    finder = XYZWaterFinder(
-        water_xyz, particle_type_wall=["C"], oxygen_type="O", hydrogen_type="H"
-    )
+    finder = XYZWaterFinder(water_xyz, oxygen_type="O", hydrogen_type="H")
     indices = finder.get_water_oxygen_indices(0)
     # Two oxygens are at indices 0 and 3 in the input order.
     assert sorted(indices.tolist()) == [0, 3]
 
 
 def test_xyz_water_finder_positions(water_xyz):
-    finder = XYZWaterFinder(water_xyz, particle_type_wall=["C"])
+    finder = XYZWaterFinder(water_xyz)
     positions = finder.get_water_oxygen_positions(0)
     assert positions.shape == (2, 3)
     # Centers of the two waters.
@@ -66,27 +64,27 @@ def test_xyz_water_finder_no_water_returns_empty(tmp_path):
         '1\nLattice="10.0 0.0 0.0 0.0 10.0 0.0 0.0 0.0 10.0" '
         "Properties=species:S:1:pos:R:3\nO 0.0 0.0 0.0\n"
     )
-    finder = XYZWaterFinder(str(p), particle_type_wall=["C"])
+    finder = XYZWaterFinder(str(p))
     positions = finder.get_water_oxygen_positions(0)
     assert positions.shape == (0, 3)
 
 
 def test_xyz_water_finder_parse_filters_liquid(water_xyz):
-    finder = XYZWaterFinder(water_xyz, particle_type_wall=["C"])
+    finder = XYZWaterFinder(water_xyz)
     positions = finder.parse(["O", "H"], 0)
     # Six liquid atoms (2 O + 4 H), wall (C) excluded.
     assert positions.shape == (6, 3)
 
 
 def test_xyz_water_finder_box_length_max(water_xyz):
-    finder = XYZWaterFinder(water_xyz, particle_type_wall=["C"])
+    finder = XYZWaterFinder(water_xyz)
     assert finder.box_length_max(0) == pytest.approx(20.0)
 
 
 def test_xyz_water_finder_box_length_max_without_lattice_raises(tmp_path):
     p = tmp_path / "no_lattice.xyz"
     _write_water_xyz(p, with_lattice=False)
-    finder = XYZWaterFinder(str(p), particle_type_wall=["C"])
+    finder = XYZWaterFinder(str(p))
     with pytest.raises(ValueError, match="No Lattice="):
         finder.box_length_max(0)
 
@@ -117,7 +115,6 @@ def water_extxyz(tmp_path):
 def test_ase_water_finder_identifies_oxygens(water_extxyz):
     finder = AseWaterFinder(
         water_extxyz,
-        particle_type_wall=["C"],
         oxygen_type="O",
         hydrogen_type="H",
     )
@@ -126,7 +123,7 @@ def test_ase_water_finder_identifies_oxygens(water_extxyz):
 
 
 def test_ase_water_finder_positions(water_extxyz):
-    finder = AseWaterFinder(water_extxyz, particle_type_wall=["C"])
+    finder = AseWaterFinder(water_extxyz)
     positions = finder.get_water_oxygen_positions(0)
     assert positions.shape == (2, 3)
 
