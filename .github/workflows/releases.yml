@@ -7,8 +7,8 @@ on:
 
 env:
   PUBLISH_UPDATE_BRANCH: main
-  GIT_USER_NAME: Matgenix
-  GIT_USER_EMAIL: "dev@matgenix.com"
+  GIT_USER_NAME: gtaillandier
+  GIT_USER_EMAIL: "gabrieltaillandier@gmail.com"
 
 jobs:
 
@@ -89,12 +89,12 @@ jobs:
     - name: Build source distribution
       run: python -m build
 
-    - name: Publish package to Test PyPI first
-      uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        user: __token__
-        password: ${{ secrets.TEST_PYPI_PASSWORD }}
-        repository-url: https://test.pypi.org/legacy/
+    #- name: Publish package to Test PyPI first
+    #  uses: pypa/gh-action-pypi-publish@release/v1
+    #  with:
+    #    user: __token__
+    #    password: ${{ secrets.TEST_PYPI_PASSWORD }}
+    #    repository-url: https://test.pypi.org/legacy/
 
     - name: Publish package to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
