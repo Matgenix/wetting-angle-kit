@@ -88,6 +88,8 @@ class SlicingTrajectoryPlotter(BaseTrajectoryPlotter):
         stat: str = "median",
         per_frame_std: bool = True,
         running_mean: bool = True,
+        timestep: float | None = None,
+        time_unit: str | None = None,
         save_path: str | None = None,
     ) -> go.Figure:
         """Plot per-frame contact angle as a function of time.
@@ -105,6 +107,16 @@ class SlicingTrajectoryPlotter(BaseTrajectoryPlotter):
             central tendency as a dashed line, plus a transparent ±σ band
             of that cumulative series — shows how the time-averaged contact
             angle converges as more frames are accumulated.
+        timestep : float, optional
+            Time between two consecutive frames *in the trajectory file*
+            (i.e. dump interval × MD integration timestep). Applied
+            uniformly to all trajectories, overriding the per-trajectory
+            ``time_steps`` passed at construction. This is **not** the MD
+            integration timestep — it is the spacing between frames as
+            they appear in the dump.
+        time_unit : str, optional
+            Override for the x-axis time unit label. Defaults to the
+            ``time_unit`` passed at construction.
         save_path : str, optional
             If provided, write the figure as standalone HTML.
 
@@ -121,9 +133,11 @@ class SlicingTrajectoryPlotter(BaseTrajectoryPlotter):
         palette = pc.qualitative.Plotly
         band_traces: list[go.Scatter] = []
         line_traces: list[go.Scatter] = []
-        for idx, (label, result, dt) in enumerate(
+        effective_unit = time_unit if time_unit is not None else self.time_unit
+        for idx, (label, result, default_dt) in enumerate(
             zip(self.labels, self.results, self.time_steps, strict=False)
         ):
+            dt = timestep if timestep is not None else default_dt
             color = palette[idx % len(palette)]
             band_color = _hex_to_rgba(color, 0.2)
             times = np.array(result.frames) * dt
@@ -192,7 +206,7 @@ class SlicingTrajectoryPlotter(BaseTrajectoryPlotter):
             fig.add_trace(trace)
         fig.update_layout(
             title=f"Contact angle evolution ({stat})",
-            xaxis_title=f"Time ({self.time_unit})",
+            xaxis_title=f"Time ({effective_unit})",
             yaxis_title="Contact angle (°)",
             template="plotly_white",
         )
