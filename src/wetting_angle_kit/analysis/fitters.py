@@ -355,6 +355,66 @@ class _SlicingFitter(SurfaceFitter):
         )
 
 
+def _kasa_sphere_fit_3d(
+    x: np.ndarray, y: np.ndarray, z: np.ndarray
+) -> tuple[float, float, float, float]:
+    """Algebraic (Kasa) least-squares sphere fit in 3D.
+
+    Linearises ``(x - xc)^2 + (y - yc)^2 + (z - zc)^2 = R^2`` into
+    ``2 xc x + 2 yc y + 2 zc z + c = x^2 + y^2 + z^2`` with
+    ``c = R^2 - xc^2 - yc^2 - zc^2`` and solves with
+    :func:`numpy.linalg.lstsq`.
+
+    Returns ``(xc, yc, zc, R)``.
+
+    Raises
+    ------
+    np.linalg.LinAlgError
+        If the input points are co-planar (rank-deficient system).
+    ValueError
+        If the algebraic solution gives a non-positive ``R^2``.
+    """
+    x = np.asarray(x, dtype=float)
+    y = np.asarray(y, dtype=float)
+    z = np.asarray(z, dtype=float)
+    a_matrix = np.column_stack((2.0 * x, 2.0 * y, 2.0 * z, np.ones_like(x)))
+    rhs = x * x + y * y + z * z
+    sol, _, _, _ = np.linalg.lstsq(a_matrix, rhs, rcond=None)
+    xc, yc, zc, c = (float(sol[0]), float(sol[1]), float(sol[2]), float(sol[3]))
+    r_sq = c + xc * xc + yc * yc + zc * zc
+    if r_sq <= 0.0:
+        raise ValueError(
+            f"Algebraic sphere fit produced non-positive R^2 ({r_sq:.3g}); "
+            "the points are likely degenerate."
+        )
+    return xc, yc, zc, float(np.sqrt(r_sq))
+
+
+def _whole_fit_one(
+    points: np.ndarray, *, spherical: bool
+) -> tuple[np.ndarray, float, float]:
+    """Fit a sphere (spherical=True) or cylinder (spherical=False) to ``points``.
+
+    Returns ``(popt_no_wall, R, zc)`` where ``popt_no_wall`` is
+    ``[xc, yc, zc, R]`` for spherical or ``[xc, zc, R]`` for cylinder.
+    The cylinder fit drops the ``y`` column and fits a 2D circle in
+    ``(x, z)``.
+    """
+    if spherical:
+        xc, yc, zc, R = _kasa_sphere_fit_3d(points[:, 0], points[:, 1], points[:, 2])
+        return np.array([xc, yc, zc, R]), R, zc
+    xc, zc, R = _kasa_circle_fit_2d(points[:, 0], points[:, 2])
+    return np.array([xc, zc, R]), R, zc
+
+
+def _angle_from_cap(z_wall: float, zc: float, R: float) -> float | None:
+    """Contact angle from ``cos θ = (z_wall - zc) / R`` or None if no intersection."""
+    delta_z = z_wall - zc
+    if abs(delta_z) >= R:
+        return None
+    return float(np.degrees(np.arccos(delta_z / R)))
+
+
 @dataclass(frozen=True, eq=False, kw_only=True)
 class _WholeFitter(SurfaceFitter):
     """Concrete fitter for :meth:`SurfaceFitter.whole`."""
@@ -382,4 +442,90 @@ class _WholeFitter(SurfaceFitter):
         z_wall: float,
         droplet_geometry: DropletGeometry,
     ) -> WholeFitOutput:
-        raise NotImplementedError("whole surface fit not implemented in skeleton.")
+        if not isinstance(interface_data, np.ndarray):
+            raise TypeError(
+                "whole fitter expects an (N, 3) ndarray shell; "
+                f"got {type(interface_data).__name__}."
+            )
+        if interface_data.ndim != 2 or interface_data.shape[1] != 3:
+            raise ValueError(
+                "whole fitter expects an (N, 3) ndarray shell; "
+                f"got shape {interface_data.shape}."
+            )
+
+        z_filter = z_wall + self.surface_filter_offset
+        kept = interface_data[interface_data[:, 2] > z_filter]
+        spherical = droplet_geometry.is_spherical
+        # Minimum points: 4 for a 3D sphere, 3 for a 2D circle.
+        min_points = 4 if spherical else 3
+        if len(kept) < min_points:
+            raise RuntimeError(
+                f"whole fit: only {len(kept)} shell points above "
+                f"z_wall + surface_filter_offset = {z_filter:.3f} Å; "
+                f"need at least {min_points} for the "
+                f"{'sphere' if spherical else 'cylinder'} fit."
+            )
+
+        try:
+            popt_shape, radius, zc = _whole_fit_one(kept, spherical=spherical)
+        except (np.linalg.LinAlgError, ValueError) as e:
+            raise RuntimeError(f"whole fit: geometric fit failed: {e}") from e
+
+        angle = _angle_from_cap(z_wall, zc, radius)
+        if angle is None:
+            raise RuntimeError(
+                f"whole fit: fitted shape (R={radius:.3f}, zc={zc:.3f}) "
+                f"does not intersect wall plane z={z_wall:.3f}."
+            )
+
+        # Per-point residuals: distance to the fitted shape, in Å.
+        if spherical:
+            xc, yc, zc_fit, R_fit = popt_shape
+            point_radius = np.sqrt(
+                (kept[:, 0] - xc) ** 2
+                + (kept[:, 1] - yc) ** 2
+                + (kept[:, 2] - zc_fit) ** 2
+            )
+        else:
+            xc, zc_fit, R_fit = popt_shape
+            point_radius = np.hypot(kept[:, 0] - xc, kept[:, 2] - zc_fit)
+        rms = float(np.sqrt(np.mean((point_radius - R_fit) ** 2)))
+
+        angle_std = self._bootstrap_angle_std(kept, z_wall, spherical=spherical)
+
+        # Pack popt with the wall position appended for plotting /
+        # downstream reproduction. Spherical: [xc, yc, zc, R, z_wall].
+        # Cylinder: [xc, zc, R, z_wall].
+        popt = np.concatenate([popt_shape, [z_wall]])
+
+        return WholeFitOutput(
+            angle=angle,
+            z_wall=z_wall,
+            rms_residual=rms,
+            angle_std=angle_std,
+            interface_shell=kept,
+            popt=popt,
+        )
+
+    def _bootstrap_angle_std(
+        self, kept: np.ndarray, z_wall: float, *, spherical: bool
+    ) -> float | None:
+        if self.bootstrap_samples <= 0:
+            return None
+        # Deterministic seed so result is reproducible per (analyzer, batch).
+        rng = np.random.default_rng(0)
+        n = len(kept)
+        bootstrap_angles: list[float] = []
+        for _ in range(self.bootstrap_samples):
+            idx = rng.integers(0, n, n)
+            sample = kept[idx]
+            try:
+                _, b_R, b_zc = _whole_fit_one(sample, spherical=spherical)
+            except (np.linalg.LinAlgError, ValueError):
+                continue
+            a = _angle_from_cap(z_wall, b_zc, b_R)
+            if a is not None:
+                bootstrap_angles.append(a)
+        if not bootstrap_angles:
+            return None
+        return float(np.std(bootstrap_angles))
