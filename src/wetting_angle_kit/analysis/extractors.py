@@ -732,6 +732,139 @@ def _extract_isocontour_2d(
     return np.column_stack([r_phys, z_phys])
 
 
+def _build_3d_density_grid(
+    liquid_coordinates: np.ndarray,
+    center_geom: np.ndarray,
+    grid_params: dict[str, Any],
+    *,
+    smooth_sigma: float | None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """Build a 3D density grid centered laterally on the droplet COM.
+
+    The ``(x, y)`` coordinates are recentered on ``(center_geom[0],
+    center_geom[1])`` so the user can specify symmetric grid bounds
+    (e.g. ``xi_0 = -30, xi_f = 30``) regardless of where the droplet
+    sits in the box after PBC recentering. ``z`` stays in the lab
+    frame so the wall position retains physical meaning.
+
+    Returns ``(x_centers, y_centers, z_centers, density)`` with
+    ``density.shape == (n_x_cells, n_y_cells, n_z_cells)``.
+    """
+    x_edges = np.linspace(
+        float(grid_params["xi_0"]),
+        float(grid_params["xi_f"]),
+        int(grid_params["nbins_xi"]),
+    )
+    y_edges = np.linspace(
+        float(grid_params["yi_0"]),
+        float(grid_params["yi_f"]),
+        int(grid_params["nbins_yi"]),
+    )
+    z_edges = np.linspace(
+        float(grid_params["zi_0"]),
+        float(grid_params["zi_f"]),
+        int(grid_params["nbins_zi"]),
+    )
+
+    atoms_centered = liquid_coordinates - np.array(
+        [center_geom[0], center_geom[1], 0.0]
+    )
+    counts, _ = np.histogramdd(atoms_centered, bins=(x_edges, y_edges, z_edges))
+    dx = float(x_edges[1] - x_edges[0])
+    dy = float(y_edges[1] - y_edges[0])
+    dz = float(z_edges[1] - z_edges[0])
+    x_centers = 0.5 * (x_edges[:-1] + x_edges[1:])
+    y_centers = 0.5 * (y_edges[:-1] + y_edges[1:])
+    z_centers = 0.5 * (z_edges[:-1] + z_edges[1:])
+    density = counts / (dx * dy * dz)
+
+    if smooth_sigma is not None and smooth_sigma > 0.0:
+        from scipy.ndimage import gaussian_filter
+
+        sigma_cells = (
+            smooth_sigma / dx,
+            smooth_sigma / dy,
+            smooth_sigma / dz,
+        )
+        density = gaussian_filter(density, sigma=sigma_cells)
+    return x_centers, y_centers, z_centers, density
+
+
+def _extract_isosurface_3d(
+    x_centers: np.ndarray,
+    y_centers: np.ndarray,
+    z_centers: np.ndarray,
+    density: np.ndarray,
+    center_geom: np.ndarray,
+    *,
+    fraction_of_bulk: float = 0.5,
+    bulk_percentile: float = 95.0,
+) -> np.ndarray:
+    """Run marching cubes and return ``(N, 3)`` shell points in the internal frame.
+
+    The shell is shifted back by ``(center_geom[0], center_geom[1], 0)``
+    so its coordinates match the convention used by the rays-whole
+    extractor: absolute internal-frame positions, not droplet-centered.
+    """
+    from skimage.measure import marching_cubes
+
+    if density.size == 0 or float(density.max()) <= 0:
+        return np.empty((0, 3))
+    bulk = float(np.percentile(density, bulk_percentile))
+    if bulk <= 0:
+        return np.empty((0, 3))
+    level = fraction_of_bulk * bulk
+    try:
+        # ``no-untyped-call`` fires when scikit-image is not installed
+        # in the type-check env; ``unused-ignore`` keeps the comment
+        # tolerant when it is.
+        verts, _faces, _normals, _values = marching_cubes(  # type: ignore[no-untyped-call,unused-ignore]
+            density, level
+        )
+    except (RuntimeError, ValueError):
+        return np.empty((0, 3))
+
+    dx = float(x_centers[-1] - x_centers[0]) / max(len(x_centers) - 1, 1)
+    dy = float(y_centers[-1] - y_centers[0]) / max(len(y_centers) - 1, 1)
+    dz = float(z_centers[-1] - z_centers[0]) / max(len(z_centers) - 1, 1)
+    x_phys = float(x_centers[0]) + dx * verts[:, 0] + float(center_geom[0])
+    y_phys = float(y_centers[0]) + dy * verts[:, 1] + float(center_geom[1])
+    z_phys = float(z_centers[0]) + dz * verts[:, 2]
+    return np.column_stack([x_phys, y_phys, z_phys])
+
+
+def _extract_grid_whole(
+    *,
+    liquid_coordinates: np.ndarray,
+    center_geom: np.ndarray,
+    droplet_geometry: DropletGeometry,
+    grid_params: dict[str, Any],
+    smooth_sigma: float | None,
+) -> np.ndarray:
+    """Build a 3D density grid + marching-cubes shell for whole-kind grid extractors.
+
+    Currently spherical only — for cylindrical droplets the cylinder
+    axis would need to span the full simulation box, which the
+    centered-grid convention doesn't accommodate naturally. Use a
+    ``rays_*`` extractor for cylinder whole-fits.
+    """
+    if droplet_geometry.is_cylinder:
+        raise NotImplementedError(
+            "grid + whole-kind extraction is currently spherical-only. "
+            "For cylinder droplets use InterfaceExtractor.rays_gaussian "
+            "or rays_binning with surface_kind='whole'."
+        )
+    x_centers, y_centers, z_centers, density = _build_3d_density_grid(
+        liquid_coordinates,
+        center_geom,
+        grid_params,
+        smooth_sigma=smooth_sigma,
+    )
+    return _extract_isosurface_3d(
+        x_centers, y_centers, z_centers, density, center_geom=center_geom
+    )
+
+
 def _extract_grid_slicing(
     *,
     liquid_coordinates: np.ndarray,
@@ -785,12 +918,15 @@ class _GridGaussianExtractor(InterfaceExtractor):
         max_dist: float,
         surface_kind: SurfaceKind,
     ) -> InterfaceData:
-        if surface_kind != "slicing":
-            raise NotImplementedError(
-                "grid_gaussian whole-kind extraction (3D grid + marching "
-                "cubes) lands in Phase 8."
+        if surface_kind == "slicing":
+            return _extract_grid_slicing(
+                liquid_coordinates=liquid_coordinates,
+                center_geom=center_geom,
+                droplet_geometry=droplet_geometry,
+                grid_params=self.grid_params,
+                smooth_sigma=self.density_sigma,
             )
-        return _extract_grid_slicing(
+        return _extract_grid_whole(
             liquid_coordinates=liquid_coordinates,
             center_geom=center_geom,
             droplet_geometry=droplet_geometry,
@@ -826,12 +962,15 @@ class _GridBinningExtractor(InterfaceExtractor):
         max_dist: float,
         surface_kind: SurfaceKind,
     ) -> InterfaceData:
-        if surface_kind != "slicing":
-            raise NotImplementedError(
-                "grid_binning whole-kind extraction (3D grid + marching "
-                "cubes) lands in Phase 8."
+        if surface_kind == "slicing":
+            return _extract_grid_slicing(
+                liquid_coordinates=liquid_coordinates,
+                center_geom=center_geom,
+                droplet_geometry=droplet_geometry,
+                grid_params=self.grid_params,
+                smooth_sigma=None,
             )
-        return _extract_grid_slicing(
+        return _extract_grid_whole(
             liquid_coordinates=liquid_coordinates,
             center_geom=center_geom,
             droplet_geometry=droplet_geometry,
