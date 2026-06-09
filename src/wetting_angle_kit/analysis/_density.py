@@ -6,13 +6,32 @@ and the new ``rays_gaussian`` / ``rays_binning`` extractors that fit
 a hyperbolic-tangent profile to the density along a ray.
 
 :class:`GaussianDensityField` wraps a ``cKDTree`` over the atom cloud
-plus the kernel-width parameters. :func:`fit_tanh_profiles_batched`
-solves the per-ray tanh fit for an entire slice in one batched
-Gauss–Newton call.
+plus the kernel-width parameters. :class:`HistogramDensityField` is
+the equivalent for the histogram-style estimator used by
+``rays_binning``. Both expose the same ``evaluate(positions)`` method
+so the ray-fan geometry helpers in
+:mod:`wetting_angle_kit.analysis.extractors` can take either one.
+:func:`fit_tanh_profiles_batched` solves the per-ray tanh fit for an
+entire slice in one batched Gauss–Newton call.
 """
+
+from typing import Protocol
 
 import numpy as np
 from scipy.spatial import cKDTree
+
+
+class DensityFieldProtocol(Protocol):
+    """Density field used by the ray-fan extractors.
+
+    Any object exposing :meth:`evaluate` mapping ``(M, 3)`` sample
+    positions to an ``(M,)`` density array satisfies the protocol;
+    both :class:`GaussianDensityField` and :class:`HistogramDensityField`
+    are concrete implementations.
+    """
+
+    def evaluate(self, positions: np.ndarray) -> np.ndarray: ...
+
 
 #: Minimum number of sampling points along each ray. Below this the
 #: tanh profile fit becomes numerically unreliable.
@@ -94,6 +113,70 @@ class GaussianDensityField:
             return np.zeros(n_samples)
         contribs = prefactor * np.exp(-(pairs["v"] ** 2) / (2.0 * sigma2))
         return np.bincount(pairs["i"], weights=contribs, minlength=n_samples)
+
+
+class HistogramDensityField:
+    """Top-hat (histogram-style) density evaluator over a fixed atom cloud.
+
+    The natural counterpart of :class:`GaussianDensityField` for the
+    ``rays_binning`` extractor. Conceptually a 1D histogram of atoms
+    projected onto each ray, implemented as a 3D top-hat kernel:
+    each sample position counts atoms within a sphere of radius
+    ``bin_width / 2`` and divides by the sphere's volume. This shares
+    the ``cKDTree.sparse_distance_matrix`` machinery used by the
+    Gaussian field and exposes the same ``evaluate`` interface so the
+    ray-fan geometry helpers in :mod:`wetting_angle_kit.analysis.extractors`
+    can take either field.
+
+    Parameters
+    ----------
+    atom_coords : ndarray, shape (N, 3)
+        Atom positions used as the density sources.
+    bin_width : float
+        Diameter (Å) of the top-hat kernel — i.e. atoms within
+        ``bin_width / 2`` of a sample position count, atoms outside
+        do not. The natural analogue of ``density_sigma`` in the
+        Gaussian field, but with a hard cutoff instead of a smooth
+        fall-off.
+    """
+
+    def __init__(self, atom_coords: np.ndarray, bin_width: float) -> None:
+        if bin_width <= 0.0:
+            raise ValueError(f"bin_width must be positive; got {bin_width!r}.")
+        self.bin_width = bin_width
+        self._radius = bin_width / 2.0
+        self._volume = (4.0 / 3.0) * np.pi * self._radius**3
+        self._atom_tree: cKDTree | None = (
+            cKDTree(atom_coords) if len(atom_coords) > 0 else None
+        )
+
+    def evaluate(self, positions: np.ndarray) -> np.ndarray:
+        """Return per-sample atom-count density.
+
+        For each sample position, counts the atoms inside a sphere of
+        radius ``bin_width / 2`` and divides by that sphere's volume.
+
+        Parameters
+        ----------
+        positions : ndarray, shape (M, 3)
+            Sample coordinates.
+
+        Returns
+        -------
+        ndarray, shape (M,)
+            Density values (atoms / Å³) at each sample position.
+        """
+        n_samples = len(positions)
+        if self._atom_tree is None or n_samples == 0:
+            return np.zeros(n_samples)
+        sample_tree = cKDTree(positions)
+        pairs = sample_tree.sparse_distance_matrix(
+            self._atom_tree, max_distance=self._radius, output_type="ndarray"
+        )
+        if pairs.size == 0:
+            return np.zeros(n_samples)
+        counts = np.bincount(pairs["i"], minlength=n_samples).astype(float)
+        return counts / self._volume
 
 
 def tanh_profile(z: np.ndarray, zd: float, d: float, h: float) -> np.ndarray:
