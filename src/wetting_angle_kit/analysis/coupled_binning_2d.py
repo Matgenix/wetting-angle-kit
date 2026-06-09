@@ -20,14 +20,10 @@ For per-frame analysis with separable strategies use
 :class:`TrajectoryAnalyzer` instead. For the 3D extension of this
 analyzer (relaxing the radial symmetry assumption) see
 :class:`CoupledBinning3DAnalyzer`.
-
-The algorithm body (projection → 2D histogram → tanh fit) is stubbed
-with ``NotImplementedError`` at this skeleton stage. The
-worker-pool wiring is real, so misconfigurations and per-batch
-exception handling are exercised end-to-end.
 """
 
 import logging
+import warnings
 from typing import Any, ClassVar
 
 import numpy as np
@@ -35,7 +31,9 @@ import numpy as np
 from wetting_angle_kit.analysis.base import (
     _BatchedTrajectoryAnalyzer,
     build_parser,
-    gather_batch_coords,
+)
+from wetting_angle_kit.analysis.binning.surface_definition import (
+    HyperbolicTangentModel,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (
@@ -43,8 +41,45 @@ from wetting_angle_kit.analysis.results import (
     CoupledBinning2DResults,
 )
 from wetting_angle_kit.analysis.temporal import TemporalAggregator
+from wetting_angle_kit.io_utils import project_to_profile
 
 logger = logging.getLogger(__name__)
+
+_PARAM_NAMES = ("rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2")
+
+
+def _heuristic_binning_params(parser: Any) -> dict[str, Any]:
+    """Build the legacy heuristic binning grid: 50×50 cells over a third
+    of the largest in-plane box dimension.
+    """
+    max_dist = int(
+        np.max(
+            np.array(
+                [
+                    parser.box_size_y(frame_index=0),
+                    parser.box_size_x(frame_index=0),
+                ]
+            )
+        )
+        / 3
+    )
+    warnings.warn(
+        "binning_params was not supplied; using a heuristic default "
+        f"(xi_0=0, xi_f={max_dist}, zi_0=0, zi_f={max_dist}, 50x50 bins) "
+        "derived from one third of the largest in-plane box dimension. "
+        "For accurate density fields, supply system-specific "
+        "binning_params matching your droplet size and per-frame sampling.",
+        UserWarning,
+        stacklevel=3,
+    )
+    return {
+        "xi_0": 0,
+        "xi_f": max_dist,
+        "nbins_xi": 50,
+        "zi_0": 0.0,
+        "zi_f": max_dist,
+        "nbins_zi": 50,
+    }
 
 
 class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
@@ -74,7 +109,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         Initial guess for the seven tanh-model parameters
         ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]``. Defaults to the
         values tuned for room-temperature water in the existing
-        ``HyperbolicTangentModel``.
+        :class:`HyperbolicTangentModel`.
     temporal_aggregator : TemporalAggregator, optional
         Defaults to a single fully pooled batch
         (``batch_size=-1``) — the coupled fit benefits from as much
@@ -109,8 +144,20 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             or TemporalAggregator(batch_size=-1),
             precentered=precentered,
         )
+        if binning_params is None:
+            binning_params = _heuristic_binning_params(parser)
         self.binning_params = binning_params
         self.initial_params = initial_params
+        # Cylinder dV normalisation needs the box length along the
+        # cylinder axis; read it once at construction (per legacy).
+        self.box_dimension: float | None
+        if self.droplet_geometry.is_cylinder:
+            if self.droplet_geometry.cylinder_axis == "x":
+                self.box_dimension = float(parser.box_size_x(frame_index=0))
+            else:
+                self.box_dimension = float(parser.box_size_y(frame_index=0))
+        else:
+            self.box_dimension = None
 
     # ------------------------------------------------------------------
     # _BatchedTrajectoryAnalyzer extension points.
@@ -127,6 +174,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             self.binning_params,
             self.initial_params,
             self.precentered,
+            self.box_dimension,
         )
 
     @staticmethod
@@ -134,9 +182,10 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         filename: str,
         atom_indices: np.ndarray,
         droplet_geometry: DropletGeometry,
-        binning_params: dict[str, Any] | None,
+        binning_params: dict[str, Any],
         initial_params: list[float] | None,
         precentered: bool,
+        box_dimension: float | None,
     ) -> None:
         cls = CoupledBinning2DAnalyzer
         cls._WORKER_STATE.clear()
@@ -147,6 +196,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             binning_params=binning_params,
             initial_params=initial_params,
             precentered=precentered,
+            box_dimension=box_dimension,
         )
 
     @staticmethod
@@ -157,21 +207,88 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         parser = state["parser"]
         atom_indices: np.ndarray = state["atom_indices"]
         droplet_geometry: DropletGeometry = state["droplet_geometry"]
+        binning_params: dict[str, Any] = state["binning_params"]
+        initial_params: list[float] | None = state["initial_params"]
         precentered: bool = state["precentered"]
+        box_dimension: float | None = state["box_dimension"]
         try:
-            # Pooled liquid-atom coordinates across the batch. The
-            # CoupledBinning2D algorithm then projects to (xi, zi),
-            # builds the histogram, and fits the tanh model — all
-            # currently stubbed.
-            coords, center, max_dist = gather_batch_coords(
-                parser=parser,
-                frame_indices=frame_indices,
-                atom_indices=atom_indices,
-                droplet_geometry=droplet_geometry,
-                precentered=precentered,
+            # Per-frame ``(xi, zi)`` projection, matching the legacy
+            # ``BinningBatchFitter.get_profile_coordinates`` so the
+            # joint fit sees the same projected coordinates.
+            r_chunks: list[np.ndarray] = []
+            z_chunks: list[np.ndarray] = []
+            for frame_idx in frame_indices:
+                positions = parser.parse(frame_index=frame_idx, indices=atom_indices)
+                box_size: tuple[float, float] | None = None
+                if not precentered:
+                    box_size = (
+                        parser.box_size_x(frame_index=frame_idx),
+                        parser.box_size_y(frame_index=frame_idx),
+                    )
+                r_frame, z_frame = project_to_profile(
+                    positions, droplet_geometry.name, box_size=box_size
+                )
+                r_chunks.append(r_frame)
+                z_chunks.append(z_frame)
+            r_values = np.concatenate(r_chunks) if r_chunks else np.empty(0)
+            z_values = np.concatenate(z_chunks) if z_chunks else np.empty(0)
+            n_frames = len(frame_indices)
+
+            # Build the 2D density grid + apply geometry-aware dV
+            # normalisation, mirroring ``BinningBatchFitter.binning``.
+            xi_edges = np.linspace(
+                binning_params["xi_0"],
+                binning_params["xi_f"],
+                int(binning_params["nbins_xi"]),
             )
-            raise NotImplementedError(
-                "coupled 2D-binning joint fit not implemented in skeleton."
+            zi_edges = np.linspace(
+                binning_params["zi_0"],
+                binning_params["zi_f"],
+                int(binning_params["nbins_zi"]),
+            )
+            counts, _, _ = np.histogram2d(r_values, z_values, bins=(xi_edges, zi_edges))
+            dxi = float(xi_edges[1] - xi_edges[0])
+            dzi = float(zi_edges[1] - zi_edges[0])
+            xi_cc = 0.5 * (xi_edges[:-1] + xi_edges[1:])
+            zi_cc = 0.5 * (zi_edges[:-1] + zi_edges[1:])
+            if droplet_geometry.is_cylinder:
+                assert box_dimension is not None
+                dV = 2.0 * box_dimension * dxi * dzi
+                rho_cc = counts / dV
+            else:
+                dV_per_row = 2.0 * np.pi * xi_cc * dxi * dzi
+                rho_cc = counts / dV_per_row[:, np.newaxis]
+            if n_frames > 0:
+                rho_cc /= n_frames
+
+            # Joint tanh fit. ``HyperbolicTangentModel`` expects the
+            # density and grid axes flattened in Fortran order — same
+            # as the legacy ``BinningBatchFitter.process_batch``.
+            model = HyperbolicTangentModel(initial_params=initial_params)
+            msh_zi_grid, msh_xi_grid = np.meshgrid(zi_cc, xi_cc)
+            n_flat = len(xi_cc) * len(zi_cc)
+            msh_zi = msh_zi_grid.reshape(n_flat, order="F")
+            msh_xi = msh_xi_grid.reshape(n_flat, order="F")
+            msh_rho = rho_cc.reshape(n_flat, order="F")
+            model.fit((msh_xi, msh_zi), msh_rho)
+            angle = float(model.compute_contact_angle())
+            params = model.params
+            if params is None:
+                raise RuntimeError(
+                    "HyperbolicTangentModel did not set model parameters; "
+                    "cannot build CoupledBinning2DBatchResult."
+                )
+            model_params = {
+                name: float(value)
+                for name, value in zip(_PARAM_NAMES, params, strict=False)
+            }
+            return CoupledBinning2DBatchResult(
+                frames=list(frame_indices),
+                angle=angle,
+                model_params=model_params,
+                xi_grid=xi_cc.copy(),
+                zi_grid=zi_cc.copy(),
+                density=rho_cc,
             )
         except Exception as e:
             logger.error(f"Error processing batch {frame_indices}: {e}", exc_info=True)
