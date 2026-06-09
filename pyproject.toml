@@ -131,6 +131,17 @@ disable_error_code = ["import-untyped"]
 module = ["ase.*", "wetting_angle_kit.parsers.ase"]
 disable_error_code = ["union-attr", "arg-type", "no-untyped-call"]
 
+[[tool.mypy.overrides]]
+# scikit-image is an optional dependency installed via the ``grid3d``
+# extra; the grid-based whole-kind extractors import it lazily and raise
+# a clean ImportError otherwise. Telling mypy to ignore missing imports
+# for ``skimage.*`` makes the inline ``# type: ignore[import-not-found]``
+# unnecessary AND keeps the check passing whether or not the user has
+# scikit-image in their environment — otherwise running mypy with and
+# without the extra produces flipped error states.
+module = ["skimage.*"]
+ignore_missing_imports = true
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"

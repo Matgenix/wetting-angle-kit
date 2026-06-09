@@ -35,6 +35,11 @@ from typing import Any, ClassVar, Literal
 
 import numpy as np
 
+from wetting_angle_kit.analysis._density import (
+    MIN_POINTS_PER_RAY,
+    GaussianDensityField,
+    fit_tanh_profiles_batched,
+)
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.wall import InterfaceData
 
@@ -309,6 +314,37 @@ def _validate_grid_params(
         )
 
 
+def _fibonacci_hemisphere_directions(n: int) -> np.ndarray:
+    """Equal-area Fibonacci-spiral directions on the upper hemisphere.
+
+    ``cos θ`` is uniformly spaced over ``[0, 1]`` (so the surface
+    density is uniform on the sphere) and ``φ`` is incremented by the
+    golden angle for low-discrepancy azimuthal coverage. ``i = 0``
+    sits at the horizon (``cos θ = 0``) and ``i = n - 1`` at the pole
+    (``cos θ = 1``).
+
+    Parameters
+    ----------
+    n : int
+        Number of directions.
+
+    Returns
+    -------
+    ndarray, shape (n, 3)
+        Unit direction vectors.
+    """
+    if n <= 0:
+        return np.empty((0, 3))
+    i = np.arange(n, dtype=np.float64)
+    cos_theta = i / (n - 1) if n > 1 else np.array([1.0])
+    sin_theta = np.sqrt(np.maximum(0.0, 1.0 - cos_theta * cos_theta))
+    golden_angle = np.pi * (3.0 - np.sqrt(5.0))
+    phi = (i * golden_angle) % (2.0 * np.pi)
+    return np.column_stack(
+        [sin_theta * np.cos(phi), sin_theta * np.sin(phi), cos_theta]
+    )
+
+
 def _validate_rays_params(
     *,
     name: str,
@@ -375,9 +411,149 @@ class _RaysGaussianExtractor(InterfaceExtractor):
         max_dist: float,
         surface_kind: SurfaceKind,
     ) -> InterfaceData:
-        raise NotImplementedError(
-            "rays_gaussian extraction not implemented in skeleton."
+        field = GaussianDensityField(
+            atom_coords=liquid_coordinates,
+            density_sigma=self.density_sigma,
+            cutoff_sigma=self.cutoff_sigma,
         )
+        n_samples = max(int(max_dist * self.points_per_angstrom), MIN_POINTS_PER_RAY)
+        distances = np.linspace(0.0, max_dist, n_samples)
+        if surface_kind == "slicing":
+            if droplet_geometry.is_spherical:
+                return self._slicing_spherical(field, center_geom, max_dist, distances)
+            return self._slicing_cylinder(
+                field, liquid_coordinates, center_geom, max_dist, distances
+            )
+        # surface_kind == "whole"
+        if droplet_geometry.is_spherical:
+            return self._whole_spherical(field, center_geom, max_dist, distances)
+        return self._whole_cylinder(
+            field, liquid_coordinates, center_geom, max_dist, distances
+        )
+
+    def _slicing_spherical(
+        self,
+        field: GaussianDensityField,
+        center: np.ndarray,
+        max_dist: float,
+        distances: np.ndarray,
+    ) -> list[np.ndarray]:
+        # ``n_slices = int(180 / delta_azimuthal)`` and the gammas span
+        # ``[0, 180]`` inclusive — same construction as the legacy
+        # ``SlicingFrameFitter._slice_sweep`` to preserve parity.
+        assert self.delta_azimuthal is not None
+        n_slices = int(180 / self.delta_azimuthal)
+        gammas = np.linspace(0.0, 180.0, n_slices)
+        return [
+            self._slice_in_plane(field, center, float(gamma), max_dist, distances)
+            for gamma in gammas
+        ]
+
+    def _slicing_cylinder(
+        self,
+        field: GaussianDensityField,
+        liquid_coordinates: np.ndarray,
+        center: np.ndarray,
+        max_dist: float,
+        distances: np.ndarray,
+    ) -> list[np.ndarray]:
+        assert self.delta_cylinder is not None
+        y_vals = liquid_coordinates[:, 1]
+        ys = np.arange(float(y_vals.min()), float(y_vals.max()), self.delta_cylinder)
+        slices: list[np.ndarray] = []
+        for y in ys:
+            slice_center = np.array([center[0], float(y), center[2]])
+            slices.append(
+                self._slice_in_plane(field, slice_center, 0.0, max_dist, distances)
+            )
+        return slices
+
+    def _slice_in_plane(
+        self,
+        field: GaussianDensityField,
+        center: np.ndarray,
+        gamma: float,
+        max_dist: float,
+        distances: np.ndarray,
+    ) -> np.ndarray:
+        # Per-slice (x, z) interface from a tilted ray fan. Matches
+        # the legacy ``SurfaceDefinition.analyze_lines`` body.
+        beta = np.linspace(0, 360, int(360 / self.delta_polar), endpoint=False)
+        cos_beta = np.cos(np.deg2rad(beta))
+        sin_beta = np.sin(np.deg2rad(beta))
+        cos_gamma = np.cos(np.deg2rad(gamma))
+        sin_gamma = np.sin(np.deg2rad(gamma))
+        directions = np.column_stack(
+            (cos_beta * cos_gamma, cos_beta * sin_gamma, sin_beta)
+        )
+        positions_rm = (
+            center[None, None, :] + distances[None, :, None] * directions[:, None, :]
+        )
+        density_flat = field.evaluate(positions_rm.reshape(-1, 3))
+        densities = density_flat.reshape(len(beta), len(distances))
+        interface_re = fit_tanh_profiles_batched(
+            distances, densities, max_dist=max_dist
+        )
+        x_proj = cos_beta * interface_re + center[0]
+        z_proj = sin_beta * interface_re + center[2]
+        return np.column_stack([x_proj, z_proj])
+
+    def _whole_spherical(
+        self,
+        field: GaussianDensityField,
+        center: np.ndarray,
+        max_dist: float,
+        distances: np.ndarray,
+    ) -> np.ndarray:
+        assert self.n_rays_sphere is not None
+        directions = _fibonacci_hemisphere_directions(self.n_rays_sphere)
+        positions_rm = (
+            center[None, None, :] + distances[None, :, None] * directions[:, None, :]
+        )
+        density_flat = field.evaluate(positions_rm.reshape(-1, 3))
+        densities = density_flat.reshape(len(directions), len(distances))
+        interface_re = fit_tanh_profiles_batched(
+            distances, densities, max_dist=max_dist
+        )
+        return center[None, :] + interface_re[:, None] * directions
+
+    def _whole_cylinder(
+        self,
+        field: GaussianDensityField,
+        liquid_coordinates: np.ndarray,
+        center: np.ndarray,
+        max_dist: float,
+        distances: np.ndarray,
+    ) -> np.ndarray:
+        assert self.delta_cylinder is not None
+        y_vals = liquid_coordinates[:, 1]
+        ys = np.arange(float(y_vals.min()), float(y_vals.max()), self.delta_cylinder)
+        beta = np.linspace(0, 360, int(360 / self.delta_polar), endpoint=False)
+        cos_beta = np.cos(np.deg2rad(beta))
+        sin_beta = np.sin(np.deg2rad(beta))
+        # In-plane (x, z) directions, with y = 0; same fan at every y.
+        directions = np.column_stack([cos_beta, np.zeros_like(beta), sin_beta])
+        shells: list[np.ndarray] = []
+        for y in ys:
+            slice_center = np.array([center[0], float(y), center[2]])
+            positions_rm = (
+                slice_center[None, None, :]
+                + distances[None, :, None] * directions[:, None, :]
+            )
+            density_flat = field.evaluate(positions_rm.reshape(-1, 3))
+            densities = density_flat.reshape(len(beta), len(distances))
+            interface_re = fit_tanh_profiles_batched(
+                distances, densities, max_dist=max_dist
+            )
+            points = np.column_stack(
+                [
+                    cos_beta * interface_re + slice_center[0],
+                    np.full(len(beta), float(y)),
+                    sin_beta * interface_re + slice_center[2],
+                ]
+            )
+            shells.append(points)
+        return np.concatenate(shells, axis=0) if shells else np.empty((0, 3))
 
 
 @dataclass(frozen=True, eq=False, kw_only=True)
