@@ -397,7 +397,7 @@ def _validate_rays_params(
 def _ray_slice_in_plane(
     field: DensityFieldProtocol,
     center: np.ndarray,
-    gamma: float,
+    azimuthal: float,
     max_dist: float,
     distances: np.ndarray,
     delta_polar: float,
@@ -408,20 +408,22 @@ def _ray_slice_in_plane(
     parameterised on a generic :class:`DensityFieldProtocol` so both
     ``rays_gaussian`` and ``rays_binning`` can share the geometry.
     """
-    beta = np.linspace(0, 360, int(360 / delta_polar), endpoint=False)
-    cos_beta = np.cos(np.deg2rad(beta))
-    sin_beta = np.sin(np.deg2rad(beta))
-    cos_gamma = np.cos(np.deg2rad(gamma))
-    sin_gamma = np.sin(np.deg2rad(gamma))
-    directions = np.column_stack((cos_beta * cos_gamma, cos_beta * sin_gamma, sin_beta))
+    polar = np.linspace(0, 360, int(360 / delta_polar), endpoint=False)
+    cos_polar = np.cos(np.deg2rad(polar))
+    sin_polar = np.sin(np.deg2rad(polar))
+    cos_azimuthal = np.cos(np.deg2rad(azimuthal))
+    sin_azimuthal = np.sin(np.deg2rad(azimuthal))
+    directions = np.column_stack(
+        (cos_polar * cos_azimuthal, cos_polar * sin_azimuthal, sin_polar)
+    )
     positions_rm = (
         center[None, None, :] + distances[None, :, None] * directions[:, None, :]
     )
     density_flat = field.evaluate(positions_rm.reshape(-1, 3))
-    densities = density_flat.reshape(len(beta), len(distances))
+    densities = density_flat.reshape(len(polar), len(distances))
     interface_re = fit_tanh_profiles_batched(distances, densities, max_dist=max_dist)
-    x_proj = cos_beta * interface_re + center[0]
-    z_proj = sin_beta * interface_re + center[2]
+    x_proj = cos_polar * interface_re + center[0]
+    z_proj = sin_polar * interface_re + center[2]
     return np.column_stack([x_proj, z_proj])
 
 
@@ -453,12 +455,12 @@ def _extract_rays(
         if droplet_geometry.is_spherical:
             assert delta_azimuthal is not None
             n_slices = int(180 / delta_azimuthal)
-            gammas = np.linspace(0.0, 180.0, n_slices)
+            azimuthals = np.linspace(0.0, 180.0, n_slices)
             return [
                 _ray_slice_in_plane(
                     field, center_geom, float(g), max_dist, distances, delta_polar
                 )
-                for g in gammas
+                for g in azimuthals
             ]
         # cylinder_*: y-step slice fan
         assert delta_cylinder is not None
@@ -493,10 +495,10 @@ def _extract_rays(
     assert delta_cylinder is not None
     y_vals = liquid_coordinates[:, 1]
     ys = np.arange(float(y_vals.min()), float(y_vals.max()), delta_cylinder)
-    beta = np.linspace(0, 360, int(360 / delta_polar), endpoint=False)
-    cos_beta = np.cos(np.deg2rad(beta))
-    sin_beta = np.sin(np.deg2rad(beta))
-    cyl_directions = np.column_stack([cos_beta, np.zeros_like(beta), sin_beta])
+    polar = np.linspace(0, 360, int(360 / delta_polar), endpoint=False)
+    cos_polar = np.cos(np.deg2rad(polar))
+    sin_polar = np.sin(np.deg2rad(polar))
+    cyl_directions = np.column_stack([cos_polar, np.zeros_like(polar), sin_polar])
     shells: list[np.ndarray] = []
     for y in ys:
         slice_center = np.array([center_geom[0], float(y), center_geom[2]])
@@ -505,15 +507,15 @@ def _extract_rays(
             + distances[None, :, None] * cyl_directions[:, None, :]
         )
         density_flat = field.evaluate(positions_rm.reshape(-1, 3))
-        densities = density_flat.reshape(len(beta), len(distances))
+        densities = density_flat.reshape(len(polar), len(distances))
         interface_re = fit_tanh_profiles_batched(
             distances, densities, max_dist=max_dist
         )
         points = np.column_stack(
             [
-                cos_beta * interface_re + slice_center[0],
-                np.full(len(beta), float(y)),
-                sin_beta * interface_re + slice_center[2],
+                cos_polar * interface_re + slice_center[0],
+                np.full(len(polar), float(y)),
+                sin_polar * interface_re + slice_center[2],
             ]
         )
         shells.append(points)

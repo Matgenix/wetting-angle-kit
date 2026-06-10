@@ -68,18 +68,18 @@ def test_whole_fitter_exact_cylinder_recovers_angle_to_numerical_precision() -> 
     truth_angle = float(np.degrees(np.arccos((z_wall - zc_truth) / R_truth)))
 
     # Half-cylinder along y, radius R_truth, in (x, z) plane.
-    beta = np.linspace(0, 360, 45, endpoint=False)
-    cos_beta = np.cos(np.deg2rad(beta))
-    sin_beta = np.sin(np.deg2rad(beta))
+    polar = np.linspace(0, 360, 45, endpoint=False)
+    cos_polar = np.cos(np.deg2rad(polar))
+    sin_polar = np.sin(np.deg2rad(polar))
     y_vals = np.arange(-15.0, 15.0, 3.0)
     shell_parts: list[np.ndarray] = []
     for y in y_vals:
         shell_parts.append(
             np.column_stack(
                 [
-                    R_truth * cos_beta,
-                    np.full_like(beta, y),
-                    R_truth * sin_beta + zc_truth,
+                    R_truth * cos_polar,
+                    np.full_like(polar, y),
+                    R_truth * sin_polar + zc_truth,
                 ]
             )
         )
