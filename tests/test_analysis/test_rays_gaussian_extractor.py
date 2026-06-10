@@ -173,10 +173,10 @@ def test_whole_spherical_recovers_known_sphere_radius() -> None:
     """
     radius = 20.0
     sigma = 3.0
-    # Use a full sphere (no hemisphere cut) so the Fibonacci-spaced
-    # upper-hemisphere rays probe an angularly isotropic atom cloud.
-    # This isolates the sampling pattern + tanh-fit recovery from any
-    # cap-induced inward bias near the equator.
+    # Use a full sphere of atoms (no hemisphere cut) so the
+    # Fibonacci-spaced full-sphere rays probe an angularly isotropic
+    # atom cloud. This isolates the sampling pattern + tanh-fit
+    # recovery from any cap-induced bias near the equator.
     atoms = _uniform_sphere_atoms(radius=radius, n_atoms=15000, seed=0)
 
     n_rays = 400
@@ -195,9 +195,13 @@ def test_whole_spherical_recovers_known_sphere_radius() -> None:
     )
     assert isinstance(shell, np.ndarray)
     assert shell.shape == (n_rays, 3)
-    # Fibonacci hemisphere directions all have cos θ ≥ 0; the
-    # recovered shell points should mirror that.
-    assert np.all(shell[:, 2] >= -1e-12)
+    # Full-sphere Fibonacci directions span ``cos θ ∈ [-1, 1]``; the
+    # recovered shell should cover both hemispheres roughly equally
+    # — no zero crossing in ``z`` is allowed to be biased.
+    assert np.any(shell[:, 2] < 0)
+    assert np.any(shell[:, 2] > 0)
+    # Symmetric cloud → mean z should sit near zero.
+    assert abs(float(np.mean(shell[:, 2]))) < 1.0
 
     r = np.linalg.norm(shell, axis=1)
     mean_r = float(np.mean(r))

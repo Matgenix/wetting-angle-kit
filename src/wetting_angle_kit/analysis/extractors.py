@@ -153,9 +153,15 @@ class InterfaceExtractor(ABC):
             Step (Å) along the cylinder axis between slices for the
             cylinder modes (both slicing and whole).
         n_rays_sphere : int, optional
-            Total number of rays in the upper hemisphere for the
+            Total number of rays covering the **full sphere** for the
             spherical whole-fit mode. Rays are placed via an equal-area
-            ``(cos θ, φ)`` construction to avoid pole bias.
+            Fibonacci ``(cos θ, φ)`` construction so the angular density
+            is uniform from south to north pole. Full-sphere (rather
+            than upper-hemisphere) coverage is intentional: downward
+            rays from the droplet COM traverse the liquid and hit the
+            wall plane, producing interface points at the wall — that
+            keeps :meth:`WallDetector.min_plus_offset` consistent with
+            the physical wall position.
         delta_polar : float, default 8.0
             In-plane ray step (degrees) for every mode that emits rays
             in the ``(x, z)`` plane (i.e. everything except
@@ -320,14 +326,21 @@ def _validate_grid_params(
         )
 
 
-def _fibonacci_hemisphere_directions(n: int) -> np.ndarray:
-    """Equal-area Fibonacci-spiral directions on the upper hemisphere.
+def _fibonacci_sphere_directions(n: int) -> np.ndarray:
+    """Equal-area Fibonacci-spiral directions on the full sphere.
 
-    ``cos θ`` is uniformly spaced over ``[0, 1]`` (so the surface
-    density is uniform on the sphere) and ``φ`` is incremented by the
-    golden angle for low-discrepancy azimuthal coverage. ``i = 0``
-    sits at the horizon (``cos θ = 0``) and ``i = n - 1`` at the pole
-    (``cos θ = 1``).
+    ``cos θ`` is uniformly spaced over ``[-1, 1]`` (so the surface
+    density is uniform over the whole sphere) and ``φ`` is incremented
+    by the golden angle for low-discrepancy azimuthal coverage.
+    ``i = 0`` sits at the south pole (``cos θ = -1``) and
+    ``i = n - 1`` at the north pole (``cos θ = 1``).
+
+    The full sphere coverage is important for sessile droplets: rays
+    emitted from the droplet COM in downward directions traverse the
+    liquid, hit the wall plane, and contribute interface points at the
+    wall — making :meth:`WallDetector.min_plus_offset` work correctly
+    in the whole-fit pipeline. (Restricting to the upper hemisphere
+    misses the wall, so ``min(shell z)`` lands on ``COM_z`` instead.)
 
     Parameters
     ----------
@@ -337,12 +350,12 @@ def _fibonacci_hemisphere_directions(n: int) -> np.ndarray:
     Returns
     -------
     ndarray, shape (n, 3)
-        Unit direction vectors.
+        Unit direction vectors covering the full sphere.
     """
     if n <= 0:
         return np.empty((0, 3))
     i = np.arange(n, dtype=np.float64)
-    cos_theta = i / (n - 1) if n > 1 else np.array([1.0])
+    cos_theta = 2.0 * i / (n - 1) - 1.0 if n > 1 else np.array([1.0])
     sin_theta = np.sqrt(np.maximum(0.0, 1.0 - cos_theta * cos_theta))
     golden_angle = np.pi * (3.0 - np.sqrt(5.0))
     phi = (i * golden_angle) % (2.0 * np.pi)
@@ -464,7 +477,7 @@ def _extract_rays(
     # surface_kind == "whole"
     if droplet_geometry.is_spherical:
         assert n_rays_sphere is not None
-        directions = _fibonacci_hemisphere_directions(n_rays_sphere)
+        directions = _fibonacci_sphere_directions(n_rays_sphere)
         positions_rm = (
             center_geom[None, None, :]
             + distances[None, :, None] * directions[:, None, :]

@@ -17,7 +17,7 @@ import numpy as np
 
 from wetting_angle_kit.analysis.extractors import (
     InterfaceExtractor,
-    _fibonacci_hemisphere_directions,
+    _fibonacci_sphere_directions,
 )
 from wetting_angle_kit.analysis.fitters import SurfaceFitter
 from wetting_angle_kit.analysis.geometry import DropletGeometry
@@ -39,7 +39,7 @@ def test_whole_fitter_exact_sphere_recovers_angle_to_numerical_precision() -> No
     z_wall = 5.0  # cos θ = 0.25 → θ ≈ 75.522°
     truth_angle = float(np.degrees(np.arccos((z_wall - zc_truth) / R_truth)))
 
-    directions = _fibonacci_hemisphere_directions(400)
+    directions = _fibonacci_sphere_directions(400)
     shell = directions * R_truth + np.array([0.0, 0.0, zc_truth])
 
     fitter = SurfaceFitter.whole(surface_filter_offset=0.0)
@@ -165,7 +165,7 @@ def test_whole_fitter_bootstrap_sigma_scales_inverse_sqrt_n_shell() -> None:
 
     def make_noisy_shell(n_rays: int, seed: int) -> np.ndarray:
         rng = np.random.default_rng(seed)
-        directions = _fibonacci_hemisphere_directions(n_rays)
+        directions = _fibonacci_sphere_directions(n_rays)
         shell = directions * R_truth + np.array([0.0, 0.0, zc_truth])
         return shell + rng.normal(0.0, point_noise, size=shell.shape)
 

@@ -1,23 +1,37 @@
+"""Slicing-method integration tests on the LAMMPS water/graphene fixture.
+
+Phase 11 migration: the bulk of the testing here moved to the new
+``TrajectoryAnalyzer`` (slicing fitter + rays_gaussian extractor +
+min_plus_offset wall detector). One legacy ``SlicingTrajectoryAnalyzer``
+test is kept as a frozen regression net — scheduled for removal in
+Phase 12 once :class:`SlicingTrajectoryAnalyzer` itself goes away.
+"""
+
 import pathlib
 
 import numpy as np
 import pytest
 
-# The slicing integration tests run on a LAMMPS dump fixture parsed through
-# OVITO; skip the whole module when the optional dependency is unavailable
-# (typically on macOS CI).
+# The slicing fixture is a LAMMPS dump parsed through OVITO; skip the
+# whole module when the optional dependency is unavailable (typically
+# on macOS CI).
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import SlicingTrajectoryAnalyzer  # noqa: E402
+from wetting_angle_kit.analysis import (  # noqa: E402
+    InterfaceExtractor,
+    SlicingTrajectoryAnalyzer,
+    SurfaceFitter,
+    TrajectoryAnalyzer,
+    WallDetector,
+)
 from wetting_angle_kit.parsers import (  # noqa: E402
     LammpsDumpParser,
     LammpsDumpWaterFinder,
 )
 
 
-# --- Fixtures ---
 @pytest.fixture
-def filename():
+def filename() -> pathlib.Path:
     return (
         pathlib.Path(__file__).parent
         / ".."
@@ -27,76 +41,66 @@ def filename():
 
 
 @pytest.fixture
-def wat_find(filename):
-    return LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
+def oxygen_indices(filename: pathlib.Path) -> np.ndarray:
+    return LammpsDumpWaterFinder(
+        filename, oxygen_type=1, hydrogen_type=2
+    ).get_water_oxygen_ids(0)
 
 
-@pytest.fixture
-def oxygen_indices(wat_find):
-    return wat_find.get_water_oxygen_ids(0)
-
-
-@pytest.fixture
-def parser(filename):
-    return LammpsDumpParser(filename)
-
-
-# --- Unit Tests for SlicingFrameFitter ---
+# --- Frozen legacy regression --------------------------------------------------
+# To be removed in Phase 12 alongside ``SlicingTrajectoryAnalyzer`` itself.
 @pytest.mark.integration
 @pytest.mark.slow
-def test_contact_angle_slicing_with_real_data(parser, oxygen_indices):
-    # Parse liquid positions for frame 0
-    liquid_positions = parser.parse(frame_index=0, indices=oxygen_indices)
-    max_dist = int(
-        np.max(
-            np.array(
-                [parser.box_size_y(frame_index=0), parser.box_size_x(frame_index=0)]
-            )
-        )
-        / 2
-    )
-    mean_liquid_position = np.mean(liquid_positions, axis=0)
-
-    # Initialize SlicingFrameFitter
-    from wetting_angle_kit.analysis.slicing import (
-        SlicingFrameFitter,
-    )
-
-    predictor = SlicingFrameFitter(
-        liquid_coordinates=liquid_positions,
-        liquid_geom_center=mean_liquid_position,
-        droplet_geometry="spherical",
-        delta_gamma=20,
-        max_dist=max_dist,
-    )
-
-    # Test predict_contact_angle
-    angles, surfaces, popt_arrays = predictor.predict_contact_angle()
-    assert isinstance(angles, list)
-    assert isinstance(surfaces, list)
-    assert isinstance(popt_arrays, list)
-    assert len(angles) > 0
-
-
-# --- Integration Test for SlicingTrajectoryAnalyzer ---
-@pytest.mark.integration
-@pytest.mark.slow
-def test_slicing_contact_angle_analyzer_with_real_data(filename, oxygen_indices):
+def test_legacy_slicing_trajectory_analyzer_regression(
+    filename: pathlib.Path, oxygen_indices: np.ndarray
+) -> None:
+    """Frozen-legacy parity check on the spherical-droplet fixture."""
     analyzer = SlicingTrajectoryAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
         delta_gamma=20,
     )
-
     results = analyzer.analyze([1])
 
     assert len(results) == 1
     assert results.frames == [1]
-    # The fixture is a water droplet on a graphene-like substrate, which
-    # gives a contact angle around 90-100° (literature: ~93° for graphene).
-    # Assert a tight physically-plausible band so regressions in the
-    # slicing pipeline are caught.
+    # Legacy slicing on this fixture: mean angle = 94.873°, per-slice
+    # std = 1.829°. ±3° band so the test catches real regressions
+    # while tolerating numerical jitter.
     mean_angle = float(np.mean(results.angles[0]))
-    assert 80.0 <= mean_angle <= 110.0
-    assert np.isfinite(np.std(results.angles[0]))
+    assert 92.0 <= mean_angle <= 98.0
+    slice_std = float(np.std(results.angles[0]))
+    assert 0.5 < slice_std < 4.0
+
+
+# --- New-API equivalent --------------------------------------------------------
+@pytest.mark.integration
+@pytest.mark.slow
+def test_trajectory_analyzer_slicing_with_real_data(
+    filename: pathlib.Path, oxygen_indices: np.ndarray
+) -> None:
+    """End-to-end ``TrajectoryAnalyzer`` (rays_gaussian + slicing fitter)."""
+    analyzer = TrajectoryAnalyzer(
+        parser=LammpsDumpParser(filename),
+        atom_indices=oxygen_indices,
+        droplet_geometry="spherical",
+        interface_extractor=InterfaceExtractor.rays_gaussian(
+            delta_azimuthal=20.0, delta_polar=8.0
+        ),
+        surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
+        wall_detector=WallDetector.min_plus_offset(offset=0.0),
+    )
+    results = analyzer.analyze([1])
+
+    assert len(results) == 1
+    batch = results.batches[0]
+    assert batch.frames == [1]
+    # New slicing pipeline on this fixture: 95.159° (matches the
+    # legacy 94.873° within 0.3° — see Phase 3 parity test).
+    assert 92.0 <= batch.angle <= 98.0
+    # Across-slice std on this fixture: ~1.9°.
+    assert 0.5 < batch.angle_std < 4.0
+    # Aggregate properties on the results container.
+    assert np.isfinite(results.mean_angle)
+    assert np.isfinite(results.std_angle)

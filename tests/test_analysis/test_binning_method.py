@@ -1,48 +1,48 @@
+"""Binning-method integration tests on a LAMMPS cylinder-droplet fixture.
+
+Phase 11 migration: the new ``CoupledBinning2DAnalyzer`` is exercised
+end-to-end against the same fixture as the legacy
+``BinningTrajectoryAnalyzer``. One legacy test is kept as a frozen
+regression net (to be removed in Phase 12 alongside the legacy class).
+"""
+
 import pathlib
 
 import numpy as np
 import pytest
 
-# The binning integration tests run on a LAMMPS dump fixture parsed through
-# OVITO; skip the whole module when the optional dependency is unavailable
-# (typically on macOS CI).
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import BinningTrajectoryAnalyzer  # noqa: E402
+from wetting_angle_kit.analysis import (  # noqa: E402
+    BinningTrajectoryAnalyzer,
+    CoupledBinning2DAnalyzer,
+)
+from wetting_angle_kit.analysis.temporal import TemporalAggregator  # noqa: E402
 from wetting_angle_kit.parsers import (  # noqa: E402
     LammpsDumpParser,
     LammpsDumpWaterFinder,
 )
 
 
-# --- Fixtures ---
 @pytest.fixture
-def filename():
-    # Use the correct path for your test file
+def filename() -> pathlib.Path:
     return (
-        pathlib.Path(__file__).parent.parent
+        pathlib.Path(__file__).parent
+        / ".."
         / "trajectories"
         / "traj_10_3_330w_nve_4k_reajust.lammpstrj"
     )
 
 
 @pytest.fixture
-def wat_find(filename):
-    return LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
+def oxygen_indices(filename: pathlib.Path) -> np.ndarray:
+    return LammpsDumpWaterFinder(
+        filename, oxygen_type=1, hydrogen_type=2
+    ).get_water_oxygen_ids(0)
 
 
 @pytest.fixture
-def oxygen_indices(wat_find):
-    return wat_find.get_water_oxygen_ids(0)
-
-
-@pytest.fixture
-def parser(filename):
-    return LammpsDumpParser(filename)
-
-
-@pytest.fixture
-def binning_params():
+def binning_params() -> dict:
     return {
         "xi_0": 0,
         "xi_f": 100.0,
@@ -53,47 +53,83 @@ def binning_params():
     }
 
 
-# --- Unit Test for BinningTrajectoryAnalyzer ---
+# --- Frozen legacy regression --------------------------------------------------
+# To be removed in Phase 12 alongside ``BinningTrajectoryAnalyzer`` itself.
 @pytest.mark.integration
-def test_binning_contact_angle_analyzer_with_real_data(
-    filename, oxygen_indices, binning_params
-):
+def test_legacy_binning_trajectory_analyzer_regression(
+    filename: pathlib.Path,
+    oxygen_indices: np.ndarray,
+    binning_params: dict,
+) -> None:
+    """Frozen-legacy regression on the cylinder-droplet fixture."""
     analyzer = BinningTrajectoryAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
         binning_params=binning_params,
     )
-
     results = analyzer.analyze([1])
 
     assert len(results) == 1
-    # Cylindrical droplet on a graphene-like surface gives a contact angle
-    # around 90-100° here. Use a moderate band so the test catches gross
-    # regressions but tolerates the inherent noise of a single-frame fit.
-    assert 80.0 <= results.mean_angle <= 115.0
-    assert np.isfinite(results.std_angle)
+    # Legacy binning on the cylinder fixture, frame 1: 99.110°.
+    # ±3° band.
+    assert 96.0 <= results.mean_angle <= 102.0
+    # Single batch → std across batches is 0.
+    assert results.std_angle == 0.0
 
 
-# --- Multi-batch test: with split_factor=1 each frame produces its own
-# angle, so we should get one angle per frame, not a single collapsed value.
+# --- New-API equivalent --------------------------------------------------------
 @pytest.mark.integration
-def test_binning_contact_angle_analyzer_per_frame_with_split_factor(
-    filename, oxygen_indices, binning_params
-):
-    analyzer = BinningTrajectoryAnalyzer(
+def test_coupled_binning_2d_with_cylinder_fixture(
+    filename: pathlib.Path,
+    oxygen_indices: np.ndarray,
+    binning_params: dict,
+) -> None:
+    """End-to-end ``CoupledBinning2DAnalyzer`` on the cylinder droplet."""
+    analyzer = CoupledBinning2DAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
         binning_params=binning_params,
     )
+    results = analyzer.analyze([1])
 
-    # split_factor=1 → one batch per frame → 3 batch-level angles.
-    results = analyzer.analyze([1, 2, 3], split_factor=1)
+    assert len(results) == 1
+    angle = float(results.batches[0].angle)
+    # New analyzer matches legacy bit-for-bit (Phase 9 parity test)
+    # so the same 99.110° ±3° band applies.
+    assert 96.0 <= angle <= 102.0
+    assert np.isfinite(results.mean_angle)
+    # Single batch → std across batches is 0.
+    assert results.std_angle == 0.0
 
-    assert results.method_metadata == {"frames_per_trajectory": 1}
-    assert results.angles_per_batch.shape == (3,)
-    # Each batch can either converge to a physically-plausible angle in
-    # [0, 180] or return NaN (signaling fit failure on a single frame).
-    for angle in results.angles_per_batch:
-        assert np.isnan(angle) or (0.0 <= angle <= 180.0)
+
+@pytest.mark.integration
+def test_coupled_binning_2d_per_frame_batches(
+    filename: pathlib.Path,
+    oxygen_indices: np.ndarray,
+    binning_params: dict,
+) -> None:
+    """``batch_size=1`` ↔ legacy ``split_factor=1``: one fit per frame."""
+    frames = [1, 2, 3]
+    analyzer = CoupledBinning2DAnalyzer(
+        parser=LammpsDumpParser(filename),
+        atom_indices=oxygen_indices,
+        droplet_geometry="cylinder_y",
+        binning_params=binning_params,
+        temporal_aggregator=TemporalAggregator(batch_size=1),
+    )
+    results = analyzer.analyze(frames)
+
+    # One batch per frame ⇒ three angles.
+    assert len(results) == 3
+    assert results.per_batch_angles.shape == (3,)
+    # Observed per-frame angles on this fixture: ~99°, ~96°, ~93°
+    # (some thermal drift across frames). Pin a per-frame ±5° band
+    # to absorb that drift while catching real regressions.
+    expected_angles = (99.11, 96.10, 92.65)
+    for batch, expected in zip(results.batches, expected_angles, strict=True):
+        assert len(batch.frames) == 1
+        # Allow either a converged angle near the expected value, or
+        # NaN on per-frame fit failure (matches the legacy contract).
+        assert np.isnan(batch.angle) or abs(batch.angle - expected) < 5.0
