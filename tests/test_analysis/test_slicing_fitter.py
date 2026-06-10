@@ -1,39 +1,14 @@
-"""Phase 3 quantification: ``SurfaceFitter.slicing()`` correctness + parity.
+"""Synthetic-correctness tests for ``SurfaceFitter.slicing()``.
 
-Two flavors:
-
-- **Synthetic-circle correctness.** Per-slice points lying on a known
-  circle. The fitter should recover the truth contact angle to
-  numerical precision and report (near-)zero fit residual.
-- **End-to-end parity** against the legacy
-  :class:`SlicingTrajectoryAnalyzer` on the LAMMPS water-on-graphene
-  fixture. The two pipelines compute the angle baseline slightly
-  differently (legacy: per-slice ``min(z)``; new: per-batch
-  ``min(z) + offset``), so a small drift is expected — quantified
-  with and without the ``min_plus_offset`` offset.
+Per-slice points lying on a known circle. The fitter should recover
+the truth contact angle to numerical precision and report (near-)zero
+fit residual.
 """
 
-import pathlib
-
 import numpy as np
-import pytest
 
-# Slicing fixture is a LAMMPS dump parsed through OVITO; skip if the
-# optional backend is missing (typically macOS CI without ovito).
-pytest.importorskip("ovito")
-
-from wetting_angle_kit.analysis import (  # noqa: E402
-    InterfaceExtractor,
-    SlicingTrajectoryAnalyzer,
-    SurfaceFitter,
-    TrajectoryAnalyzer,
-    WallDetector,
-)
-from wetting_angle_kit.analysis.geometry import DropletGeometry  # noqa: E402
-from wetting_angle_kit.parsers import (  # noqa: E402
-    LammpsDumpParser,
-    LammpsDumpWaterFinder,
-)
+from wetting_angle_kit.analysis import SurfaceFitter
+from wetting_angle_kit.analysis.geometry import DropletGeometry
 
 # --- Synthetic correctness -------------------------------------------------
 
@@ -127,105 +102,3 @@ def test_slicing_fitter_aggregates_across_slices() -> None:
     assert out.per_slice_angles.shape == (8,)
     assert out.slice_popts.shape == (8, 4)
     assert len(out.slice_surfaces) == 8
-
-
-# --- End-to-end parity vs legacy SlicingTrajectoryAnalyzer -----------------
-
-
-_FIXTURE = (
-    pathlib.Path(__file__).parent
-    / ".."
-    / "trajectories"
-    / "traj_spherical_drop_4k.lammpstrj"
-)
-
-
-@pytest.fixture
-def fixture_path() -> pathlib.Path:
-    return _FIXTURE
-
-
-@pytest.fixture
-def oxygen_indices(fixture_path: pathlib.Path) -> np.ndarray:
-    finder = LammpsDumpWaterFinder(fixture_path, oxygen_type=1, hydrogen_type=2)
-    return finder.get_water_oxygen_ids(0)
-
-
-def _run_legacy_angle(
-    fixture_path: pathlib.Path, oxygen_indices: np.ndarray, frame: int
-) -> float:
-    analyzer = SlicingTrajectoryAnalyzer(
-        parser=LammpsDumpParser(fixture_path),
-        atom_indices=oxygen_indices,
-        droplet_geometry="spherical",
-        delta_gamma=20,
-    )
-    results = analyzer.analyze([frame])
-    return float(np.mean(results.angles[0]))
-
-
-def _run_new_angle(
-    fixture_path: pathlib.Path,
-    oxygen_indices: np.ndarray,
-    frame: int,
-    *,
-    wall_offset: float,
-) -> float:
-    analyzer = TrajectoryAnalyzer(
-        parser=LammpsDumpParser(fixture_path),
-        atom_indices=oxygen_indices,
-        droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            delta_azimuthal=20.0,
-            delta_polar=8.0,
-        ),
-        surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
-        wall_detector=WallDetector.min_plus_offset(offset=wall_offset),
-    )
-    results = analyzer.analyze([frame])
-    return float(results.per_batch_angles[0])
-
-
-@pytest.mark.integration
-@pytest.mark.slow
-def test_slicing_end_to_end_parity_vs_legacy(
-    fixture_path: pathlib.Path, oxygen_indices: np.ndarray
-) -> None:
-    """Quantify the drift between legacy and new slicing pipelines.
-
-    Two new-pipeline configurations are reported:
-
-    - ``min_plus_offset(0)``: angle baseline ≈ legacy's per-slice
-      ``min(z)`` (modulo per-slice → per-batch substitution).
-    - ``min_plus_offset(2)``: the new default; angle baseline shifted
-      2 Å above the lowest interface point.
-    """
-    frame = 1
-    legacy_angle = _run_legacy_angle(fixture_path, oxygen_indices, frame)
-    new_angle_offset0 = _run_new_angle(
-        fixture_path, oxygen_indices, frame, wall_offset=0.0
-    )
-    new_angle_offset2 = _run_new_angle(
-        fixture_path, oxygen_indices, frame, wall_offset=2.0
-    )
-
-    drift_0 = abs(new_angle_offset0 - legacy_angle)
-    drift_2 = abs(new_angle_offset2 - legacy_angle)
-
-    print(
-        f"\nLegacy mean angle                            = {legacy_angle:.3f}°"
-        f"\nNew (min_plus_offset offset=0) mean angle    = "
-        f"{new_angle_offset0:.3f}°   |drift| = {drift_0:.3f}°"
-        f"\nNew (min_plus_offset offset=2, default) mean = "
-        f"{new_angle_offset2:.3f}°   |drift| = {drift_2:.3f}°"
-    )
-
-    # Both new configurations should land near the legacy result.
-    # offset=0 is the closest analogue (legacy uses per-slice min(z));
-    # offset=2 shifts the baseline up by 2 Å (smaller measured angle).
-    assert drift_0 < 3.0, f"offset=0 drift too large: {drift_0:.3f}°"
-    assert drift_2 < 10.0, f"offset=2 drift too large: {drift_2:.3f}°"
-    # Both new angles should still sit in the physically plausible
-    # 80–110° band the legacy test enforces for this fixture.
-    assert 70.0 < new_angle_offset0 < 110.0
-    assert 70.0 < new_angle_offset2 < 110.0

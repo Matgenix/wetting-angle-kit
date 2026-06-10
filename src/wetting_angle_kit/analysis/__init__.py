@@ -22,24 +22,11 @@ Results dataclasses returned by ``analyze()``::
     TrajectoryResults, BatchResult, SlicingBatchResult, WholeBatchResult
     CoupledBinning2DResults, CoupledBinning2DBatchResult
     CoupledBinning3DResults, CoupledBinning3DBatchResult
-
-Legacy entry points (kept while the new pipeline's algorithm bodies are
-being ported; scheduled for removal once :class:`TrajectoryAnalyzer`
-subsumes them)::
-
-    SlicingTrajectoryAnalyzer, SlicingFrameFitter
-    BinningTrajectoryAnalyzer, BinningBatchFitter
 """
 
 from wetting_angle_kit.analysis.analyzer import BaseTrajectoryAnalyzer
 
-# Legacy entry points. Kept while the new pipeline's algorithm bodies
-# are being ported. To be removed once TrajectoryAnalyzer +
-# CoupledBinning{2,3}DAnalyzer fully subsume them.
-from wetting_angle_kit.analysis.binning.analyzer import BinningTrajectoryAnalyzer
-from wetting_angle_kit.analysis.binning.angle_fitting import BinningBatchFitter
-
-# New top-level analyzers.
+# Top-level analyzers.
 from wetting_angle_kit.analysis.coupled_binning_2d import CoupledBinning2DAnalyzer
 from wetting_angle_kit.analysis.coupled_binning_3d import CoupledBinning3DAnalyzer
 
@@ -64,8 +51,6 @@ from wetting_angle_kit.analysis.results import (
     TrajectoryResults,
     WholeBatchResult,
 )
-from wetting_angle_kit.analysis.slicing.analyzer import SlicingTrajectoryAnalyzer
-from wetting_angle_kit.analysis.slicing.angle_fitting import SlicingFrameFitter
 from wetting_angle_kit.analysis.temporal import TemporalAggregator
 from wetting_angle_kit.analysis.trajectory import TrajectoryAnalyzer
 from wetting_angle_kit.analysis.wall import WallDetector
@@ -94,9 +79,4 @@ __all__ = [
     "CoupledBinning2DResults",
     "CoupledBinning3DBatchResult",
     "CoupledBinning3DResults",
-    # Legacy.
-    "SlicingTrajectoryAnalyzer",
-    "SlicingFrameFitter",
-    "BinningTrajectoryAnalyzer",
-    "BinningBatchFitter",
 ]

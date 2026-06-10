@@ -1,166 +1,28 @@
-"""Quantification tests for the new ``rays_gaussian`` extractor.
+"""Quantification tests for the ``rays_gaussian`` extractor.
 
-Two flavors:
-
-- **Parity** with the legacy slicing primitive
-  (:class:`SurfaceDefinition.analyze_lines`) on slicing-mode cases.
-  Both pipelines route through the same
-  :mod:`wetting_angle_kit.analysis._density` helpers, so agreement
-  should be bit-for-bit (max-abs diff at the 1e-12 level).
-- **Fibonacci correctness** for the new whole+spherical case where
-  there's no legacy comparator. We build a synthetic uniform-volume
-  sphere of atoms and verify the recovered shell sits at the sphere
-  radius to within the density-smoothing tolerance.
+- **Fibonacci correctness** for the whole+spherical case: build a
+  synthetic uniform-volume sphere of atoms and verify the recovered
+  shell sits near the sphere radius and spans both hemispheres.
+- **Cylinder ridge smoke test** for the whole+cylinder case.
 """
 
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis._density import (
-    DEFAULT_CUTOFF_SIGMA,
-    DEFAULT_DENSITY_SIGMA,
-)
 from wetting_angle_kit.analysis.extractors import InterfaceExtractor
 from wetting_angle_kit.analysis.geometry import DropletGeometry
-from wetting_angle_kit.analysis.slicing.surface_definition import (
-    SurfaceDefinition,
-)
-
-
-def _make_random_droplet(
-    seed: int = 0, n_atoms: int = 2000, sigma_xy: float = 8.0, sigma_z: float = 6.0
-) -> np.ndarray:
-    """Random atom cloud that loosely resembles a sessile droplet."""
-    rng = np.random.default_rng(seed)
-    xy = rng.normal(0.0, sigma_xy, size=(n_atoms, 2))
-    z = np.abs(rng.normal(0.0, sigma_z, size=n_atoms)) + 1.0
-    return np.column_stack([xy, z])
-
-
-def test_slicing_spherical_matches_legacy_surface_definition() -> None:
-    """Parity: new extractor (slicing+spherical) vs legacy SurfaceDefinition."""
-    atoms = _make_random_droplet(seed=0)
-    center = np.array([0.0, 0.0, 0.0])
-    delta_azimuthal = 30.0
-    delta_polar = 8.0
-    max_dist = 30.0
-
-    # Legacy: instantiate one SurfaceDefinition per gamma and call
-    # analyze_lines() — exactly what the legacy
-    # SlicingFrameFitter does for spherical droplets.
-    n_slices = int(180 / delta_azimuthal)
-    gammas = np.linspace(0.0, 180.0, n_slices)
-    legacy_xz: list[np.ndarray] = []
-    for gamma in gammas:
-        sd = SurfaceDefinition(
-            atom_coords=atoms,
-            delta_angle=delta_polar,
-            max_dist=max_dist,
-            center_geom=center,
-            gamma=float(gamma),
-            density_sigma=DEFAULT_DENSITY_SIGMA,
-            cutoff_sigma=DEFAULT_CUTOFF_SIGMA,
-        )
-        _, xz = sd.analyze_lines()
-        legacy_xz.append(np.asarray(xz, dtype=float))
-
-    # New: rays_gaussian extractor in slicing+spherical mode.
-    extractor = InterfaceExtractor.rays_gaussian(
-        delta_azimuthal=delta_azimuthal,
-        delta_polar=delta_polar,
-        density_sigma=DEFAULT_DENSITY_SIGMA,
-        cutoff_sigma=DEFAULT_CUTOFF_SIGMA,
-    )
-    geom = DropletGeometry.coerce("spherical")
-    extractor.validate_compatibility(surface_kind="slicing", droplet_geometry=geom)
-    new_xz = extractor.extract(
-        liquid_coordinates=atoms,
-        center_geom=center,
-        droplet_geometry=geom,
-        max_dist=max_dist,
-        surface_kind="slicing",
-    )
-
-    assert isinstance(new_xz, list)
-    assert len(new_xz) == len(legacy_xz)
-
-    max_diff = 0.0
-    for legacy, new in zip(legacy_xz, new_xz, strict=True):
-        assert legacy.shape == new.shape
-        diff = float(np.max(np.abs(legacy - new)))
-        max_diff = max(max_diff, diff)
-
-    # Quantification: agreement is at the floating-point round-off
-    # level (the two paths call the same density / tanh helpers).
-    print(f"\nslicing+spherical parity: max |diff| = {max_diff:.3e} Å")
-    assert max_diff < 1e-10
-
-
-def test_slicing_cylinder_matches_legacy_surface_definition() -> None:
-    """Parity check for the cylinder slicing case."""
-    atoms = _make_random_droplet(seed=1)
-    center = np.array([0.0, 0.0, 0.0])
-    delta_cylinder = 4.0
-    delta_polar = 8.0
-    max_dist = 30.0
-
-    # Legacy: gamma stays at 0, y sweeps over delta_cylinder steps.
-    y_vals = atoms[:, 1]
-    ys = np.arange(float(y_vals.min()), float(y_vals.max()), delta_cylinder)
-    legacy_xz: list[np.ndarray] = []
-    for y in ys:
-        slice_center = np.array([center[0], float(y), center[2]])
-        sd = SurfaceDefinition(
-            atom_coords=atoms,
-            delta_angle=delta_polar,
-            max_dist=max_dist,
-            center_geom=slice_center,
-            gamma=0.0,
-            density_sigma=DEFAULT_DENSITY_SIGMA,
-            cutoff_sigma=DEFAULT_CUTOFF_SIGMA,
-        )
-        _, xz = sd.analyze_lines()
-        legacy_xz.append(np.asarray(xz, dtype=float))
-
-    extractor = InterfaceExtractor.rays_gaussian(
-        delta_cylinder=delta_cylinder,
-        delta_polar=delta_polar,
-        density_sigma=DEFAULT_DENSITY_SIGMA,
-        cutoff_sigma=DEFAULT_CUTOFF_SIGMA,
-    )
-    geom = DropletGeometry.coerce("cylinder_y")
-    extractor.validate_compatibility(surface_kind="slicing", droplet_geometry=geom)
-    new_xz = extractor.extract(
-        liquid_coordinates=atoms,
-        center_geom=center,
-        droplet_geometry=geom,
-        max_dist=max_dist,
-        surface_kind="slicing",
-    )
-
-    assert isinstance(new_xz, list)
-    assert len(new_xz) == len(legacy_xz)
-    max_diff = 0.0
-    for legacy, new in zip(legacy_xz, new_xz, strict=True):
-        assert legacy.shape == new.shape
-        diff = float(np.max(np.abs(legacy - new)))
-        max_diff = max(max_diff, diff)
-    print(f"slicing+cylinder parity: max |diff| = {max_diff:.3e} Å")
-    assert max_diff < 1e-10
 
 
 def _uniform_sphere_atoms(radius: float, n_atoms: int, seed: int = 0) -> np.ndarray:
-    """Atoms uniformly distributed inside a sphere of given radius."""
+    """Rejection-sample atoms uniformly inside a sphere of the given radius."""
     rng = np.random.default_rng(seed)
-    # Rejection-sample inside a cube; cheap and unbiased.
-    pts = []
-    while len(pts) * 3 < n_atoms * 3:
-        sample = rng.uniform(-radius, radius, size=(4 * n_atoms, 3))
-        inside = np.linalg.norm(sample, axis=1) < radius
-        pts.append(sample[inside])
-        if sum(len(p) for p in pts) >= n_atoms:
-            break
-    return np.concatenate(pts, axis=0)[:n_atoms]
+    pts: list[np.ndarray] = []
+    target = n_atoms
+    while sum(len(p) for p in pts) < target:
+        chunk = rng.uniform(-radius, radius, size=(target * 3, 3))
+        mask = np.linalg.norm(chunk, axis=1) <= radius
+        pts.append(chunk[mask])
+    return np.concatenate(pts, axis=0)[:target]
 
 
 def test_whole_spherical_recovers_known_sphere_radius() -> None:

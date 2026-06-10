@@ -1,10 +1,8 @@
-"""Slicing-method integration tests on the LAMMPS water/graphene fixture.
+"""Slicing-method integration test on the LAMMPS water/graphene fixture.
 
-Phase 11 migration: the bulk of the testing here moved to the new
-``TrajectoryAnalyzer`` (slicing fitter + rays_gaussian extractor +
-min_plus_offset wall detector). One legacy ``SlicingTrajectoryAnalyzer``
-test is kept as a frozen regression net — scheduled for removal in
-Phase 12 once :class:`SlicingTrajectoryAnalyzer` itself goes away.
+End-to-end ``TrajectoryAnalyzer`` with the slicing fitter + rays_gaussian
+extractor + min_plus_offset wall detector on the spherical-droplet
+fixture. Anchored against the well-characterised ~95° contact angle.
 """
 
 import pathlib
@@ -19,7 +17,6 @@ pytest.importorskip("ovito")
 
 from wetting_angle_kit.analysis import (  # noqa: E402
     InterfaceExtractor,
-    SlicingTrajectoryAnalyzer,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -47,34 +44,6 @@ def oxygen_indices(filename: pathlib.Path) -> np.ndarray:
     ).get_water_oxygen_ids(0)
 
 
-# --- Frozen legacy regression --------------------------------------------------
-# To be removed in Phase 12 alongside ``SlicingTrajectoryAnalyzer`` itself.
-@pytest.mark.integration
-@pytest.mark.slow
-def test_legacy_slicing_trajectory_analyzer_regression(
-    filename: pathlib.Path, oxygen_indices: np.ndarray
-) -> None:
-    """Frozen-legacy parity check on the spherical-droplet fixture."""
-    analyzer = SlicingTrajectoryAnalyzer(
-        parser=LammpsDumpParser(filename),
-        atom_indices=oxygen_indices,
-        droplet_geometry="spherical",
-        delta_gamma=20,
-    )
-    results = analyzer.analyze([1])
-
-    assert len(results) == 1
-    assert results.frames == [1]
-    # Legacy slicing on this fixture: mean angle = 94.873°, per-slice
-    # std = 1.829°. ±3° band so the test catches real regressions
-    # while tolerating numerical jitter.
-    mean_angle = float(np.mean(results.angles[0]))
-    assert 92.0 <= mean_angle <= 98.0
-    slice_std = float(np.std(results.angles[0]))
-    assert 0.5 < slice_std < 4.0
-
-
-# --- New-API equivalent --------------------------------------------------------
 @pytest.mark.integration
 @pytest.mark.slow
 def test_trajectory_analyzer_slicing_with_real_data(
@@ -96,8 +65,7 @@ def test_trajectory_analyzer_slicing_with_real_data(
     assert len(results) == 1
     batch = results.batches[0]
     assert batch.frames == [1]
-    # New slicing pipeline on this fixture: 95.159° (matches the
-    # legacy 94.873° within 0.3° — see Phase 3 parity test).
+    # Slicing pipeline on this fixture: 95.159°. ±3° band.
     assert 92.0 <= batch.angle <= 98.0
     # Across-slice std on this fixture: ~1.9°.
     assert 0.5 < batch.angle_std < 4.0

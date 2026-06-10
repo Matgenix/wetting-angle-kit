@@ -27,13 +27,11 @@ import warnings
 from typing import Any, ClassVar
 
 import numpy as np
+from scipy.optimize import curve_fit
 
 from wetting_angle_kit.analysis.base import (
     _BatchedTrajectoryAnalyzer,
     build_parser,
-)
-from wetting_angle_kit.analysis.binning.surface_definition import (
-    HyperbolicTangentModel,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (
@@ -46,6 +44,113 @@ from wetting_angle_kit.io_utils import project_to_profile
 logger = logging.getLogger(__name__)
 
 _PARAM_NAMES = ("rho1", "rho2", "R_eq", "zi_c", "zi_0", "t1", "t2")
+
+
+class _HyperbolicTangentModel2D:
+    """Coupled 2D-binning joint contact-angle model.
+
+    Density field modelled as a product of two sigmoidal (tanh) terms,
+    one radial and one vertical:
+
+    ::
+
+        rho(xi, zi) = g(r) * h(zi - zi_0),
+            g(r) = 0.5 * [(rho1 + rho2) - (rho1 - rho2) * tanh(2 (r - R_eq) / t1)],
+            h(z) = 0.5 * [1 + tanh(2 z / t2)],
+            r    = sqrt(xi^2 + (zi - zi_c)^2).
+
+    Seven free parameters fitted by bounded NLLS. Private (the public
+    entry point is :class:`CoupledBinning2DAnalyzer`); the 3D
+    counterpart lives in :mod:`coupled_binning_3d` as
+    ``_HyperbolicTangentModel3D``.
+    """
+
+    DEFAULT_INITIAL_PARAMS = (1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0)
+
+    _PARAM_LOWER = np.array([0.0, 0.0, 1e-6, -np.inf, -np.inf, 1e-6, 1e-6])
+    _PARAM_UPPER = np.array([np.inf] * 7)
+
+    def __init__(self, initial_params: list[float] | None = None) -> None:
+        if initial_params is None:
+            initial_params = list(self.DEFAULT_INITIAL_PARAMS)
+        self.params: list[float] | np.ndarray | None = initial_params
+        self.covariance: np.ndarray | None = None
+
+    @staticmethod
+    def _fitting_function(
+        x: tuple[np.ndarray, np.ndarray],
+        rho1: float,
+        rho2: float,
+        R_eq: float,
+        zi_c: float,
+        zi_0: float,
+        t1: float,
+        t2: float,
+    ) -> np.ndarray:
+        xi, zi = x[0], x[1]
+        r = np.sqrt(xi**2 + (zi - zi_c) ** 2)
+        g_r = 0.5 * ((rho1 + rho2) - (rho1 - rho2) * np.tanh(2 * (r - R_eq) / t1))
+        h_z = 0.5 * (1.0 + np.tanh(2 * (zi - zi_0) / t2))
+        return g_r * h_z
+
+    def fit(
+        self,
+        x_data: tuple[np.ndarray, np.ndarray],
+        density_data: np.ndarray,
+    ) -> "_HyperbolicTangentModel2D":
+        self.params, self.covariance = curve_fit(
+            self._fitting_function,
+            x_data,
+            density_data,
+            p0=self.params,
+            bounds=(self._PARAM_LOWER, self._PARAM_UPPER),
+            maxfev=1_000_000,
+        )
+        self._warn_if_at_bounds()
+        return self
+
+    def _warn_if_at_bounds(self) -> None:
+        if self.params is None:
+            return
+        tol = 1e-6
+        at_bound = []
+        for name, value, lo, hi in zip(
+            _PARAM_NAMES,
+            self.params,
+            self._PARAM_LOWER,
+            self._PARAM_UPPER,
+            strict=False,
+        ):
+            if np.isfinite(lo) and abs(value - lo) < tol * max(1.0, abs(lo)):
+                at_bound.append(f"{name}={value:.3g} at lower bound {lo}")
+            elif np.isfinite(hi) and abs(value - hi) < tol * max(1.0, abs(hi)):
+                at_bound.append(f"{name}={value:.3g} at upper bound {hi}")
+        if at_bound:
+            warnings.warn(
+                "Hyperbolic tangent fit converged with parameter(s) at the "
+                "physical bound, suggesting a poor fit: " + "; ".join(at_bound),
+                RuntimeWarning,
+                stacklevel=3,
+            )
+
+    def compute_contact_angle(self) -> float:
+        if self.params is None:
+            raise ValueError("Model must be fitted before computing contact angle.")
+        R_eq = float(self.params[2])
+        zi_c = float(self.params[3])
+        zi_0 = float(self.params[4])
+        discriminant = R_eq**2 - (zi_0 - zi_c) ** 2
+        if discriminant < 0:
+            warnings.warn(
+                "Fitted wall is outside the fitted droplet sphere "
+                f"(R_eq={R_eq:.3f}, |zi_0 - zi_c|={abs(zi_0 - zi_c):.3f}); "
+                "contact angle is undefined.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return float("nan")
+        xi_cross = np.sqrt(discriminant)
+        return float((np.pi / 2 - np.arctan((zi_0 - zi_c) / xi_cross)) * 180 / np.pi)
 
 
 def _heuristic_binning_params(parser: Any) -> dict[str, Any]:
@@ -109,7 +214,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         Initial guess for the seven tanh-model parameters
         ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]``. Defaults to the
         values tuned for room-temperature water in the existing
-        :class:`HyperbolicTangentModel`.
+        :class:`_HyperbolicTangentModel2D`.
     temporal_aggregator : TemporalAggregator, optional
         Defaults to a single fully pooled batch
         (``batch_size=-1``) — the coupled fit benefits from as much
@@ -261,10 +366,10 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             if n_frames > 0:
                 rho_cc /= n_frames
 
-            # Joint tanh fit. ``HyperbolicTangentModel`` expects the
+            # Joint tanh fit. ``_HyperbolicTangentModel2D`` expects the
             # density and grid axes flattened in Fortran order — same
             # as the legacy ``BinningBatchFitter.process_batch``.
-            model = HyperbolicTangentModel(initial_params=initial_params)
+            model = _HyperbolicTangentModel2D(initial_params=initial_params)
             msh_zi_grid, msh_xi_grid = np.meshgrid(zi_cc, xi_cc)
             n_flat = len(xi_cc) * len(zi_cc)
             msh_zi = msh_zi_grid.reshape(n_flat, order="F")
@@ -275,7 +380,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             params = model.params
             if params is None:
                 raise RuntimeError(
-                    "HyperbolicTangentModel did not set model parameters; "
+                    "_HyperbolicTangentModel2D did not set model parameters; "
                     "cannot build CoupledBinning2DBatchResult."
                 )
             model_params = {

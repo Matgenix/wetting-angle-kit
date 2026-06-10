@@ -1,9 +1,7 @@
 """Binning-method integration tests on a LAMMPS cylinder-droplet fixture.
 
-Phase 11 migration: the new ``CoupledBinning2DAnalyzer`` is exercised
-end-to-end against the same fixture as the legacy
-``BinningTrajectoryAnalyzer``. One legacy test is kept as a frozen
-regression net (to be removed in Phase 12 alongside the legacy class).
+End-to-end ``CoupledBinning2DAnalyzer`` runs on the cylinder droplet
+fixture, both single-batch and per-frame batching.
 """
 
 import pathlib
@@ -13,10 +11,7 @@ import pytest
 
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import (  # noqa: E402
-    BinningTrajectoryAnalyzer,
-    CoupledBinning2DAnalyzer,
-)
+from wetting_angle_kit.analysis import CoupledBinning2DAnalyzer  # noqa: E402
 from wetting_angle_kit.analysis.temporal import TemporalAggregator  # noqa: E402
 from wetting_angle_kit.parsers import (  # noqa: E402
     LammpsDumpParser,
@@ -53,32 +48,6 @@ def binning_params() -> dict:
     }
 
 
-# --- Frozen legacy regression --------------------------------------------------
-# To be removed in Phase 12 alongside ``BinningTrajectoryAnalyzer`` itself.
-@pytest.mark.integration
-def test_legacy_binning_trajectory_analyzer_regression(
-    filename: pathlib.Path,
-    oxygen_indices: np.ndarray,
-    binning_params: dict,
-) -> None:
-    """Frozen-legacy regression on the cylinder-droplet fixture."""
-    analyzer = BinningTrajectoryAnalyzer(
-        parser=LammpsDumpParser(filename),
-        atom_indices=oxygen_indices,
-        droplet_geometry="cylinder_y",
-        binning_params=binning_params,
-    )
-    results = analyzer.analyze([1])
-
-    assert len(results) == 1
-    # Legacy binning on the cylinder fixture, frame 1: 99.110°.
-    # ±3° band.
-    assert 96.0 <= results.mean_angle <= 102.0
-    # Single batch → std across batches is 0.
-    assert results.std_angle == 0.0
-
-
-# --- New-API equivalent --------------------------------------------------------
 @pytest.mark.integration
 def test_coupled_binning_2d_with_cylinder_fixture(
     filename: pathlib.Path,
@@ -96,8 +65,7 @@ def test_coupled_binning_2d_with_cylinder_fixture(
 
     assert len(results) == 1
     angle = float(results.batches[0].angle)
-    # New analyzer matches legacy bit-for-bit (Phase 9 parity test)
-    # so the same 99.110° ±3° band applies.
+    # Coupled-binning angle on this fixture, frame 1: 99.110°. ±3° band.
     assert 96.0 <= angle <= 102.0
     assert np.isfinite(results.mean_angle)
     # Single batch → std across batches is 0.
@@ -110,7 +78,7 @@ def test_coupled_binning_2d_per_frame_batches(
     oxygen_indices: np.ndarray,
     binning_params: dict,
 ) -> None:
-    """``batch_size=1`` ↔ legacy ``split_factor=1``: one fit per frame."""
+    """``batch_size=1``: one fit per frame."""
     frames = [1, 2, 3]
     analyzer = CoupledBinning2DAnalyzer(
         parser=LammpsDumpParser(filename),
@@ -131,5 +99,5 @@ def test_coupled_binning_2d_per_frame_batches(
     for batch, expected in zip(results.batches, expected_angles, strict=True):
         assert len(batch.frames) == 1
         # Allow either a converged angle near the expected value, or
-        # NaN on per-frame fit failure (matches the legacy contract).
+        # NaN on per-frame fit failure.
         assert np.isnan(batch.angle) or abs(batch.angle - expected) < 5.0
