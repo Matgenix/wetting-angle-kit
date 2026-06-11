@@ -227,18 +227,20 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
     def analyze(
         self,
         frame_range: list[int] | None = None,
-        n_jobs: int | None = None,
+        n_jobs: int | None = 1,
     ) -> Any:
-        """Run the analyzer in parallel across batches.
+        """Run the analyzer across batches.
 
         Parameters
         ----------
         frame_range : list[int], optional
             Frame indices to analyse. Defaults to every frame in the
             trajectory (``range(parser.frame_count())``).
-        n_jobs : int, optional
-            Worker process count. ``None`` lets
-            ``multiprocessing.Pool`` pick the default
+        n_jobs : int, default 1
+            Worker process count. ``1`` (default) runs in-process
+            with no ``multiprocessing.Pool`` overhead. Set to an
+            integer ``>= 2`` for parallel execution, or to ``None``
+            to let ``multiprocessing.Pool`` pick the default
             (``os.cpu_count()``).
 
         Returns
@@ -259,11 +261,51 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         )
 
         init_args = self._init_args()
-        # ``Any`` here because each concrete subclass has its own
-        # per-batch result type (BatchResult / CoupledBinning2DBatchResult
-        # / CoupledBinning3DBatchResult); they share a duck-typed
-        # ``.frames`` attribute used for ordering, not a nominal base.
-        batch_results: list[Any] = []
+        if n_jobs == 1 or len(batches) == 1:
+            batch_results = self._run_inline(batches, init_args)
+        else:
+            batch_results = self._run_parallel(batches, init_args, n_jobs)
+
+        if not batch_results:
+            raise RuntimeError(
+                f"None of the {len(batches)} requested batches produced a "
+                "result. Check the worker logs above for the underlying "
+                "parser, geometry, or fit errors."
+            )
+
+        # ``imap_unordered`` returns completion-ordered; restore batch
+        # order using the first frame index in each batch.
+        batch_results.sort(key=lambda b: min(b.frames) if b.frames else 0)
+        return self._build_results(batches=batch_results)
+
+    def _run_inline(
+        self,
+        batches: list[list[int]],
+        init_args: tuple,
+    ) -> list[Any]:
+        """In-process batch loop; avoids ``Pool`` spawn overhead."""
+        self._init_worker(*init_args)
+        results: list[Any] = []
+        with tqdm(
+            total=len(batches),
+            desc=self._tqdm_desc(),
+            unit="batch",
+        ) as pbar:
+            for batch in batches:
+                result = self._process_batch_worker(batch)
+                if result is not None:
+                    results.append(result)
+                pbar.update(1)
+        return results
+
+    def _run_parallel(
+        self,
+        batches: list[list[int]],
+        init_args: tuple,
+        n_jobs: int | None,
+    ) -> list[Any]:
+        """Multi-process batch loop via ``multiprocessing.Pool``."""
+        results: list[Any] = []
         with (
             _MP_CONTEXT.Pool(
                 processes=n_jobs,
@@ -278,20 +320,9 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         ):
             for result in pool.imap_unordered(self._process_batch_worker, batches):
                 if result is not None:
-                    batch_results.append(result)
+                    results.append(result)
                 pbar.update(1)
-
-        if not batch_results:
-            raise RuntimeError(
-                f"None of the {len(batches)} requested batches produced a "
-                "result. Check the worker logs above for the underlying "
-                "parser, geometry, or fit errors."
-            )
-
-        # ``imap_unordered`` returns completion-ordered; restore batch
-        # order using the first frame index in each batch.
-        batch_results.sort(key=lambda b: min(b.frames) if b.frames else 0)
-        return self._build_results(batches=batch_results)
+        return results
 
     def _tqdm_desc(self) -> str:
         """Progress bar label. Subclasses may override for clarity."""
