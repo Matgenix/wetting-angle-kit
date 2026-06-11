@@ -11,13 +11,13 @@ from typing import ClassVar, Literal
 
 import numpy as np
 
+from wetting_angle_kit.analysis.extractors.base import InterfaceData
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (
     BatchResult,
     SlicingBatchResult,
     WholeBatchResult,
 )
-from wetting_angle_kit.analysis.wall import InterfaceData
 
 #: Surface-representation kind the fitter consumes. Mirrors
 #: :data:`wetting_angle_kit.analysis.extractors.SurfaceKind` — the two

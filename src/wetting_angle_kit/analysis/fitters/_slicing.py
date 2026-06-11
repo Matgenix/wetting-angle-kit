@@ -5,6 +5,7 @@ from typing import ClassVar
 
 import numpy as np
 
+from wetting_angle_kit.analysis.extractors.base import InterfaceData
 from wetting_angle_kit.analysis.fitters._kasa import _kasa_circle_fit_2d
 from wetting_angle_kit.analysis.fitters.base import (
     SlicingFitOutput,
@@ -12,7 +13,6 @@ from wetting_angle_kit.analysis.fitters.base import (
     SurfaceKind,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
-from wetting_angle_kit.analysis.wall import InterfaceData
 
 
 @dataclass(frozen=True, eq=False, kw_only=True)

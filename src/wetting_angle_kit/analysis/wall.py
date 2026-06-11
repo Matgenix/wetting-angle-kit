@@ -23,17 +23,11 @@ class::
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal, TypeAlias
+from typing import Literal
 
 import numpy as np
 
-#: Interface point set produced by an :class:`InterfaceExtractor`.
-#:
-#: - In slicing mode, a list of ``(N_i, 2)`` arrays in the per-slice
-#:   ``(x, z)`` plane.
-#: - In whole mode, a single ``(N, 3)`` array in the internal
-#:   ``(x, y, z)`` frame.
-InterfaceData: TypeAlias = list[np.ndarray] | np.ndarray
+from wetting_angle_kit.analysis.extractors.base import InterfaceData
 
 
 @dataclass(frozen=True)

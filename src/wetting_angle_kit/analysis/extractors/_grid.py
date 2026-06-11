@@ -6,12 +6,12 @@ from typing import Any, ClassVar
 import numpy as np
 
 from wetting_angle_kit.analysis.extractors.base import (
+    InterfaceData,
     InterfaceExtractor,
     SamplingKind,
     SurfaceKind,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
-from wetting_angle_kit.analysis.wall import InterfaceData
 
 _GRID_KEYS_2D = frozenset({"xi_0", "xi_f", "nbins_xi", "zi_0", "zi_f", "nbins_zi"})
 _GRID_KEYS_3D = _GRID_KEYS_2D | {"yi_0", "yi_f", "nbins_yi"}

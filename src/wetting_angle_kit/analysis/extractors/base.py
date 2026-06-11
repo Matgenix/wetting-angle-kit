@@ -6,18 +6,27 @@ modules (which inherit from :class:`InterfaceExtractor`).
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, Literal
+from typing import Any, ClassVar, Literal, TypeAlias
 
 import numpy as np
 
 from wetting_angle_kit.analysis.geometry import DropletGeometry
-from wetting_angle_kit.analysis.wall import InterfaceData
 
 #: What the downstream :class:`SurfaceFitter` will consume.
 SurfaceKind = Literal["slicing", "whole"]
 
 #: Sampling strategy used by the extractor.
 SamplingKind = Literal["rays", "grid"]
+
+#: Interface point set produced by an :class:`InterfaceExtractor` and
+#: consumed by :class:`SurfaceFitter` (and, via :class:`WallContext`,
+#: by :class:`WallDetector`).
+#:
+#: - In slicing mode, a list of ``(N_i, 2)`` arrays in the per-slice
+#:   ``(x, z)`` plane.
+#: - In whole mode, a single ``(N, 3)`` array in the internal
+#:   ``(x, y, z)`` frame.
+InterfaceData: TypeAlias = list[np.ndarray] | np.ndarray
 
 
 class InterfaceExtractor(ABC):

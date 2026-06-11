@@ -16,12 +16,12 @@ from wetting_angle_kit.analysis.extractors._sampling import (
     _fibonacci_sphere_directions,
 )
 from wetting_angle_kit.analysis.extractors.base import (
+    InterfaceData,
     InterfaceExtractor,
     SamplingKind,
     SurfaceKind,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
-from wetting_angle_kit.analysis.wall import InterfaceData
 
 
 def _validate_rays_params(
