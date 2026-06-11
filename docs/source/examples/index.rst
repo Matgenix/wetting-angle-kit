@@ -6,7 +6,8 @@ Ready-to-run example scripts demonstrating common workflows.
 Parsing Trajectory Files
 -------------------------
 
-This example demonstrates how to parse different trajectory file formats.
+Parse different trajectory file formats (LAMMPS dump, ASE, XYZ) into a
+unified ``(N, 3)`` coordinate array.
 
 .. literalinclude:: ../../examples/parsing_trajectory_files.py
    :language: python
@@ -14,21 +15,11 @@ This example demonstrates how to parse different trajectory file formats.
 
 ----
 
-Binning Contact Angle Analysis
+Slicing-Pipeline Contact Angle
 ------------------------------
 
-Example of using the binning method for contact angle analysis.
-
-.. literalinclude:: ../../examples/binning_ca.py
-   :language: python
-   :linenos:
-
-----
-
-Slicing Contact Angle Analysis
-------------------------------
-
-Example of using the slicing method for contact angle analysis.
+Per-frame angle via the composable :class:`TrajectoryAnalyzer` with the
+ray-fan extractor and the slicing fitter.
 
 .. literalinclude:: ../../examples/slicing_ca.py
    :language: python
@@ -36,11 +27,49 @@ Example of using the slicing method for contact angle analysis.
 
 ----
 
-Visualizing Slicing Trajectories
---------------------------------
+Whole-Fit Contact Angle with Bootstrap
+---------------------------------------
 
-Example of visualizing droplet trajectories with the slicing method.
+Whole-shape sphere fit with the wall position taken from the actual
+substrate atoms and a bootstrap uncertainty.
+
+.. literalinclude:: ../../examples/whole_fit_ca.py
+   :language: python
+   :linenos:
+
+----
+
+Coupled-Binning Contact Angle
+------------------------------
+
+Joint hyperbolic-tangent density-model fit via
+:class:`CoupledBinning2DAnalyzer` — one angle per pooled batch.
+
+.. literalinclude:: ../../examples/binning_ca.py
+   :language: python
+   :linenos:
+
+----
+
+Visualising a Per-Frame Droplet Snapshot
+-----------------------------------------
+
+Pull a single slice's interface contour off a slicing-pipeline result
+and render it with :class:`DropletSlicePlotter`.
 
 .. literalinclude:: ../../examples/visualisation_slicing_traj.py
+   :language: python
+   :linenos:
+
+----
+
+Angle Evolution + Density Contour Plots
+----------------------------------------
+
+The two trajectory-level plotters
+(:class:`AngleEvolutionPlotter` and :class:`DensityContourPlotter`)
+on the same trajectory.
+
+.. literalinclude:: ../../examples/visualisation_evolution_density.py
    :language: python
    :linenos:
