@@ -21,10 +21,6 @@ Subclasses fill in:
   computation, run inside a worker;
 - ``_build_results(batches)`` — packaging the per-batch results
   into the analyzer's results dataclass.
-
-Algorithm bodies for the subclass extension points are stubbed at this
-skeleton stage. The shared scaffolding (constructor, ``analyze``, coord
-gathering) is real because it is small, well-defined, and stable.
 """
 
 import logging

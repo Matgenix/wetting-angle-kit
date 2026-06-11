@@ -12,9 +12,7 @@ that define a contact-angle analysis pipeline:
 The class extends the shared :class:`_BatchedTrajectoryAnalyzer`
 worker-pool scaffolding by implementing the four extension points
 documented there. The per-batch wiring lives in
-:meth:`_process_batch_worker`; algorithm bodies (extraction, fitting,
-wall detection beyond :meth:`WallDetector.min_plus_offset`) remain
-``NotImplementedError`` until porting begins.
+:meth:`_process_batch_worker`.
 
 The joint-fit analyzers (:class:`CoupledBinning2DAnalyzer`,
 :class:`CoupledBinning3DAnalyzer`) live in their own modules and
