@@ -26,7 +26,7 @@ from typing import Any, ClassVar
 
 import numpy as np
 
-from wetting_angle_kit.analysis.base import (
+from wetting_angle_kit.analysis._base import (
     _BatchedTrajectoryAnalyzer,
     build_parser,
     gather_batch_coords,

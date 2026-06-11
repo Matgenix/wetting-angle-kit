@@ -18,7 +18,7 @@ import pathlib
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis.coupled_binning_3d import (  # noqa: E402
+from wetting_angle_kit.analysis.coupled_binning.analyzer_3d import (  # noqa: E402
     CoupledBinning3DAnalyzer,
     _HyperbolicTangentModel3D,
 )

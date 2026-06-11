@@ -15,8 +15,8 @@ Four flavors:
 
 import numpy as np
 
-from wetting_angle_kit.analysis.extractors import (
-    InterfaceExtractor,
+from wetting_angle_kit.analysis.extractors import InterfaceExtractor
+from wetting_angle_kit.analysis.extractors._sampling import (
     _fibonacci_sphere_directions,
 )
 from wetting_angle_kit.analysis.fitters import SurfaceFitter

@@ -27,8 +27,12 @@ Results dataclasses returned by ``analyze()``::
 from wetting_angle_kit.analysis.analyzer import BaseTrajectoryAnalyzer
 
 # Top-level analyzers.
-from wetting_angle_kit.analysis.coupled_binning_2d import CoupledBinning2DAnalyzer
-from wetting_angle_kit.analysis.coupled_binning_3d import CoupledBinning3DAnalyzer
+from wetting_angle_kit.analysis.coupled_binning.analyzer_2d import (
+    CoupledBinning2DAnalyzer,
+)
+from wetting_angle_kit.analysis.coupled_binning.analyzer_3d import (
+    CoupledBinning3DAnalyzer,
+)
 
 # Strategy components.
 from wetting_angle_kit.analysis.extractors import InterfaceExtractor
