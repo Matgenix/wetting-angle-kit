@@ -1,4 +1,4 @@
-"""Phase 10 quantification: ``CoupledBinning3DAnalyzer``.
+"""Phase 10 quantification: ``CoupledFit3DAnalyzer``.
 
 Three flavors:
 
@@ -7,7 +7,7 @@ Three flavors:
   recovered contact angle matches truth to ≤ 0.1°.
 - **Cylinder rejection.** The analyzer refuses cylindrical droplets
   at construction with the documented pointer to the 2D variant.
-- **End-to-end vs ``CoupledBinning2DAnalyzer`` on the LAMMPS fixture.**
+- **End-to-end vs ``CoupledFit2DAnalyzer`` on the LAMMPS fixture.**
   The 2D analyzer collapses the droplet via radial symmetry; the 3D
   one keeps the full 3D density. For an approximately axisymmetric
   droplet the two should agree within a few degrees.
@@ -18,8 +18,8 @@ import pathlib
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis.coupled_binning.analyzer_3d import (  # noqa: E402
-    CoupledBinning3DAnalyzer,
+from wetting_angle_kit.analysis.coupled_fit.analyzer_3d import (  # noqa: E402
+    CoupledFit3DAnalyzer,
     _HyperbolicTangentModel3D,
 )
 
@@ -69,7 +69,7 @@ def test_3d_tanh_model_recovers_known_cap_angle_on_clean_grid() -> None:
     assert drift < 0.1
 
 
-def test_coupled_binning_3d_rejects_cylinder() -> None:
+def test_coupled_fit_3d_rejects_cylinder() -> None:
     """Constructing the analyzer with a cylinder droplet raises clearly."""
 
     class _MockParser:
@@ -91,7 +91,7 @@ def test_coupled_binning_3d_rejects_cylinder() -> None:
     # rejection sits **after** super().__init__, so we expect a
     # ValueError from the cylinder check.
     with pytest.raises(ValueError):
-        CoupledBinning3DAnalyzer(
+        CoupledFit3DAnalyzer(
             parser=_MockParser(),
             droplet_geometry="cylinder_y",
             binning_params={
@@ -118,10 +118,10 @@ _FIXTURE = (
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_coupled_binning_3d_close_to_2d_on_lammps_fixture() -> None:
+def test_coupled_fit_3d_close_to_2d_on_lammps_fixture() -> None:
     """On an axisymmetric droplet the 3D and 2D fits should agree within ~few°."""
     pytest.importorskip("ovito")
-    from wetting_angle_kit.analysis import CoupledBinning2DAnalyzer
+    from wetting_angle_kit.analysis import CoupledFit2DAnalyzer
     from wetting_angle_kit.parsers import (
         LammpsDumpParser,
         LammpsDumpWaterFinder,
@@ -139,7 +139,7 @@ def test_coupled_binning_3d_close_to_2d_on_lammps_fixture() -> None:
         "zi_f": 40.0,
         "bin_width_z": 1.0,
     }
-    legacy_2d = CoupledBinning2DAnalyzer(
+    legacy_2d = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
@@ -159,7 +159,7 @@ def test_coupled_binning_3d_close_to_2d_on_lammps_fixture() -> None:
         "zi_f": 40.0,
         "bin_width_z": 1.6,
     }
-    new_3d = CoupledBinning3DAnalyzer(
+    new_3d = CoupledFit3DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
@@ -169,8 +169,8 @@ def test_coupled_binning_3d_close_to_2d_on_lammps_fixture() -> None:
 
     drift = abs(angle_2d - angle_3d)
     print(
-        f"\nCoupledBinning2DAnalyzer angle = {angle_2d:.3f}°"
-        f"\nCoupledBinning3DAnalyzer angle = {angle_3d:.3f}°"
+        f"\nCoupledFit2DAnalyzer angle = {angle_2d:.3f}°"
+        f"\nCoupledFit3DAnalyzer angle = {angle_3d:.3f}°"
         f"\n|drift|                        = {drift:.3f}°"
     )
     # Both should land in the physically plausible band.

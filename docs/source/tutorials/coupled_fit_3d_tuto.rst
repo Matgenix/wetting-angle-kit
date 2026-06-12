@@ -1,9 +1,9 @@
-Tutorial: 3D Coupled-Binning Analyzer
-======================================
+Tutorial: 3D Coupled-Fit Analyzer
+==================================
 
-:class:`CoupledBinning3DAnalyzer` is the 3D extension of
-:class:`CoupledBinning2DAnalyzer`. Instead of projecting atoms to a
-2D ``(xi, zi)`` plane and exploiting radial symmetry, it bins the
+:class:`CoupledFit3DAnalyzer` is the 3D extension of
+:class:`CoupledFit2DAnalyzer`. Instead of projecting atoms to a
+2D ``(xi, zi)`` plane and exploiting radial symmetry, it builds the
 full 3D density ``rho(xi, yi, zi)`` and fits a nine-parameter
 hyperbolic-tangent density model directly:
 
@@ -58,7 +58,7 @@ wasting work.
 
 .. code-block:: python
 
-   from wetting_angle_kit.analysis import CoupledBinning3DAnalyzer
+   from wetting_angle_kit.analysis import CoupledFit3DAnalyzer
    from wetting_angle_kit.analysis.temporal import TemporalAggregator
    from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
@@ -81,7 +81,7 @@ wasting work.
        "bin_width_z": 4.0,
    }
 
-   analyzer = CoupledBinning3DAnalyzer(
+   analyzer = CoupledFit3DAnalyzer(
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
@@ -164,8 +164,8 @@ the same angle within a few degrees. It's a useful sanity check:
 .. code-block:: python
 
    from wetting_angle_kit.analysis import (
-       CoupledBinning2DAnalyzer,
-       CoupledBinning3DAnalyzer,
+       CoupledFit2DAnalyzer,
+       CoupledFit3DAnalyzer,
    )
 
    # Same trajectory, same frames; pick comparable grids.
@@ -190,7 +190,7 @@ the same angle within a few degrees. It's a useful sanity check:
    }
 
    a2d = (
-       CoupledBinning2DAnalyzer(
+       CoupledFit2DAnalyzer(
            parser=LammpsDumpParser(filename),
            atom_indices=oxygen_indices,
            droplet_geometry="spherical",
@@ -200,7 +200,7 @@ the same angle within a few degrees. It's a useful sanity check:
        .batches[0]
    )
    a3d = (
-       CoupledBinning3DAnalyzer(
+       CoupledFit3DAnalyzer(
            parser=LammpsDumpParser(filename),
            atom_indices=oxygen_indices,
            droplet_geometry="spherical",
@@ -233,6 +233,6 @@ On the test fixture this gives 94.46° (2D) vs 95.42° (3D), drift
   yi_c = 0``. Override via ``initial_params`` if you have a strong
   prior on the cap geometry.
 - **No cylinder support**: pass ``droplet_geometry="cylinder_y"``
-  to ``CoupledBinning3DAnalyzer`` and you'll get a ``ValueError``
+  to ``CoupledFit3DAnalyzer`` and you'll get a ``ValueError``
   at construction explaining the design choice; route cylindrical
-  droplets through :class:`CoupledBinning2DAnalyzer` instead.
+  droplets through :class:`CoupledFit2DAnalyzer` instead.

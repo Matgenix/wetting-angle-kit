@@ -8,9 +8,9 @@ depends on the :class:`SurfaceFitter` kind:
 - slicing fitters → :class:`SlicingBatchResult`
 - whole fitters   → :class:`WholeBatchResult`
 
-The two joint-fit analyzers — :class:`CoupledBinning2DAnalyzer` and
-:class:`CoupledBinning3DAnalyzer` — each return their own results type
-(:class:`CoupledBinning2DResults`, :class:`CoupledBinning3DResults`).
+The two joint-fit analyzers — :class:`CoupledFit2DAnalyzer` and
+:class:`CoupledFit3DAnalyzer` — each return their own results type
+(:class:`CoupledFit2DResults`, :class:`CoupledFit3DResults`).
 They carry density grids plus joint-fit parameters and are therefore
 not part of the :class:`TrajectoryResults` hierarchy.
 """
@@ -107,8 +107,8 @@ class WholeBatchResult(BatchResult):
 
 
 @dataclass(frozen=True, eq=False)
-class CoupledBinning2DBatchResult:
-    """Per-batch result from :class:`CoupledBinning2DAnalyzer`.
+class CoupledFit2DBatchResult:
+    """Per-batch result from :class:`CoupledFit2DAnalyzer`.
 
     Attributes
     ----------
@@ -137,12 +137,12 @@ class CoupledBinning2DBatchResult:
 
 
 @dataclass(frozen=True, eq=False)
-class CoupledBinning3DBatchResult:
-    """Per-batch result from :class:`CoupledBinning3DAnalyzer`.
+class CoupledFit3DBatchResult:
+    """Per-batch result from :class:`CoupledFit3DAnalyzer`.
 
     Only meaningful for spherical droplets; cylindrical droplets carry
     a translational symmetry along the cylinder axis that the 2D
-    analyzer already exploits, so :class:`CoupledBinning3DAnalyzer`
+    analyzer already exploits, so :class:`CoupledFit3DAnalyzer`
     rejects non-spherical geometries at construction.
 
     Attributes
@@ -224,19 +224,19 @@ class TrajectoryResults:
 
 
 @dataclass
-class CoupledBinning2DResults:
-    """In-memory results of a :class:`CoupledBinning2DAnalyzer.analyze` run.
+class CoupledFit2DResults:
+    """In-memory results of a :class:`CoupledFit2DAnalyzer.analyze` run.
 
     Attributes
     ----------
-    batches : list[CoupledBinning2DBatchResult]
+    batches : list[CoupledFit2DBatchResult]
         Per-batch results, in the order produced by the aggregator.
     method_metadata : dict
         Free-form descriptor (droplet geometry, binning params,
         initial parameters, batch size).
     """
 
-    batches: list[CoupledBinning2DBatchResult]
+    batches: list[CoupledFit2DBatchResult]
     method_metadata: dict[str, Any] = field(default_factory=dict)
 
     def __len__(self) -> int:
@@ -263,19 +263,19 @@ class CoupledBinning2DResults:
 
 
 @dataclass
-class CoupledBinning3DResults:
-    """In-memory results of a :class:`CoupledBinning3DAnalyzer.analyze` run.
+class CoupledFit3DResults:
+    """In-memory results of a :class:`CoupledFit3DAnalyzer.analyze` run.
 
     Attributes
     ----------
-    batches : list[CoupledBinning3DBatchResult]
+    batches : list[CoupledFit3DBatchResult]
         Per-batch results, in the order produced by the aggregator.
     method_metadata : dict
         Free-form descriptor (droplet geometry — always spherical for
         this analyzer, binning params, initial parameters, batch size).
     """
 
-    batches: list[CoupledBinning3DBatchResult]
+    batches: list[CoupledFit3DBatchResult]
     method_metadata: dict[str, Any] = field(default_factory=dict)
 
     def __len__(self) -> int:

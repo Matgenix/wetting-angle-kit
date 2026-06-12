@@ -2,7 +2,7 @@
 
 :class:`_BatchedTrajectoryAnalyzer` is the private base from which both
 :class:`TrajectoryAnalyzer` and the two coupled-fit analyzers
-(:class:`CoupledBinning2DAnalyzer`, :class:`CoupledBinning3DAnalyzer`)
+(:class:`CoupledFit2DAnalyzer`, :class:`CoupledFit3DAnalyzer`)
 inherit. It centralises:
 
 - the common constructor (parser + atom_indices + droplet_geometry +
@@ -188,7 +188,7 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
     """Shared scaffolding for batched trajectory analyzers.
 
     Not user-facing. Concrete analyzers (:class:`TrajectoryAnalyzer`,
-    :class:`CoupledBinning2DAnalyzer`, :class:`CoupledBinning3DAnalyzer`)
+    :class:`CoupledFit2DAnalyzer`, :class:`CoupledFit3DAnalyzer`)
     inherit from this and provide the four extension points listed in
     the module docstring.
     """
@@ -413,7 +413,7 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         Reads from the subclass's ``_WORKER_STATE`` populated by
         :meth:`_init_worker`. Returns the per-batch result (a
         :class:`BatchResult` subclass for :class:`TrajectoryAnalyzer`,
-        a :class:`CoupledBinning2DBatchResult` for the 2D coupled fit,
+        a :class:`CoupledFit2DBatchResult` for the 2D coupled fit,
         etc.) — or ``None`` on a per-batch failure. The parent process
         logs and skips ``None`` results, raising only if every batch
         fails.

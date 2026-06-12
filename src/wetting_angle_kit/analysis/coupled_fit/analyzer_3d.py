@@ -1,7 +1,7 @@
 """Coupled 3D-binning joint contact-angle analyzer.
 
-:class:`CoupledBinning3DAnalyzer` is the 3D extension of the joint
-binning fit (:class:`CoupledBinning2DAnalyzer`). Instead of projecting
+:class:`CoupledFit3DAnalyzer` is the 3D extension of the joint
+binning fit (:class:`CoupledFit2DAnalyzer`). Instead of projecting
 atoms onto a 2D ``(xi, zi)`` plane and exploiting radial symmetry, it
 bins the full 3D density ``rho(xi, yi, zi)`` and fits a nine-parameter
 hyperbolic-tangent model (``rho1, rho2, R_eq, xi_c, yi_c, zi_c, zi_0,
@@ -17,7 +17,7 @@ Use it when:
 
 Cylindrical droplets are rejected at construction: their translational
 symmetry along the cylinder axis means the 3D fit reduces to the 2D
-fit already implemented by :class:`CoupledBinning2DAnalyzer`.
+fit already implemented by :class:`CoupledFit2DAnalyzer`.
 """
 
 import logging
@@ -29,7 +29,10 @@ from wetting_angle_kit.analysis._base import (
     _BatchedTrajectoryAnalyzer,
     build_parser,
 )
-from wetting_angle_kit.analysis.coupled_binning._models import (
+from wetting_angle_kit.analysis.coupled_fit._density_estimator import (
+    DensityEstimator,
+)
+from wetting_angle_kit.analysis.coupled_fit._models import (
     _PARAM_NAMES_3D,
     _default_binning_params_3d,
     _HyperbolicTangentModel3D,
@@ -37,8 +40,8 @@ from wetting_angle_kit.analysis.coupled_binning._models import (
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (
-    CoupledBinning3DBatchResult,
-    CoupledBinning3DResults,
+    CoupledFit3DBatchResult,
+    CoupledFit3DResults,
 )
 from wetting_angle_kit.analysis.temporal import TemporalAggregator
 from wetting_angle_kit.io_utils import recenter_droplet_pbc
@@ -46,7 +49,7 @@ from wetting_angle_kit.io_utils import recenter_droplet_pbc
 logger = logging.getLogger(__name__)
 
 
-class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
+class CoupledFit3DAnalyzer(_BatchedTrajectoryAnalyzer):
     """Joint contact-angle fit on a 3D binned density grid.
 
     Parameters
@@ -61,7 +64,7 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
         Must be spherical. Cylindrical droplets are rejected at
         construction because their translational symmetry already
         collapses the 3D problem onto the 2D one solved by
-        :class:`CoupledBinning2DAnalyzer`.
+        :class:`CoupledFit2DAnalyzer`.
     binning_params : dict, optional
         3D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"bin_width_x"``,
         ``"yi_0"``, ``"yi_f"``, ``"bin_width_y"``, ``"zi_0"``, ``"zi_f"``,
@@ -95,6 +98,7 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
         droplet_geometry: DropletGeometry | str = "spherical",
         *,
         binning_params: dict[str, Any] | None = None,
+        density_estimator: DensityEstimator | None = None,
         initial_params: list[float] | None = None,
         temporal_aggregator: TemporalAggregator | None = None,
         precentered: bool = False,
@@ -109,15 +113,16 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
         )
         if not self.droplet_geometry.is_spherical:
             raise ValueError(
-                "CoupledBinning3DAnalyzer only supports spherical droplets; "
+                "CoupledFit3DAnalyzer only supports spherical droplets; "
                 f"got droplet_geometry={self.droplet_geometry.name!r}. "
-                "For cylindrical droplets use CoupledBinning2DAnalyzer — "
+                "For cylindrical droplets use CoupledFit2DAnalyzer — "
                 "the 3D fit collapses onto the 2D one by translational "
                 "symmetry along the cylinder axis."
             )
         if binning_params is None:
             binning_params = _default_binning_params_3d(parser)
         self.binning_params = binning_params
+        self.density_estimator = density_estimator or DensityEstimator.binning()
         self.initial_params = initial_params
 
     # ------------------------------------------------------------------
@@ -125,7 +130,7 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
     # ------------------------------------------------------------------
 
     def _tqdm_desc(self) -> str:
-        return "CoupledBinning3DAnalyzer (spherical)"
+        return f"CoupledFit3DAnalyzer (spherical / {self.density_estimator.kind})"
 
     def _init_args(self) -> tuple:
         return (
@@ -133,6 +138,7 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
             self.atom_indices,
             self.droplet_geometry,
             self.binning_params,
+            self.density_estimator,
             self.initial_params,
             self.precentered,
         )
@@ -143,16 +149,18 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
         atom_indices: np.ndarray,
         droplet_geometry: DropletGeometry,
         binning_params: dict[str, Any],
+        density_estimator: DensityEstimator,
         initial_params: list[float] | None,
         precentered: bool,
     ) -> None:
-        cls = CoupledBinning3DAnalyzer
+        cls = CoupledFit3DAnalyzer
         cls._WORKER_STATE.clear()
         cls._WORKER_STATE.update(
             parser=build_parser(filename),
             atom_indices=atom_indices,
             droplet_geometry=droplet_geometry,
             binning_params=binning_params,
+            density_estimator=density_estimator,
             initial_params=initial_params,
             precentered=precentered,
         )
@@ -160,12 +168,13 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
     @staticmethod
     def _process_batch_worker(
         frame_indices: list[int],
-    ) -> CoupledBinning3DBatchResult | None:
-        state = CoupledBinning3DAnalyzer._WORKER_STATE
+    ) -> CoupledFit3DBatchResult | None:
+        state = CoupledFit3DAnalyzer._WORKER_STATE
         parser = state["parser"]
         atom_indices: np.ndarray = state["atom_indices"]
         droplet_geometry: DropletGeometry = state["droplet_geometry"]
         binning_params: dict[str, Any] = state["binning_params"]
+        density_estimator: DensityEstimator = state["density_estimator"]
         initial_params: list[float] | None = state["initial_params"]
         precentered: bool = state["precentered"]
         # Per-frame progress callback (inline mode only); see
@@ -214,13 +223,14 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
                 binning_params["zi_f"],
                 binning_params["bin_width_z"],
             )
-            counts, _ = np.histogramdd(coords, bins=(xi_edges, yi_edges, zi_edges))
-            dxi = float(xi_edges[1] - xi_edges[0])
-            dyi = float(yi_edges[1] - yi_edges[0])
-            dzi = float(zi_edges[1] - zi_edges[0])
-            rho = counts / (dxi * dyi * dzi)
-            if n_frames > 0:
-                rho /= n_frames
+            rho = density_estimator.evaluate_3d(
+                atoms_pooled=coords,
+                n_frames=n_frames,
+                droplet_geometry=droplet_geometry,
+                xi_edges=xi_edges,
+                yi_edges=yi_edges,
+                zi_edges=zi_edges,
+            )
 
             xi_cc = 0.5 * (xi_edges[:-1] + xi_edges[1:])
             yi_cc = 0.5 * (yi_edges[:-1] + yi_edges[1:])
@@ -243,13 +253,13 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
             if params is None:
                 raise RuntimeError(
                     "_HyperbolicTangentModel3D did not set parameters; "
-                    "cannot build CoupledBinning3DBatchResult."
+                    "cannot build CoupledFit3DBatchResult."
                 )
             model_params = {
                 name: float(value)
                 for name, value in zip(_PARAM_NAMES_3D, params, strict=False)
             }
-            return CoupledBinning3DBatchResult(
+            return CoupledFit3DBatchResult(
                 frames=list(frame_indices),
                 angle=float(angle),
                 model_params=model_params,
@@ -263,9 +273,9 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
             return None
 
     def _build_results(
-        self, batches: list[CoupledBinning3DBatchResult]
-    ) -> CoupledBinning3DResults:
-        return CoupledBinning3DResults(
+        self, batches: list[CoupledFit3DBatchResult]
+    ) -> CoupledFit3DResults:
+        return CoupledFit3DResults(
             batches=batches,
             method_metadata={
                 "droplet_geometry": self.droplet_geometry.name,

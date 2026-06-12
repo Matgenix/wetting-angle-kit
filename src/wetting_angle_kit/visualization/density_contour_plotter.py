@@ -5,11 +5,11 @@ Mirrors the visuals of the legacy
 dashed cap arc, dotted wall line, equal x/y aspect) while accepting
 the new coupled-binning result shapes:
 
-- :class:`CoupledBinning2DBatchResult` — single batch, plotted directly.
-- :class:`CoupledBinning2DResults` — densities averaged across batches.
-- :class:`CoupledBinning3DBatchResult` — 3D density azimuthally
+- :class:`CoupledFit2DBatchResult` — single batch, plotted directly.
+- :class:`CoupledFit2DResults` — densities averaged across batches.
+- :class:`CoupledFit3DBatchResult` — 3D density azimuthally
   averaged on the ``(xi, yi)`` plane to a 2D ``(r, zi)`` field.
-- :class:`CoupledBinning3DResults` — averaged across batches first,
+- :class:`CoupledFit3DResults` — averaged across batches first,
   then azimuthally collapsed.
 """
 
@@ -19,10 +19,10 @@ import numpy as np
 import plotly.graph_objects as go
 
 from wetting_angle_kit.analysis.results import (
-    CoupledBinning2DBatchResult,
-    CoupledBinning2DResults,
-    CoupledBinning3DBatchResult,
-    CoupledBinning3DResults,
+    CoupledFit2DBatchResult,
+    CoupledFit2DResults,
+    CoupledFit3DBatchResult,
+    CoupledFit3DResults,
 )
 
 
@@ -164,7 +164,7 @@ class DensityContourPlotter:
     def _extract(
         self, source: Any
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, dict, str]:
-        if isinstance(source, CoupledBinning2DBatchResult):
+        if isinstance(source, CoupledFit2DBatchResult):
             return (
                 source.xi_grid,
                 source.zi_grid,
@@ -172,9 +172,9 @@ class DensityContourPlotter:
                 source.model_params,
                 "",
             )
-        if isinstance(source, CoupledBinning2DResults):
+        if isinstance(source, CoupledFit2DResults):
             if not source.batches:
-                raise ValueError("CoupledBinning2DResults has no batches to plot.")
+                raise ValueError("CoupledFit2DResults has no batches to plot.")
             ref2d = source.batches[0]
             densities = np.stack([b.density for b in source.batches], axis=0)
             mean_density = densities.mean(axis=0)
@@ -185,7 +185,7 @@ class DensityContourPlotter:
                 ref2d.model_params,
                 f"averaged over {len(source.batches)} batches",
             )
-        if isinstance(source, CoupledBinning3DBatchResult):
+        if isinstance(source, CoupledFit3DBatchResult):
             xi, zi, density2d = self._azimuthal_average_3d(
                 source.xi_grid,
                 source.yi_grid,
@@ -199,10 +199,10 @@ class DensityContourPlotter:
                 source.model_params,
                 "azimuthally averaged",
             )
-        if isinstance(source, CoupledBinning3DResults):
+        if isinstance(source, CoupledFit3DResults):
             if not source.batches:
-                raise ValueError("CoupledBinning3DResults has no batches to plot.")
-            ref3d: CoupledBinning3DBatchResult = source.batches[0]
+                raise ValueError("CoupledFit3DResults has no batches to plot.")
+            ref3d: CoupledFit3DBatchResult = source.batches[0]
             densities = np.stack([b.density for b in source.batches], axis=0)
             mean_density = densities.mean(axis=0)
             xi, zi, density2d = self._azimuthal_average_3d(

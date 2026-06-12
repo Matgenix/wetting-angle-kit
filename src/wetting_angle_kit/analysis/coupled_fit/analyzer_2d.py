@@ -1,6 +1,6 @@
 """Coupled 2D-binning joint contact-angle analyzer.
 
-:class:`CoupledBinning2DAnalyzer` is the modern incarnation of the
+:class:`CoupledFit2DAnalyzer` is the modern incarnation of the
 package's original binning method. Unlike :class:`TrajectoryAnalyzer`
 it does not separate interface extraction, wall detection, and surface
 fit — a seven-parameter hyperbolic-tangent model (rho1, rho2, R_eq,
@@ -19,7 +19,7 @@ Use it when:
 For per-frame analysis with separable strategies use
 :class:`TrajectoryAnalyzer` instead. For the 3D extension of this
 analyzer (relaxing the radial symmetry assumption) see
-:class:`CoupledBinning3DAnalyzer`.
+:class:`CoupledFit3DAnalyzer`.
 """
 
 import logging
@@ -31,7 +31,10 @@ from wetting_angle_kit.analysis._base import (
     _BatchedTrajectoryAnalyzer,
     build_parser,
 )
-from wetting_angle_kit.analysis.coupled_binning._models import (
+from wetting_angle_kit.analysis.coupled_fit._density_estimator import (
+    DensityEstimator,
+)
+from wetting_angle_kit.analysis.coupled_fit._models import (
     _PARAM_NAMES,
     _default_binning_params,
     _HyperbolicTangentModel2D,
@@ -39,16 +42,16 @@ from wetting_angle_kit.analysis.coupled_binning._models import (
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (
-    CoupledBinning2DBatchResult,
-    CoupledBinning2DResults,
+    CoupledFit2DBatchResult,
+    CoupledFit2DResults,
 )
 from wetting_angle_kit.analysis.temporal import TemporalAggregator
-from wetting_angle_kit.io_utils import project_to_profile
+from wetting_angle_kit.io_utils import recenter_droplet_pbc
 
 logger = logging.getLogger(__name__)
 
 
-class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
+class CoupledFit2DAnalyzer(_BatchedTrajectoryAnalyzer):
     """Joint contact-angle fit on a 2D binned density grid.
 
     Parameters
@@ -74,6 +77,16 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         half the largest in-plane box dimension, with ``bin_width =
         0.5 Å`` (half the model's default interface thickness ``t1``).
         A warning is emitted when the default is used.
+    density_estimator : DensityEstimator, optional
+        How the per-cell density is computed from the pooled atom
+        positions. Built via :meth:`DensityEstimator.binning` (the
+        default, top-hat histogram with geometry-aware ``dV``
+        normalisation) or :meth:`DensityEstimator.gaussian`
+        (3D Gaussian KDE evaluated at the cell centres; same kernel
+        the ``rays_gaussian`` / ``grid_gaussian`` extractors use).
+        Switching to the Gaussian variant smooths out per-cell
+        Poisson noise — useful on per-frame / small-batch analyses
+        where the histogram density is degenerate.
     initial_params : list[float], optional
         Initial guess for the seven tanh-model parameters
         ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]``. Defaults to the
@@ -101,6 +114,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         droplet_geometry: DropletGeometry | str = "spherical",
         *,
         binning_params: dict[str, Any] | None = None,
+        density_estimator: DensityEstimator | None = None,
         initial_params: list[float] | None = None,
         temporal_aggregator: TemporalAggregator | None = None,
         precentered: bool = False,
@@ -116,6 +130,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         if binning_params is None:
             binning_params = _default_binning_params(parser)
         self.binning_params = binning_params
+        self.density_estimator = density_estimator or DensityEstimator.binning()
         self.initial_params = initial_params
         # Cylinder dV normalisation needs the box length along the
         # cylinder axis; read it once at construction (per legacy).
@@ -133,7 +148,10 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
     # ------------------------------------------------------------------
 
     def _tqdm_desc(self) -> str:
-        return f"CoupledBinning2DAnalyzer ({self.droplet_geometry.name})"
+        return (
+            f"CoupledFit2DAnalyzer "
+            f"({self.droplet_geometry.name} / {self.density_estimator.kind})"
+        )
 
     def _init_args(self) -> tuple:
         return (
@@ -141,6 +159,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             self.atom_indices,
             self.droplet_geometry,
             self.binning_params,
+            self.density_estimator,
             self.initial_params,
             self.precentered,
             self.box_dimension,
@@ -152,17 +171,19 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         atom_indices: np.ndarray,
         droplet_geometry: DropletGeometry,
         binning_params: dict[str, Any],
+        density_estimator: DensityEstimator,
         initial_params: list[float] | None,
         precentered: bool,
         box_dimension: float | None,
     ) -> None:
-        cls = CoupledBinning2DAnalyzer
+        cls = CoupledFit2DAnalyzer
         cls._WORKER_STATE.clear()
         cls._WORKER_STATE.update(
             parser=build_parser(filename),
             atom_indices=atom_indices,
             droplet_geometry=droplet_geometry,
             binning_params=binning_params,
+            density_estimator=density_estimator,
             initial_params=initial_params,
             precentered=precentered,
             box_dimension=box_dimension,
@@ -171,12 +192,13 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
     @staticmethod
     def _process_batch_worker(
         frame_indices: list[int],
-    ) -> CoupledBinning2DBatchResult | None:
-        state = CoupledBinning2DAnalyzer._WORKER_STATE
+    ) -> CoupledFit2DBatchResult | None:
+        state = CoupledFit2DAnalyzer._WORKER_STATE
         parser = state["parser"]
         atom_indices: np.ndarray = state["atom_indices"]
         droplet_geometry: DropletGeometry = state["droplet_geometry"]
         binning_params: dict[str, Any] = state["binning_params"]
+        density_estimator: DensityEstimator = state["density_estimator"]
         initial_params: list[float] | None = state["initial_params"]
         precentered: bool = state["precentered"]
         box_dimension: float | None = state["box_dimension"]
@@ -184,34 +206,38 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         # :meth:`_BatchedTrajectoryAnalyzer._run_inline`.
         progress_callback = state.get("progress_callback")
         try:
-            # Per-frame ``(xi, zi)`` projection, matching the legacy
-            # ``BinningBatchFitter.get_profile_coordinates`` so the
-            # joint fit sees the same projected coordinates.
-            r_chunks: list[np.ndarray] = []
-            z_chunks: list[np.ndarray] = []
+            # Per-frame PBC recentering + droplet-centring in (x, y).
+            # ``z`` stays in the lab frame so wall position retains
+            # physical meaning. The pooled 3D positions are then
+            # handed to the density estimator strategy, which picks
+            # its own projection (radial for spherical, |x| for
+            # cylinder) and density rule (histogram vs Gaussian KDE).
+            coord_chunks: list[np.ndarray] = []
             for frame_idx in frame_indices:
                 positions = parser.parse(frame_index=frame_idx, indices=atom_indices)
-                box_size: tuple[float, float] | None = None
-                if not precentered:
-                    box_size = (
+                if precentered:
+                    com = np.mean(positions, axis=0)
+                else:
+                    box_xy = (
                         parser.box_size_x(frame_index=frame_idx),
                         parser.box_size_y(frame_index=frame_idx),
                     )
-                r_frame, z_frame = project_to_profile(
-                    positions, droplet_geometry.name, box_size=box_size
-                )
-                r_chunks.append(r_frame)
-                z_chunks.append(z_frame)
+                    positions, com = recenter_droplet_pbc(
+                        positions, droplet_geometry.name, box_size=box_xy
+                    )
+                positions = droplet_geometry.to_internal_coords(positions)
+                com = droplet_geometry.to_internal_coords(com)
+                positions_centered = positions - np.array([com[0], com[1], 0.0])
+                coord_chunks.append(positions_centered)
                 if progress_callback is not None:
                     progress_callback(1)
-            r_values = np.concatenate(r_chunks) if r_chunks else np.empty(0)
-            z_values = np.concatenate(z_chunks) if z_chunks else np.empty(0)
+            atoms_pooled = (
+                np.concatenate(coord_chunks, axis=0)
+                if coord_chunks
+                else np.empty((0, 3))
+            )
             n_frames = len(frame_indices)
 
-            # Build the 2D density grid + apply geometry-aware dV
-            # normalisation. Cell width comes from binning_params;
-            # the range bounds are honoured exactly and the effective
-            # cell width may differ by a few percent.
             xi_edges = edges_from_bin_width(
                 binning_params["xi_0"],
                 binning_params["xi_f"],
@@ -222,20 +248,16 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
                 binning_params["zi_f"],
                 binning_params["bin_width_z"],
             )
-            counts, _, _ = np.histogram2d(r_values, z_values, bins=(xi_edges, zi_edges))
-            dxi = float(xi_edges[1] - xi_edges[0])
-            dzi = float(zi_edges[1] - zi_edges[0])
             xi_cc = 0.5 * (xi_edges[:-1] + xi_edges[1:])
             zi_cc = 0.5 * (zi_edges[:-1] + zi_edges[1:])
-            if droplet_geometry.is_cylinder:
-                assert box_dimension is not None
-                dV = 2.0 * box_dimension * dxi * dzi
-                rho_cc = counts / dV
-            else:
-                dV_per_row = 2.0 * np.pi * xi_cc * dxi * dzi
-                rho_cc = counts / dV_per_row[:, np.newaxis]
-            if n_frames > 0:
-                rho_cc /= n_frames
+            rho_cc = density_estimator.evaluate_2d(
+                atoms_pooled=atoms_pooled,
+                n_frames=n_frames,
+                droplet_geometry=droplet_geometry,
+                xi_edges=xi_edges,
+                zi_edges=zi_edges,
+                box_dimension=box_dimension,
+            )
 
             # Joint tanh fit. ``_HyperbolicTangentModel2D`` expects the
             # density and grid axes flattened in Fortran order — same
@@ -252,13 +274,13 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             if params is None:
                 raise RuntimeError(
                     "_HyperbolicTangentModel2D did not set model parameters; "
-                    "cannot build CoupledBinning2DBatchResult."
+                    "cannot build CoupledFit2DBatchResult."
                 )
             model_params = {
                 name: float(value)
                 for name, value in zip(_PARAM_NAMES, params, strict=False)
             }
-            return CoupledBinning2DBatchResult(
+            return CoupledFit2DBatchResult(
                 frames=list(frame_indices),
                 angle=angle,
                 model_params=model_params,
@@ -271,9 +293,9 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             return None
 
     def _build_results(
-        self, batches: list[CoupledBinning2DBatchResult]
-    ) -> CoupledBinning2DResults:
-        return CoupledBinning2DResults(
+        self, batches: list[CoupledFit2DBatchResult]
+    ) -> CoupledFit2DResults:
+        return CoupledFit2DResults(
             batches=batches,
             method_metadata={
                 "droplet_geometry": self.droplet_geometry.name,

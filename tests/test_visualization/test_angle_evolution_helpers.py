@@ -13,8 +13,8 @@ import numpy as np
 import pytest
 
 from wetting_angle_kit.analysis.results import (
-    CoupledBinning2DBatchResult,
-    CoupledBinning3DBatchResult,
+    CoupledFit2DBatchResult,
+    CoupledFit3DBatchResult,
     SlicingBatchResult,
     TrajectoryResults,
     WholeBatchResult,
@@ -167,9 +167,9 @@ def test_batch_surface_area_whole_unknown_popt_returns_nan() -> None:
     assert math.isnan(_batch_surface_area(batch))
 
 
-def test_batch_surface_area_coupled_binning_2d_uses_model_params() -> None:
+def test_batch_surface_area_coupled_fit_2d_uses_model_params() -> None:
     """Both 2D and 3D coupled-binning batches share the dispatch arm."""
-    batch = CoupledBinning2DBatchResult(
+    batch = CoupledFit2DBatchResult(
         frames=[0],
         angle=90.0,
         model_params={
@@ -189,8 +189,8 @@ def test_batch_surface_area_coupled_binning_2d_uses_model_params() -> None:
     assert _batch_surface_area(batch) == pytest.approx(math.pi * 25.0 / 2)
 
 
-def test_batch_surface_area_coupled_binning_3d_uses_model_params() -> None:
-    batch = CoupledBinning3DBatchResult(
+def test_batch_surface_area_coupled_fit_3d_uses_model_params() -> None:
+    batch = CoupledFit3DBatchResult(
         frames=[0],
         angle=90.0,
         model_params={

@@ -4,8 +4,8 @@ Mirrors the visual conventions of the legacy
 ``SlicingTrajectoryPlotter.plot_angle_evolution`` — a per-batch
 contact-angle line with an optional inter-batch ``±σ`` band and a
 cumulative running mean overlay — but consumes the new
-:class:`TrajectoryResults` / :class:`CoupledBinning2DResults` /
-:class:`CoupledBinning3DResults` shapes.
+:class:`TrajectoryResults` / :class:`CoupledFit2DResults` /
+:class:`CoupledFit3DResults` shapes.
 
 The plotter implements :class:`BaseTrajectoryPlotter`, so callers can
 also fetch a :class:`TrajectoryStats` summary alongside the figure.
@@ -17,8 +17,8 @@ import numpy as np
 import plotly.graph_objects as go
 
 from wetting_angle_kit.analysis.results import (
-    CoupledBinning2DBatchResult,
-    CoupledBinning3DBatchResult,
+    CoupledFit2DBatchResult,
+    CoupledFit3DBatchResult,
     SlicingBatchResult,
     WholeBatchResult,
 )
@@ -73,7 +73,7 @@ def _batch_surface_area(batch: Any) -> float:
         else:
             return float("nan")
         return _circular_segment_area(R, zc, float(batch.z_wall))
-    if isinstance(batch, (CoupledBinning2DBatchResult, CoupledBinning3DBatchResult)):
+    if isinstance(batch, (CoupledFit2DBatchResult, CoupledFit3DBatchResult)):
         params = batch.model_params
         return _circular_segment_area(
             float(params["R_eq"]),
@@ -106,8 +106,8 @@ class AngleEvolutionPlotter(BaseTrajectoryPlotter):
     results
         A ``*Results`` object exposing ``.batches`` with ``.angle`` and
         ``.frames`` (i.e. :class:`TrajectoryResults`,
-        :class:`CoupledBinning2DResults`, or
-        :class:`CoupledBinning3DResults`). For per-frame analyses use
+        :class:`CoupledFit2DResults`, or
+        :class:`CoupledFit3DResults`). For per-frame analyses use
         :class:`TemporalAggregator` with ``batch_size=1``; for pooled
         batches the evolution is shown per batch with each x-value at
         the pooled-frames midpoint.

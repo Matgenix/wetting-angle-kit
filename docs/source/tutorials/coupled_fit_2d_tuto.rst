@@ -1,13 +1,22 @@
-Tutorial: Contact Angle Analysis (Coupled Binning)
+Tutorial: Contact Angle Analysis (Coupled Fit, 2D)
 ===================================================
 
-This tutorial covers :class:`CoupledBinning2DAnalyzer`, the
+This tutorial covers :class:`CoupledFit2DAnalyzer`, the
 joint-fit alternative to the composable
-:class:`TrajectoryAnalyzer` pipeline. The binning analyzer solves
-interface extraction, wall detection, and surface fit together by
-fitting a seven-parameter hyperbolic-tangent density model directly to
-a binned 2D density field. One robust angle per pooled batch — ideal
-when you have many frames and don't need per-frame time resolution.
+:class:`TrajectoryAnalyzer` pipeline. The analyzer solves interface
+extraction, wall detection, and surface fit together by fitting a
+seven-parameter hyperbolic-tangent density model directly to a 2D
+density field on a fixed grid. One robust angle per pooled batch —
+ideal when you have many frames and don't need per-frame time
+resolution.
+
+The per-cell density is computed by a pluggable
+:class:`DensityEstimator` strategy: the default
+:meth:`DensityEstimator.binning` is a top-hat histogram (legacy
+behaviour); :meth:`DensityEstimator.gaussian` evaluates a 3D Gaussian
+KDE at the cell centres for a smooth, Poisson-noise-free density —
+useful for per-frame analyses where the histogram occasionally
+collapses to a degenerate fit. See §6.2 for a worked example.
 
 ----
 
@@ -61,7 +70,7 @@ Example trajectory::
 
 .. code-block:: python
 
-   from wetting_angle_kit.analysis import CoupledBinning2DAnalyzer
+   from wetting_angle_kit.analysis import CoupledFit2DAnalyzer
    from wetting_angle_kit.analysis.temporal import TemporalAggregator
    from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
 
@@ -84,7 +93,7 @@ Example trajectory::
    }
 
    # --- Step 4: Build the analyzer ---
-   analyzer = CoupledBinning2DAnalyzer(
+   analyzer = CoupledFit2DAnalyzer(
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",
@@ -110,11 +119,11 @@ Example trajectory::
 4. Output
 ---------
 
-The returned :class:`CoupledBinning2DResults` object exposes:
+The returned :class:`CoupledFit2DResults` object exposes:
 
 * ``mean_angle`` / ``std_angle`` — mean and std across batches.
 * ``per_batch_angles`` — array of one angle per batch.
-* ``batches`` — list of :class:`CoupledBinning2DBatchResult` entries.
+* ``batches`` — list of :class:`CoupledFit2DBatchResult` entries.
   Each batch carries ``angle``, ``model_params`` (the seven tanh
   parameters), and ``xi_grid`` / ``zi_grid`` / ``density`` — the
   binned density field used for the fit. Feed any batch (or the
@@ -155,9 +164,9 @@ Example printed output::
   explicitly if you see the fit's ``rho1`` or ``rho2`` pegged at the
   zero bound (the analyzer warns when this happens).
 - **3D extension**: if you suspect significant deviation from
-  axisymmetry, swap in :class:`CoupledBinning3DAnalyzer`. Spherical
+  axisymmetry, swap in :class:`CoupledFit3DAnalyzer`. Spherical
   droplets only; same API plus extra ``yi_*`` bin keys. The full
-  tutorial is :doc:`coupled_binning_3d_tuto`.
+  tutorial is :doc:`coupled_fit_3d_tuto`.
 
 For a side-by-side density contour plot with the fitted cap
 overlaid, see :doc:`visualization_evolution_density`.
@@ -181,7 +190,7 @@ along the cylinder axis):
 
 .. code-block:: python
 
-   analyzer = CoupledBinning2DAnalyzer(
+   analyzer = CoupledFit2DAnalyzer(
        parser=LammpsDumpParser(cylinder_fixture),
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",
@@ -199,7 +208,45 @@ The seven-parameter model and the cap-angle formula are identical
 to the spherical case; the geometry change is fully absorbed into
 the projection and the volume normalisation.
 
-6.2 Custom initial parameters
+6.2 Gaussian KDE density (smoother than the histogram)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The default per-cell density is a top-hat histogram with
+geometry-aware ``dV`` normalisation — fast, exact, and intrinsically
+noisy at small per-cell atom counts. The seven-parameter tanh fit
+will fail or converge to a degenerate minimum on per-frame batches
+where the histogram density has too many empty cells.
+
+Pass a :meth:`DensityEstimator.gaussian` instance to switch the
+per-cell density to a 3D Gaussian KDE evaluated at the grid cell
+centres — the same kernel ``rays_gaussian`` and ``grid_gaussian``
+use. The density field becomes smooth; per-cell Poisson noise
+disappears at the cost of a small constant per-fit overhead:
+
+.. code-block:: python
+
+   from wetting_angle_kit.analysis import CoupledFit2DAnalyzer, DensityEstimator
+
+   analyzer = CoupledFit2DAnalyzer(
+       parser=LammpsDumpParser(filename),
+       atom_indices=oxygen_indices,
+       droplet_geometry="spherical",
+       binning_params=binning_params,
+       density_estimator=DensityEstimator.gaussian(density_sigma=2.5),
+       # batch_size=1 now becomes viable — the KDE density is smooth
+       # enough that per-frame fits don't fall into the degenerate
+       # ``t1`` minimum the histogram occasionally produces.
+       temporal_aggregator=TemporalAggregator(batch_size=1),
+   )
+
+Pick the same ``density_sigma`` you would for ``rays_gaussian`` on
+the same system (3 Å is the default; smaller for finer features,
+larger for sparser systems). The recovered angle differs from the
+binning variant by at most ~1° on well-pooled batches, but the
+Gaussian variant is far more robust on small batches and on
+systems with low atom density per cell.
+
+6.3 Custom initial parameters
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The default initial guess
@@ -211,7 +258,7 @@ If your simulation uses different units or a different liquid, pass
 
 .. code-block:: python
 
-   analyzer = CoupledBinning2DAnalyzer(
+   analyzer = CoupledFit2DAnalyzer(
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
@@ -224,7 +271,7 @@ pinned at the physical lower bound (densities at 0, lengths at
 :math:`10^{-6}`) — that's the usual sign your initial guess is
 far from the true minimum or your grid bounds are wrong.
 
-6.3 Single fully-pooled batch
+6.4 Single fully-pooled batch
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Drop the ``temporal_aggregator`` argument (or set
@@ -232,7 +279,7 @@ Drop the ``temporal_aggregator`` argument (or set
 
 .. code-block:: python
 
-   results = CoupledBinning2DAnalyzer(
+   results = CoupledFit2DAnalyzer(
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",

@@ -5,8 +5,8 @@ import plotly.graph_objects as go
 import pytest
 
 from wetting_angle_kit.analysis.results import (
-    CoupledBinning2DBatchResult,
-    CoupledBinning2DResults,
+    CoupledFit2DBatchResult,
+    CoupledFit2DResults,
     SlicingBatchResult,
     TrajectoryResults,
     WholeBatchResult,
@@ -32,9 +32,9 @@ def _slicing_results() -> TrajectoryResults:
     return TrajectoryResults(batches=batches, method_metadata={})
 
 
-def _coupled_2d_results() -> CoupledBinning2DResults:
+def _coupled_2d_results() -> CoupledFit2DResults:
     batches = [
-        CoupledBinning2DBatchResult(
+        CoupledFit2DBatchResult(
             frames=[i, i + 1],
             angle=99.0 - 0.5 * i,
             model_params={
@@ -52,7 +52,7 @@ def _coupled_2d_results() -> CoupledBinning2DResults:
         )
         for i in range(2)
     ]
-    return CoupledBinning2DResults(batches=batches, method_metadata={})
+    return CoupledFit2DResults(batches=batches, method_metadata={})
 
 
 def test_angle_evolution_plotter_slicing_runs_with_all_overlays() -> None:

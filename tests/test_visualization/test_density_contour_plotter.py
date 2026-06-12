@@ -5,10 +5,10 @@ import plotly.graph_objects as go
 import pytest
 
 from wetting_angle_kit.analysis.results import (
-    CoupledBinning2DBatchResult,
-    CoupledBinning2DResults,
-    CoupledBinning3DBatchResult,
-    CoupledBinning3DResults,
+    CoupledFit2DBatchResult,
+    CoupledFit2DResults,
+    CoupledFit3DBatchResult,
+    CoupledFit3DResults,
 )
 from wetting_angle_kit.visualization import DensityContourPlotter
 
@@ -39,12 +39,12 @@ def _model_params_3d() -> dict:
     }
 
 
-def _make_2d_batch(seed: int = 0) -> CoupledBinning2DBatchResult:
+def _make_2d_batch(seed: int = 0) -> CoupledFit2DBatchResult:
     rng = np.random.default_rng(seed)
     xi = np.linspace(0.0, 40.0, 15)
     zi = np.linspace(0.0, 40.0, 15)
     density = rng.uniform(0.0, 0.03, size=(15, 15))
-    return CoupledBinning2DBatchResult(
+    return CoupledFit2DBatchResult(
         frames=[0, 1],
         angle=95.0,
         model_params=_model_params_2d(),
@@ -54,7 +54,7 @@ def _make_2d_batch(seed: int = 0) -> CoupledBinning2DBatchResult:
     )
 
 
-def _make_3d_batch() -> CoupledBinning3DBatchResult:
+def _make_3d_batch() -> CoupledFit3DBatchResult:
     xi = np.linspace(-30.0, 30.0, 10)
     yi = np.linspace(-30.0, 30.0, 10)
     zi = np.linspace(0.0, 35.0, 12)
@@ -66,7 +66,7 @@ def _make_3d_batch() -> CoupledBinning3DBatchResult:
         * 0.5
         * (1.0 + np.tanh(2 * (ZI - 5.0) / 1.0))
     )
-    return CoupledBinning3DBatchResult(
+    return CoupledFit3DBatchResult(
         frames=[0],
         angle=90.0,
         model_params=_model_params_3d(),
@@ -100,7 +100,7 @@ def test_density_contour_plotter_2d_batch_runs() -> None:
 def test_density_contour_plotter_2d_results_averages_density() -> None:
     b1 = _make_2d_batch(seed=0)
     b2 = _make_2d_batch(seed=1)
-    results = CoupledBinning2DResults(batches=[b1, b2], method_metadata={})
+    results = CoupledFit2DResults(batches=[b1, b2], method_metadata={})
     fig = DensityContourPlotter(results).plot()
     assert isinstance(fig, go.Figure)
     contour_z = np.array(fig.data[0].z)
@@ -110,7 +110,7 @@ def test_density_contour_plotter_2d_results_averages_density() -> None:
 
 
 def test_density_contour_plotter_2d_empty_results_raises() -> None:
-    results = CoupledBinning2DResults(batches=[], method_metadata={})
+    results = CoupledFit2DResults(batches=[], method_metadata={})
     with pytest.raises(ValueError, match="no batches"):
         DensityContourPlotter(results).plot()
 
@@ -143,7 +143,7 @@ def test_density_contour_plotter_3d_batch_runs() -> None:
 
 
 def test_density_contour_plotter_3d_results_runs() -> None:
-    results = CoupledBinning3DResults(
+    results = CoupledFit3DResults(
         batches=[_make_3d_batch(), _make_3d_batch()], method_metadata={}
     )
     fig = DensityContourPlotter(results).plot()

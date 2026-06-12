@@ -22,8 +22,8 @@ pytest.importorskip("ovito")
 pytest.importorskip("skimage")
 
 from wetting_angle_kit.analysis import (  # noqa: E402
-    CoupledBinning2DAnalyzer,
-    CoupledBinning3DAnalyzer,
+    CoupledFit2DAnalyzer,
+    CoupledFit3DAnalyzer,
     InterfaceExtractor,
     SurfaceFitter,
     TrajectoryAnalyzer,
@@ -50,10 +50,10 @@ def oxygen_indices() -> np.ndarray:
 
 
 @pytest.mark.integration
-def test_coupled_binning_2d_auto_default(oxygen_indices: np.ndarray) -> None:
-    """``CoupledBinning2DAnalyzer`` with no ``binning_params`` lands at ~95°."""
+def test_coupled_fit_2d_auto_default(oxygen_indices: np.ndarray) -> None:
+    """``CoupledFit2DAnalyzer`` with no ``binning_params`` lands at ~95°."""
     with pytest.warns(UserWarning, match="binning_params was not supplied"):
-        analyzer = CoupledBinning2DAnalyzer(
+        analyzer = CoupledFit2DAnalyzer(
             parser=LammpsDumpParser(_FIXTURE),
             atom_indices=oxygen_indices,
             droplet_geometry="spherical",
@@ -66,10 +66,10 @@ def test_coupled_binning_2d_auto_default(oxygen_indices: np.ndarray) -> None:
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_coupled_binning_3d_auto_default(oxygen_indices: np.ndarray) -> None:
-    """``CoupledBinning3DAnalyzer`` with no ``binning_params`` lands at ~95°."""
+def test_coupled_fit_3d_auto_default(oxygen_indices: np.ndarray) -> None:
+    """``CoupledFit3DAnalyzer`` with no ``binning_params`` lands at ~95°."""
     with pytest.warns(UserWarning, match="binning_params was not supplied"):
-        analyzer = CoupledBinning3DAnalyzer(
+        analyzer = CoupledFit3DAnalyzer(
             parser=LammpsDumpParser(_FIXTURE),
             atom_indices=oxygen_indices,
             droplet_geometry="spherical",

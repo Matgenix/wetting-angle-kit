@@ -6,8 +6,8 @@ Public API summary
 Top-level analyzers (call ``analyze()`` to run a study)::
 
     TrajectoryAnalyzer         # decomposed pipeline: extractor → wall → fitter
-    CoupledBinning2DAnalyzer   # joint fit on a 2D density grid
-    CoupledBinning3DAnalyzer   # joint fit on a 3D density grid (spherical only)
+    CoupledFit2DAnalyzer   # joint fit on a 2D density grid
+    CoupledFit3DAnalyzer   # joint fit on a 3D density grid (spherical only)
 
 Strategy components (compose into :class:`TrajectoryAnalyzer`)::
 
@@ -17,21 +17,26 @@ Strategy components (compose into :class:`TrajectoryAnalyzer`)::
     SurfaceFitter        # slicing / whole
     WallDetector         # min_plus_offset / explicit / from_atoms
 
+Strategy components (compose into the coupled-fit analyzers)::
+
+    DensityEstimator     # binning / gaussian
+
 Results dataclasses returned by ``analyze()``::
 
     TrajectoryResults, BatchResult, SlicingBatchResult, WholeBatchResult
-    CoupledBinning2DResults, CoupledBinning2DBatchResult
-    CoupledBinning3DResults, CoupledBinning3DBatchResult
+    CoupledFit2DResults, CoupledFit2DBatchResult
+    CoupledFit3DResults, CoupledFit3DBatchResult
 """
 
 from wetting_angle_kit.analysis.analyzer import BaseTrajectoryAnalyzer
 
 # Top-level analyzers.
-from wetting_angle_kit.analysis.coupled_binning.analyzer_2d import (
-    CoupledBinning2DAnalyzer,
+from wetting_angle_kit.analysis.coupled_fit import DensityEstimator
+from wetting_angle_kit.analysis.coupled_fit.analyzer_2d import (
+    CoupledFit2DAnalyzer,
 )
-from wetting_angle_kit.analysis.coupled_binning.analyzer_3d import (
-    CoupledBinning3DAnalyzer,
+from wetting_angle_kit.analysis.coupled_fit.analyzer_3d import (
+    CoupledFit3DAnalyzer,
 )
 
 # Strategy components.
@@ -47,10 +52,10 @@ from wetting_angle_kit.analysis.geometry import DropletGeometry
 # Results dataclasses.
 from wetting_angle_kit.analysis.results import (
     BatchResult,
-    CoupledBinning2DBatchResult,
-    CoupledBinning2DResults,
-    CoupledBinning3DBatchResult,
-    CoupledBinning3DResults,
+    CoupledFit2DBatchResult,
+    CoupledFit2DResults,
+    CoupledFit3DBatchResult,
+    CoupledFit3DResults,
     SlicingBatchResult,
     TrajectoryResults,
     WholeBatchResult,
@@ -63,9 +68,10 @@ __all__ = [
     # Top-level analyzers.
     "BaseTrajectoryAnalyzer",
     "TrajectoryAnalyzer",
-    "CoupledBinning2DAnalyzer",
-    "CoupledBinning3DAnalyzer",
+    "CoupledFit2DAnalyzer",
+    "CoupledFit3DAnalyzer",
     # Strategy components.
+    "DensityEstimator",
     "DropletGeometry",
     "TemporalAggregator",
     "InterfaceExtractor",
@@ -79,8 +85,8 @@ __all__ = [
     "SlicingBatchResult",
     "WholeBatchResult",
     "TrajectoryResults",
-    "CoupledBinning2DBatchResult",
-    "CoupledBinning2DResults",
-    "CoupledBinning3DBatchResult",
-    "CoupledBinning3DResults",
+    "CoupledFit2DBatchResult",
+    "CoupledFit2DResults",
+    "CoupledFit3DBatchResult",
+    "CoupledFit3DResults",
 ]

@@ -23,7 +23,7 @@ The liquid-vapor interface isn't a sharp surface in an MD simulation — the den
 
 - **Slicing fit** — independently fits an algebraic circle in each slice's `(x, z)` plane, then averages the per-slice contact angles. Good when the droplet might be slightly non-spherical: the per-slice scatter naturally reports a `±σ` band.
 - **Whole fit** — fits a single sphere (spherical droplet) or cylinder (cylindrical droplet) to the entire 3D interface shell. Uses the algebraic Kasa method, plus optional bootstrap resampling to put an uncertainty on the recovered angle.
-- **Coupled-binning fit** (joint approach) — a 7-parameter (2D) or 9-parameter (3D) hyperbolic-tangent density model that solves "where is the interface", "where is the wall plane", and "what's the cap geometry" in one nonlinear least-squares fit on the binned density field. Statistically efficient when you pool many frames per batch.
+- **Coupled fit** (joint approach) — a 7-parameter (2D) or 9-parameter (3D) hyperbolic-tangent density model that solves "where is the interface", "where is the wall plane", and "what's the cap geometry" in one nonlinear least-squares fit on a density field. The per-cell density is computed by a pluggable `DensityEstimator` strategy: a top-hat histogram (`DensityEstimator.binning()`, default) or a 3D Gaussian KDE evaluated at the cell centres (`DensityEstimator.gaussian(density_sigma=…)`); the KDE variant trades a small constant cost for a smooth, Poisson-noise-free density. Statistically efficient when you pool many frames per batch.
 
 ### Wall detection: where is the wall plane?
 
@@ -40,7 +40,7 @@ The `TemporalAggregator` groups trajectory frames into batches before fitting. `
 ## Two top-level entry points
 
 1. **`TrajectoryAnalyzer`** — composes the four strategies above (`InterfaceExtractor` × `SurfaceFitter` × `WallDetector` × `TemporalAggregator`). Use it when you want per-frame time resolution or when you want to mix-and-match approaches (e.g. ray-fan extractor + whole-fit + explicit wall + 5-frame batches).
-2. **`CoupledBinning2DAnalyzer` / `CoupledBinning3DAnalyzer`** — the joint-fit alternative. One robust angle per pooled batch via the hyperbolic-tangent density model. Best when you have many frames and don't need per-frame time resolution.
+2. **`CoupledFit2DAnalyzer` / `CoupledFit3DAnalyzer`** — the joint-fit alternative. One robust angle per pooled batch via the hyperbolic-tangent density model. The per-cell density estimator is pluggable (`DensityEstimator.binning()` or `DensityEstimator.gaussian(...)`). Best when you have many frames and don't need per-frame time resolution.
 
 The documentation is available [here](https://matgenix.github.io/wetting-angle-kit), with worked examples and tutorials.
 
@@ -85,7 +85,8 @@ conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forg
 
 ```python
 from wetting_angle_kit.analysis import (
-    CoupledBinning2DAnalyzer,
+    CoupledFit2DAnalyzer,
+    DensityEstimator,
     InterfaceExtractor,
     SurfaceFitter,
     TrajectoryAnalyzer,
@@ -119,16 +120,20 @@ slicing = TrajectoryAnalyzer(
 results = slicing.analyze(range(0, 50))
 print(results.mean_angle, results.std_angle)
 
-# --- Joint coupled-binning fit (one robust angle over a pooled batch) ---
-binning = CoupledBinning2DAnalyzer(
+# --- Joint coupled-fit (one robust angle over a pooled batch) ---
+coupled_fit = CoupledFit2DAnalyzer(
     parser=parser,
     atom_indices=oxygen_ids,
     droplet_geometry="spherical",
     binning_params={
-        "xi_0": 0, "xi_f": 70.0, "nbins_xi": 50,
-        "zi_0": 0.0, "zi_f": 70.0, "nbins_zi": 25,
+        "xi_0": 0.0, "xi_f": 70.0, "bin_width_x": 2.0,
+        "zi_0": 0.0, "zi_f": 70.0, "bin_width_z": 2.0,
     },
+    # Default: histogram density. Swap in `DensityEstimator.gaussian(
+    # density_sigma=2.5)` for a smooth Gaussian-KDE density field —
+    # useful on per-frame batches or sparse systems.
+    density_estimator=DensityEstimator.binning(),
 )
-results_binning = binning.analyze(range(0, 200))
-print(results_binning.mean_angle, results_binning.std_angle)
+results_coupled_fit = coupled_fit.analyze(range(0, 200))
+print(results_coupled_fit.mean_angle, results_coupled_fit.std_angle)
 ```

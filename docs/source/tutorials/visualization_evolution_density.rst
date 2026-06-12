@@ -69,7 +69,7 @@ The figure has up to four traces per trajectory:
 * the cumulative running mean (dashed),
 * the cumulative ``±σ`` band of the running mean (filled).
 
-Coupled-binning result objects don't carry ``angle_std`` per batch, so
+Coupled-fit result objects don't carry ``angle_std`` per batch, so
 the per-batch band is omitted; the running mean band is always
 available.
 
@@ -77,21 +77,24 @@ The plotter also implements :class:`BaseTrajectoryPlotter` so
 ``plotter.summary()`` returns a list of :class:`TrajectoryStats`
 with the mean angle, std, sample count, and a per-method surface area
 (shoelace polygon area for slicing batches; spherical-cap segment
-area for whole / coupled-binning batches).
+area for whole / coupled-fit batches).
 
 ----
 
 2. Density contour plot
 -----------------------
 
-For a coupled-binning analysis, :class:`DensityContourPlotter` draws
-the 2D density grid with the fitted spherical cap arc (dashed) and
-wall line (dotted) overlaid. Pass either a single batch result or a
-full results object:
+For a coupled-fit analysis, :class:`DensityContourPlotter` draws the
+2D density grid with the fitted spherical cap arc (dashed) and wall
+line (dotted) overlaid. Pass either a single batch result or a full
+results object. The example below uses the default histogram
+estimator; passing ``density_estimator=DensityEstimator.gaussian(...)``
+on the analyzer constructor renders the contour over a smoothed
+density field without touching anything else here:
 
 .. code-block:: python
 
-   from wetting_angle_kit.analysis import CoupledBinning2DAnalyzer
+   from wetting_angle_kit.analysis import CoupledFit2DAnalyzer
    from wetting_angle_kit.analysis.temporal import TemporalAggregator
    from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
    from wetting_angle_kit.visualization import DensityContourPlotter
@@ -101,7 +104,7 @@ full results object:
        filename, oxygen_type=1, hydrogen_type=2
    ).get_water_oxygen_ids(frame_index=0)
 
-   binning = CoupledBinning2DAnalyzer(
+   coupled_fit = CoupledFit2DAnalyzer(
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
@@ -115,7 +118,7 @@ full results object:
        },
        temporal_aggregator=TemporalAggregator(batch_size=10),
    )
-   results = binning.analyze(range(0, 100))
+   results = coupled_fit.analyze(range(0, 100))
 
    # One batch:
    DensityContourPlotter(results.batches[0], label="spherical_4k").plot().show()
@@ -125,8 +128,8 @@ full results object:
 
 3D-results inputs are azimuthally averaged onto the same ``(r, z)``
 plane before contouring, so the same plotter works for
-:class:`CoupledBinning3DResults` and
-:class:`CoupledBinning3DBatchResult`. The default title indicates the
+:class:`CoupledFit3DResults` and
+:class:`CoupledFit3DBatchResult`. The default title indicates the
 azimuthal collapse so plots are unambiguous.
 
 ----

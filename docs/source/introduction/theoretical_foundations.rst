@@ -262,8 +262,8 @@ for two choices to make the dependence visible.
 7. Joint coupled-binning fit
 ----------------------------
 
-The :class:`CoupledBinning2DAnalyzer` and
-:class:`CoupledBinning3DAnalyzer` skip the
+The :class:`CoupledFit2DAnalyzer` and
+:class:`CoupledFit3DAnalyzer` skip the
 extractor/wall/fitter decomposition and fit a multi-parameter
 density model directly.
 

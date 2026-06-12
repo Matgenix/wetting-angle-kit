@@ -1,6 +1,6 @@
 """Binning-method integration tests on a LAMMPS cylinder-droplet fixture.
 
-End-to-end ``CoupledBinning2DAnalyzer`` runs on the cylinder droplet
+End-to-end ``CoupledFit2DAnalyzer`` runs on the cylinder droplet
 fixture, both single-batch and per-frame batching.
 """
 
@@ -11,7 +11,7 @@ import pytest
 
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import CoupledBinning2DAnalyzer  # noqa: E402
+from wetting_angle_kit.analysis import CoupledFit2DAnalyzer  # noqa: E402
 from wetting_angle_kit.analysis.temporal import TemporalAggregator  # noqa: E402
 from wetting_angle_kit.parsers import (  # noqa: E402
     LammpsDumpParser,
@@ -54,13 +54,13 @@ def binning_params() -> dict:
 
 
 @pytest.mark.integration
-def test_coupled_binning_2d_with_cylinder_fixture(
+def test_coupled_fit_2d_with_cylinder_fixture(
     filename: pathlib.Path,
     oxygen_indices: np.ndarray,
     binning_params: dict,
 ) -> None:
-    """End-to-end ``CoupledBinning2DAnalyzer`` on the cylinder droplet."""
-    analyzer = CoupledBinning2DAnalyzer(
+    """End-to-end ``CoupledFit2DAnalyzer`` on the cylinder droplet."""
+    analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
@@ -78,14 +78,14 @@ def test_coupled_binning_2d_with_cylinder_fixture(
 
 
 @pytest.mark.integration
-def test_coupled_binning_2d_per_frame_batches(
+def test_coupled_fit_2d_per_frame_batches(
     filename: pathlib.Path,
     oxygen_indices: np.ndarray,
     binning_params: dict,
 ) -> None:
     """``batch_size=1``: one fit per frame."""
     frames = [1, 2, 3]
-    analyzer = CoupledBinning2DAnalyzer(
+    analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",

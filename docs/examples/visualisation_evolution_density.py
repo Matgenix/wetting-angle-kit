@@ -1,13 +1,17 @@
 """End-to-end example: angle evolution + density contour plots.
 
-Runs both the per-frame slicing pipeline and the coupled-binning
+Runs both the per-frame slicing pipeline and the coupled-fit
 analyzer on the same trajectory, then renders the two trajectory-level
 plots: the angle evolution curve (with per-batch ±σ band and running
 mean) and the density contour with the fitted spherical cap overlaid.
+
+The coupled-fit analyzer is built with the default histogram
+estimator; pass ``density_estimator=DensityEstimator.gaussian(...)``
+to render the contour over a smoothed density field instead.
 """
 
 from wetting_angle_kit.analysis import (
-    CoupledBinning2DAnalyzer,
+    CoupledFit2DAnalyzer,
     InterfaceExtractor,
     SurfaceFitter,
     TrajectoryAnalyzer,
@@ -50,8 +54,8 @@ fig_evolution = splot.plot(per_frame_std=True, running_mean=True)
 fig_evolution.write_html("angle_evolution.html")
 print("Saved angle_evolution.html")
 
-# --- 2. Coupled-binning analyzer → density contour figure ---
-binning = CoupledBinning2DAnalyzer(
+# --- 2. Coupled-fit analyzer → density contour figure ---
+coupled_fit = CoupledFit2DAnalyzer(
     parser=LammpsDumpParser(filename),
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",
@@ -63,13 +67,14 @@ binning = CoupledBinning2DAnalyzer(
         "zi_f": 70.0,
         "bin_width_z": 2.0,
     },
+    # density_estimator=DensityEstimator.gaussian(density_sigma=2.5),
     temporal_aggregator=TemporalAggregator(batch_size=10),
 )
-binning_results = binning.analyze(range(0, 100))
+coupled_fit_results = coupled_fit.analyze(range(0, 100))
 
-# Pick the first batch (or pass ``binning_results`` directly to average
-# the density across all batches before contouring).
-bplot = DensityContourPlotter(binning_results.batches[0], label="spherical_4k")
+# Pick the first batch (or pass ``coupled_fit_results`` directly to
+# average the density across all batches before contouring).
+bplot = DensityContourPlotter(coupled_fit_results.batches[0], label="spherical_4k")
 fig_density = bplot.plot()
 fig_density.write_html("density_contour.html")
 print("Saved density_contour.html")

@@ -104,7 +104,7 @@ combinations:
   batches — interface from a 2D density iso-contour, wall from the
   actual substrate atoms.
 
-:class:`CoupledBinning2DAnalyzer` and :class:`CoupledBinning3DAnalyzer`
+:class:`CoupledFit2DAnalyzer` and :class:`CoupledFit3DAnalyzer`
 are the **joint-fit alternative**. They skip the
 extractor/wall/fitter decomposition and fit a seven-parameter (2D) or
 nine-parameter (3D) hyperbolic-tangent density model directly to the
@@ -159,7 +159,7 @@ Examples for each plot live in the :doc:`../tutorials/index` section.
 -----------------------------------------
 
 Every analyzer (:class:`TrajectoryAnalyzer`,
-:class:`CoupledBinning2DAnalyzer`, :class:`CoupledBinning3DAnalyzer`)
+:class:`CoupledFit2DAnalyzer`, :class:`CoupledFit3DAnalyzer`)
 accepts an ``n_jobs`` argument on :meth:`analyze` for worker-process
 parallelism, plus a ``temporal_aggregator`` constructor argument that
 controls how the requested frame range is partitioned into batches.

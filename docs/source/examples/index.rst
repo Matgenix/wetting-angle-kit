@@ -39,13 +39,15 @@ substrate atoms and a bootstrap uncertainty.
 
 ----
 
-Coupled-Binning Contact Angle
-------------------------------
+Coupled-Fit Contact Angle
+--------------------------
 
 Joint hyperbolic-tangent density-model fit via
-:class:`CoupledBinning2DAnalyzer` — one angle per pooled batch.
+:class:`CoupledFit2DAnalyzer` — one angle per pooled batch. The
+example shows both density estimators (histogram default vs Gaussian
+KDE).
 
-.. literalinclude:: ../../examples/binning_ca.py
+.. literalinclude:: ../../examples/coupled_fit_ca.py
    :language: python
    :linenos:
 

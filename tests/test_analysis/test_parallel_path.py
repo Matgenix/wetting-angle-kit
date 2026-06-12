@@ -11,7 +11,7 @@ import pytest
 
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import CoupledBinning2DAnalyzer  # noqa: E402
+from wetting_angle_kit.analysis import CoupledFit2DAnalyzer  # noqa: E402
 from wetting_angle_kit.analysis.temporal import TemporalAggregator  # noqa: E402
 from wetting_angle_kit.parsers import (  # noqa: E402
     LammpsDumpParser,
@@ -36,7 +36,7 @@ def test_run_parallel_path_executes_with_n_jobs_2() -> None:
     oxygen_indices = LammpsDumpWaterFinder(
         _FIXTURE, oxygen_type=1, hydrogen_type=2
     ).get_water_oxygen_ids(0)
-    analyzer = CoupledBinning2DAnalyzer(
+    analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
@@ -69,7 +69,7 @@ def test_n_jobs_gt_1_with_batch_size_minus_1_warns_and_runs_inline() -> None:
     oxygen_indices = LammpsDumpWaterFinder(
         _FIXTURE, oxygen_type=1, hydrogen_type=2
     ).get_water_oxygen_ids(0)
-    analyzer = CoupledBinning2DAnalyzer(
+    analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",

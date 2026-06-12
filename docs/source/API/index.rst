@@ -25,7 +25,7 @@ Top-level analyzers
    :members:
    :show-inheritance:
 
-.. automodule:: wetting_angle_kit.analysis.coupled_binning
+.. automodule:: wetting_angle_kit.analysis.coupled_fit
    :members:
    :show-inheritance:
 

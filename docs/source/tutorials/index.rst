@@ -24,8 +24,8 @@ math.
    :maxdepth: 1
    :caption: Joint-fit analyzers:
 
-   binning_method_tuto
-   coupled_binning_3d_tuto
+   coupled_fit_2d_tuto
+   coupled_fit_3d_tuto
 
 .. toctree::
    :maxdepth: 1

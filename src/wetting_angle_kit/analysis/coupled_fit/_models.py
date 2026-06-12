@@ -3,7 +3,7 @@
 Both the 2D (seven-parameter) and 3D (nine-parameter) joint density
 models are kept in this module so the shared bounds / warning / cap-angle
 formula sit side by side. Public access goes through
-:class:`CoupledBinning2DAnalyzer` and :class:`CoupledBinning3DAnalyzer`.
+:class:`CoupledFit2DAnalyzer` and :class:`CoupledFit3DAnalyzer`.
 """
 
 import warnings
@@ -47,7 +47,7 @@ class _HyperbolicTangentModel2D:
             r    = sqrt(xi^2 + (zi - zi_c)^2).
 
     Seven free parameters fitted by bounded NLLS. Private (the public
-    entry point is :class:`CoupledBinning2DAnalyzer`); the 3D
+    entry point is :class:`CoupledFit2DAnalyzer`); the 3D
     counterpart :class:`_HyperbolicTangentModel3D` lives in the same
     module.
     """
