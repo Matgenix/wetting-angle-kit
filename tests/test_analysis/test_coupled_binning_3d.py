@@ -97,13 +97,13 @@ def test_coupled_binning_3d_rejects_cylinder() -> None:
             binning_params={
                 "xi_0": -30,
                 "xi_f": 30,
-                "nbins_xi": 10,
+                "bin_width_x": 6.0,
                 "yi_0": -30,
                 "yi_f": 30,
-                "nbins_yi": 10,
+                "bin_width_y": 6.0,
                 "zi_0": 0,
                 "zi_f": 30,
-                "nbins_zi": 10,
+                "bin_width_z": 3.0,
             },
         )
 
@@ -134,10 +134,10 @@ def test_coupled_binning_3d_close_to_2d_on_lammps_fixture() -> None:
     binning_params_2d = {
         "xi_0": 0,
         "xi_f": 40,
-        "nbins_xi": 40,
+        "bin_width_x": 1.0,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "nbins_zi": 40,
+        "bin_width_z": 1.0,
     }
     legacy_2d = CoupledBinning2DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
@@ -151,13 +151,13 @@ def test_coupled_binning_3d_close_to_2d_on_lammps_fixture() -> None:
     binning_params_3d = {
         "xi_0": -40,
         "xi_f": 40,
-        "nbins_xi": 25,
+        "bin_width_x": 3.3,
         "yi_0": -40,
         "yi_f": 40,
-        "nbins_yi": 25,
+        "bin_width_y": 3.3,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "nbins_zi": 25,
+        "bin_width_z": 1.6,
     }
     new_3d = CoupledBinning3DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),

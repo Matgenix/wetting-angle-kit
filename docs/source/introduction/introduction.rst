@@ -155,6 +155,51 @@ Three visualisation classes cover the most common needs:
 
 Examples for each plot live in the :doc:`../tutorials/index` section.
 
+4. Parallelisation and progress reporting
+-----------------------------------------
+
+Every analyzer (:class:`TrajectoryAnalyzer`,
+:class:`CoupledBinning2DAnalyzer`, :class:`CoupledBinning3DAnalyzer`)
+accepts an ``n_jobs`` argument on :meth:`analyze` for worker-process
+parallelism, plus a ``temporal_aggregator`` constructor argument that
+controls how the requested frame range is partitioned into batches.
+The two interact in three regimes:
+
+* **Per-frame analysis** (``batch_size=1``, the default for
+  :class:`TrajectoryAnalyzer`): each frame is its own batch, so
+  ``n_jobs > 1`` distributes batches over a
+  :class:`multiprocessing.Pool`. This is the right combination for
+  long trajectories where you want a time-resolved angle trace and
+  CPU cores are the limiting resource.
+
+* **Bucketed batches** (``batch_size=N``, ``N > 1``): consecutive
+  groups of ``N`` frames are pooled into batches; ``n_jobs > 1``
+  distributes those batches across workers. Each batch gives one
+  pooled-density fit and ``angle_std`` reports spatial asymmetry of
+  the pooled cloud (see the note on pooled-batch slicing in the
+  :doc:`../tutorials/slicing_method_tuto`).
+
+* **Fully pooled** (``batch_size=-1``, the default for the
+  coupled-binning analyzers): every frame goes into one batch and one
+  fit. Because there's only one unit of work, ``n_jobs`` is silently
+  irrelevant — :meth:`analyze` always runs inline, and passing
+  ``n_jobs > 1`` emits a ``UserWarning`` to flag the wasted
+  expectation. Reach for ``batch_size=-1`` when you want one
+  maximally-noise-reduced angle over a steady-state window.
+
+The :class:`multiprocessing.Pool` uses the ``spawn`` start method, so
+trajectory parsers are reconstructed in each worker from the file
+path captured at :class:`TrajectoryAnalyzer.__init__`. Keep parser
+construction cheap (just a path string and a few light flags) — the
+spawn cost shows up once per worker per :meth:`analyze` call.
+
+Progress is reported in **frames**, not batches, so the tqdm meter
+stays informative regardless of ``batch_size``. Under
+``batch_size=-1`` the meter still updates frame-by-frame while the
+per-frame parse loop runs at the start of the batch; the subsequent
+extract/fit stage on the pooled cloud is opaque to the meter (a
+single long-running computation that the workers can't subdivide).
+
 Troubleshooting
 ---------------
 

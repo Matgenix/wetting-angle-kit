@@ -43,10 +43,10 @@ def test_run_parallel_path_executes_with_n_jobs_2() -> None:
         binning_params={
             "xi_0": 0.0,
             "xi_f": 40.0,
-            "nbins_xi": 30,
+            "bin_width_x": 1.4,
             "zi_0": 0.0,
             "zi_f": 40.0,
-            "nbins_zi": 30,
+            "bin_width_z": 1.4,
         },
         temporal_aggregator=TemporalAggregator(batch_size=1),
     )
@@ -55,3 +55,36 @@ def test_run_parallel_path_executes_with_n_jobs_2() -> None:
     assert len(results) == 3
     for batch in results.batches:
         assert np.isfinite(batch.angle)
+
+
+@pytest.mark.integration
+def test_n_jobs_gt_1_with_batch_size_minus_1_warns_and_runs_inline() -> None:
+    """``batch_size=-1`` + ``n_jobs > 1`` warns: no parallelism possible.
+
+    With ``batch_size=-1`` every frame is pooled into one batch, so
+    ``n_jobs`` can't subdivide the work. The analyzer falls back to
+    inline execution and emits a ``UserWarning`` to flag the
+    mis-configuration.
+    """
+    oxygen_indices = LammpsDumpWaterFinder(
+        _FIXTURE, oxygen_type=1, hydrogen_type=2
+    ).get_water_oxygen_ids(0)
+    analyzer = CoupledBinning2DAnalyzer(
+        parser=LammpsDumpParser(_FIXTURE),
+        atom_indices=oxygen_indices,
+        droplet_geometry="spherical",
+        binning_params={
+            "xi_0": 0.0,
+            "xi_f": 40.0,
+            "bin_width_x": 1.4,
+            "zi_0": 0.0,
+            "zi_f": 40.0,
+            "bin_width_z": 1.4,
+        },
+        temporal_aggregator=TemporalAggregator(batch_size=-1),
+    )
+    with pytest.warns(UserWarning, match="batch_size=-1"):
+        results = analyzer.analyze([0, 1, 2], n_jobs=4)
+    # One pooled batch ⇒ one result regardless of n_jobs request.
+    assert len(results) == 1
+    assert np.isfinite(results.batches[0].angle)

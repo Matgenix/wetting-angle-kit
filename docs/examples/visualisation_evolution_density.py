@@ -58,10 +58,10 @@ binning = CoupledBinning2DAnalyzer(
     binning_params={
         "xi_0": 0.0,
         "xi_f": 70.0,
-        "nbins_xi": 30,
+        "bin_width_x": 2.0,
         "zi_0": 0.0,
         "zi_f": 70.0,
-        "nbins_zi": 30,
+        "bin_width_z": 2.0,
     },
     temporal_aggregator=TemporalAggregator(batch_size=10),
 )

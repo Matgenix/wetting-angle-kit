@@ -58,7 +58,6 @@ def _ray_slice_in_plane(
     field: DensityFieldProtocol,
     center: np.ndarray,
     azimuthal: float,
-    max_dist: float,
     distances: np.ndarray,
     delta_polar: float,
 ) -> np.ndarray:
@@ -80,10 +79,29 @@ def _ray_slice_in_plane(
     )
     density_flat = field.evaluate(positions_rm.reshape(-1, 3))
     densities = density_flat.reshape(len(polar), len(distances))
-    interface_re = fit_tanh_profiles_batched(distances, densities, max_dist=max_dist)
+    interface_re = fit_tanh_profiles_batched(distances, densities)
     x_proj = cos_polar * interface_re + center[0]
     z_proj = sin_polar * interface_re + center[2]
     return np.column_stack([x_proj, z_proj])
+
+
+def _compute_max_dist(
+    liquid_coordinates: np.ndarray,
+    center_geom: np.ndarray,
+    *,
+    buffer: float = 10.0,
+) -> float:
+    """Ray-sampling envelope derived from atom positions.
+
+    Returns the maximum distance from any atom to ``center_geom`` plus
+    a small ``buffer`` (Å) so the tanh fit has headroom past the
+    interface (a few smoothing-σ worth, for typical density_sigma ≈ 3).
+    Defaults to ``buffer`` alone when the atom set is empty.
+    """
+    if liquid_coordinates.size == 0:
+        return float(buffer)
+    distances = np.linalg.norm(liquid_coordinates - center_geom[None, :], axis=1)
+    return float(np.max(distances) + buffer)
 
 
 def _extract_rays(
@@ -117,7 +135,7 @@ def _extract_rays(
             azimuthals = np.linspace(0.0, 180.0, n_slices)
             return [
                 _ray_slice_in_plane(
-                    field, center_geom, float(g), max_dist, distances, delta_polar
+                    field, center_geom, float(g), distances, delta_polar
                 )
                 for g in azimuthals
             ]
@@ -129,9 +147,7 @@ def _extract_rays(
         for y in ys:
             slice_center = np.array([center_geom[0], float(y), center_geom[2]])
             slices.append(
-                _ray_slice_in_plane(
-                    field, slice_center, 0.0, max_dist, distances, delta_polar
-                )
+                _ray_slice_in_plane(field, slice_center, 0.0, distances, delta_polar)
             )
         return slices
 
@@ -145,9 +161,7 @@ def _extract_rays(
         )
         density_flat = field.evaluate(positions_rm.reshape(-1, 3))
         densities = density_flat.reshape(len(directions), len(distances))
-        interface_re = fit_tanh_profiles_batched(
-            distances, densities, max_dist=max_dist
-        )
+        interface_re = fit_tanh_profiles_batched(distances, densities)
         return center_geom[None, :] + interface_re[:, None] * directions
 
     # whole + cylinder_*: pool a per-y ray fan into a 3D shell.
@@ -167,9 +181,7 @@ def _extract_rays(
         )
         density_flat = field.evaluate(positions_rm.reshape(-1, 3))
         densities = density_flat.reshape(len(polar), len(distances))
-        interface_re = fit_tanh_profiles_batched(
-            distances, densities, max_dist=max_dist
-        )
+        interface_re = fit_tanh_profiles_batched(distances, densities)
         points = np.column_stack(
             [
                 cos_polar * interface_re + slice_center[0],
@@ -214,7 +226,6 @@ class _RaysGaussianExtractor(InterfaceExtractor):
         liquid_coordinates: np.ndarray,
         center_geom: np.ndarray,
         droplet_geometry: DropletGeometry,
-        max_dist: float,
         surface_kind: SurfaceKind,
     ) -> InterfaceData:
         field = GaussianDensityField(
@@ -222,6 +233,7 @@ class _RaysGaussianExtractor(InterfaceExtractor):
             density_sigma=self.density_sigma,
             cutoff_sigma=self.cutoff_sigma,
         )
+        max_dist = _compute_max_dist(liquid_coordinates, center_geom)
         return _extract_rays(
             field=field,
             liquid_coordinates=liquid_coordinates,
@@ -269,13 +281,13 @@ class _RaysBinningExtractor(InterfaceExtractor):
         liquid_coordinates: np.ndarray,
         center_geom: np.ndarray,
         droplet_geometry: DropletGeometry,
-        max_dist: float,
         surface_kind: SurfaceKind,
     ) -> InterfaceData:
         field = HistogramDensityField(
             atom_coords=liquid_coordinates,
             bin_width=self.bin_width,
         )
+        max_dist = _compute_max_dist(liquid_coordinates, center_geom)
         return _extract_rays(
             field=field,
             liquid_coordinates=liquid_coordinates,

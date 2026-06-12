@@ -52,7 +52,6 @@ def test_whole_spherical_recovers_known_sphere_radius() -> None:
         liquid_coordinates=atoms,
         center_geom=np.zeros(3),
         droplet_geometry=geom,
-        max_dist=radius + 10.0,
         surface_kind="whole",
     )
     assert isinstance(shell, np.ndarray)
@@ -118,7 +117,6 @@ def test_whole_cylinder_recovers_horizontal_ridge() -> None:
     shell = extractor.extract(
         liquid_coordinates=atoms,
         center_geom=np.array([0.0, 0.0, R_truth]),
-        max_dist=R_truth + 10.0,
         droplet_geometry=geom,
         surface_kind="whole",
     )

@@ -93,7 +93,6 @@ def test_rays_binning_whole_spherical_recovers_sphere() -> None:
         liquid_coordinates=atoms,
         center_geom=np.zeros(3),
         droplet_geometry=geom,
-        max_dist=radius + 10.0,
         surface_kind="whole",
     )
     assert isinstance(shell, np.ndarray)
@@ -122,7 +121,6 @@ def test_rays_binning_matches_rays_gaussian_slicing_spherical() -> None:
     bin_width = sigma * float(np.sqrt(12.0))  # variance-matched top-hat
     delta_azimuthal = 30.0
     delta_polar = 8.0
-    max_dist = 30.0
 
     geom = DropletGeometry.coerce("spherical")
     g = InterfaceExtractor.rays_gaussian(
@@ -141,14 +139,12 @@ def test_rays_binning_matches_rays_gaussian_slicing_spherical() -> None:
         liquid_coordinates=atoms,
         center_geom=np.zeros(3),
         droplet_geometry=geom,
-        max_dist=max_dist,
         surface_kind="slicing",
     )
     bin_slices = b.extract(
         liquid_coordinates=atoms,
         center_geom=np.zeros(3),
         droplet_geometry=geom,
-        max_dist=max_dist,
         surface_kind="slicing",
     )
     assert isinstance(gauss_slices, list)

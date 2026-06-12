@@ -271,74 +271,105 @@ class _HyperbolicTangentModel3D:
 # ----------------------------------------------------------------------
 
 
-def _heuristic_binning_params(parser: Any) -> dict[str, Any]:
-    """Build the legacy heuristic binning grid: 50×50 cells over a third
-    of the largest in-plane box dimension.
+#: Default cell width in 2D coupled binning (Å). Matches ``t1 / 2`` from
+#: :class:`_HyperbolicTangentModel2D.DEFAULT_INITIAL_PARAMS` so the
+#: per-bin density resolves the tanh interface profile.
+_DEFAULT_BIN_WIDTH_2D = 0.5
+
+#: Default cell width in 3D coupled binning (Å). Coarser than the 2D
+#: default to keep the total cell count tractable for the 9-parameter
+#: NLLS fit (3D grids at 0.5 Å cells would give ~1.7M cells for a
+#: typical box).
+_DEFAULT_BIN_WIDTH_3D = 1.0
+
+
+def edges_from_bin_width(lo: float, hi: float, bin_width: float) -> np.ndarray:
+    """Bin edges spanning ``[lo, hi]`` with cells of approximately ``bin_width``.
+
+    The number of cells is rounded to the nearest integer; the range
+    bounds are honoured exactly, so the effective cell width is
+    ``(hi - lo) / n_cells`` which may differ slightly from
+    ``bin_width``. Always returns at least one cell.
     """
-    max_dist = int(
-        np.max(
-            np.array(
-                [
-                    parser.box_size_y(frame_index=0),
-                    parser.box_size_x(frame_index=0),
-                ]
-            )
+    n = max(int(round((float(hi) - float(lo)) / float(bin_width))), 1)
+    return np.linspace(float(lo), float(hi), n + 1)
+
+
+def _default_binning_params(parser: Any) -> dict[str, Any]:
+    """Atom-derived default 2D binning grid.
+
+    Range: in-plane radial (``xi``) and vertical (``zi``) both span
+    ``[0, max(box_x, box_y) / 2]``. The radial half-box is the largest
+    possible distance from the droplet COM to any atom that fits
+    inside the simulation box (precondition: droplet doesn't interact
+    with its periodic image). Vertical half-box is the same value as
+    a safe upper bound on a typical sessile droplet's apex height.
+
+    Cell width: ``_DEFAULT_BIN_WIDTH_2D = 0.5 Å`` — half the model's
+    default interface thickness ``t1 = 1 Å``, so the tanh profile is
+    resolved by two cells.
+    """
+    half_lateral = (
+        max(
+            float(parser.box_size_x(frame_index=0)),
+            float(parser.box_size_y(frame_index=0)),
         )
-        / 3
+        / 2.0
     )
     warnings.warn(
-        "binning_params was not supplied; using a heuristic default "
-        f"(xi_0=0, xi_f={max_dist}, zi_0=0, zi_f={max_dist}, 50x50 bins) "
-        "derived from one third of the largest in-plane box dimension. "
-        "For accurate density fields, supply system-specific "
-        "binning_params matching your droplet size and per-frame sampling.",
+        "binning_params was not supplied; using a default "
+        f"(xi/zi in [0, {half_lateral:.1f}], bin_width = {_DEFAULT_BIN_WIDTH_2D} Å) "
+        "derived from half the largest in-plane box dimension. "
+        "For accurate density fields on a specific system, supply "
+        "binning_params matching the droplet size and the desired "
+        "interface resolution.",
         UserWarning,
         stacklevel=3,
     )
     return {
-        "xi_0": 0,
-        "xi_f": max_dist,
-        "nbins_xi": 50,
+        "xi_0": 0.0,
+        "xi_f": half_lateral,
+        "bin_width_x": _DEFAULT_BIN_WIDTH_2D,
         "zi_0": 0.0,
-        "zi_f": max_dist,
-        "nbins_zi": 50,
+        "zi_f": half_lateral,
+        "bin_width_z": _DEFAULT_BIN_WIDTH_2D,
     }
 
 
-def _heuristic_binning_params_3d(parser: Any) -> dict[str, Any]:
-    """Build a heuristic 3D binning grid centred on the droplet COM.
+def _default_binning_params_3d(parser: Any) -> dict[str, Any]:
+    """Atom-derived default 3D binning grid.
 
-    Same one-third-of-box heuristic as the 2D version but tripled
-    along all three axes. Emits a warning because the user almost
-    always wants to override this.
+    Same lateral half-box rule as :func:`_default_binning_params` but
+    ``xi`` and ``yi`` are signed (the droplet-centred frame spans
+    both halves of the diameter), and the default cell width is
+    coarser (``_DEFAULT_BIN_WIDTH_3D = 1 Å``) so the 9-parameter NLLS
+    fit stays tractable.
     """
-    half = int(
-        np.max(
-            np.array(
-                [
-                    parser.box_size_y(frame_index=0),
-                    parser.box_size_x(frame_index=0),
-                ]
-            )
+    half_lateral = (
+        max(
+            float(parser.box_size_x(frame_index=0)),
+            float(parser.box_size_y(frame_index=0)),
         )
-        / 6
+        / 2.0
     )
     warnings.warn(
-        "binning_params was not supplied; using a heuristic default "
-        f"(xi/yi in [-{half}, {half}], zi in [0, {2 * half}], 30^3 bins). "
-        "For accurate density fields, supply system-specific "
-        "binning_params matching your droplet size and per-frame sampling.",
+        "binning_params was not supplied; using a default "
+        f"(xi/yi in [-{half_lateral:.1f}, {half_lateral:.1f}], zi in "
+        f"[0, {half_lateral:.1f}], bin_width = {_DEFAULT_BIN_WIDTH_3D} Å). "
+        "For accurate density fields on a specific system, supply "
+        "binning_params matching the droplet size and the desired "
+        "interface resolution.",
         UserWarning,
         stacklevel=3,
     )
     return {
-        "xi_0": -half,
-        "xi_f": half,
-        "nbins_xi": 30,
-        "yi_0": -half,
-        "yi_f": half,
-        "nbins_yi": 30,
+        "xi_0": -half_lateral,
+        "xi_f": half_lateral,
+        "bin_width_x": _DEFAULT_BIN_WIDTH_3D,
+        "yi_0": -half_lateral,
+        "yi_f": half_lateral,
+        "bin_width_y": _DEFAULT_BIN_WIDTH_3D,
         "zi_0": 0.0,
-        "zi_f": 2 * half,
-        "nbins_zi": 30,
+        "zi_f": half_lateral,
+        "bin_width_z": _DEFAULT_BIN_WIDTH_3D,
     }

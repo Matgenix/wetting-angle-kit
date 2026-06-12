@@ -166,7 +166,7 @@ class _ExplicitDetector(WallDetector):
 
     z_wall: float
 
-    def detect(self, ctx: WallContext) -> float:
+    def detect(self, ctx: WallContext) -> float:  # noqa: ARG002 — ABC contract
         return self.z_wall
 
 

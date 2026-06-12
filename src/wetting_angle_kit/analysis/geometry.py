@@ -36,6 +36,37 @@ class DropletGeometry:
       boundary so every downstream routine can assume the cylinder axis
       is ``y`` internally. The swap is self-inverse, so the same helper
       maps internal coordinates back to user coordinates.
+
+    Picking ``cylinder_x`` vs ``cylinder_y``
+    ----------------------------------------
+
+    Pick the one whose name matches your **trajectory's lab-frame axis**
+    along which the ridge is invariant:
+
+    * If your dump file's atoms are uniformly distributed along ``y``
+      (i.e. the simulation box's ``y`` direction is the periodic
+      cylinder axis), pass ``"cylinder_y"``.
+    * If the same situation holds along ``x`` instead, pass
+      ``"cylinder_x"``.
+
+    The two are not interchangeable — picking the wrong one is the
+    cylinder analogue of confusing the in-plane radial axis with the
+    cylinder axis. Symptoms of a mismatch: the slicing fitter
+    iterates over the wrong axis (slicing planes go *across* the
+    ridge instead of along it), so each "slice" sees almost no atoms
+    and the per-slice circle fit either NaNs out or recovers a
+    non-physical angle.
+
+    Internally everything happens in the ``cylinder_y`` frame:
+    ``cylinder_x`` simply applies a self-inverse ``x↔y`` column swap
+    at the parser/analyzer boundary so all downstream extractors,
+    fitters, and visualisers can assume the cylinder axis is ``y``.
+    No analysis logic is duplicated between the two cases — they're
+    distinguished only by where the swap is (or isn't) applied.
+
+    If you're not sure which axis your trajectory uses, the safe
+    diagnostic is to load one frame, plot atom positions, and look at
+    which lateral coordinate the droplet spans the full box.
     """
 
     _VALID_NAMES: ClassVar[tuple[DropletGeometryName, ...]] = (

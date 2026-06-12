@@ -72,13 +72,13 @@ wasting work.
    binning_params = {
        "xi_0": -40.0,
        "xi_f": 40.0,
-       "nbins_xi": 25,
+       "bin_width_x": 3.2,
        "yi_0": -40.0,
        "yi_f": 40.0,
-       "nbins_yi": 25,
+       "bin_width_y": 3.2,
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "nbins_zi": 25,
+       "bin_width_z": 4.0,
    }
 
    analyzer = CoupledBinning3DAnalyzer(
@@ -172,21 +172,21 @@ the same angle within a few degrees. It's a useful sanity check:
    binning_2d = {
        "xi_0": 0.0,
        "xi_f": 40.0,
-       "nbins_xi": 40,
+       "bin_width_x": 1.0,
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "nbins_zi": 40,
+       "bin_width_z": 1.0,
    }
    binning_3d = {
        "xi_0": -40.0,
        "xi_f": 40.0,
-       "nbins_xi": 25,
+       "bin_width_x": 3.2,
        "yi_0": -40.0,
        "yi_f": 40.0,
-       "nbins_yi": 25,
+       "bin_width_y": 3.2,
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "nbins_zi": 25,
+       "bin_width_z": 4.0,
    }
 
    a2d = (

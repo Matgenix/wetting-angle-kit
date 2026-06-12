@@ -25,7 +25,9 @@ Subclasses fill in:
 
 import logging
 import multiprocessing as mp
+import warnings
 from abc import abstractmethod
+from collections.abc import Callable
 from typing import Any, ClassVar
 
 import numpy as np
@@ -75,7 +77,8 @@ def gather_batch_coords(
     atom_indices: np.ndarray,
     droplet_geometry: DropletGeometry,
     precentered: bool,
-) -> tuple[np.ndarray, np.ndarray, float]:
+    progress_callback: Callable[[int], None] | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     """Pool liquid-atom coordinates across one batch.
 
     Each frame's atoms are recentered (per-frame circular-mean PBC
@@ -98,6 +101,12 @@ def gather_batch_coords(
     precentered : bool
         If True, skip the circular-mean PBC recentering and use the
         plain arithmetic-mean centre.
+    progress_callback : callable, optional
+        Called once with ``1`` after each frame is parsed. Used by
+        the inline ``analyze`` path to drive a per-frame tqdm meter
+        even when ``batch_size > 1`` makes the meaningful unit of
+        work a fraction of a batch. Pass ``None`` (the default) to
+        skip reporting.
 
     Returns
     -------
@@ -106,13 +115,9 @@ def gather_batch_coords(
     avg_center : ndarray, shape (3,)
         Mean of the per-frame liquid centres; used as the ray-fan
         origin by extractors.
-    max_dist : float
-        Maximum in-plane box half-extent across the batch, used as
-        the radial-sampling envelope.
     """
     liquid_chunks: list[np.ndarray] = []
     centres: list[np.ndarray] = []
-    max_box = 0.0
     for frame_num in frame_indices:
         positions = parser.parse(frame_index=frame_num, indices=atom_indices)
         if precentered:
@@ -132,14 +137,13 @@ def gather_batch_coords(
         mean_pos = droplet_geometry.to_internal_coords(mean_pos)
         liquid_chunks.append(positions)
         centres.append(mean_pos)
-        box_x = parser.box_size_x(frame_index=frame_num)
-        box_y = parser.box_size_y(frame_index=frame_num)
-        max_box = max(max_box, float(box_x), float(box_y))
+        if progress_callback is not None:
+            progress_callback(1)
     pooled = (
         np.concatenate(liquid_chunks, axis=0) if liquid_chunks else np.empty((0, 3))
     )
     avg_center = np.mean(np.stack(centres, axis=0), axis=0) if centres else np.zeros(3)
-    return pooled, avg_center, max_box / 2.0
+    return pooled, avg_center
 
 
 def gather_wall_coords(
@@ -251,10 +255,28 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         if not batches:
             return self._build_results(batches=[])
 
+        total_frames = sum(len(b) for b in batches)
         logger.info(
-            f"Processing {len(batches)} batches "
+            f"Processing {total_frames} frames across {len(batches)} batches "
             f"(batch_size={self.temporal_aggregator.batch_size}, n_jobs={n_jobs})."
         )
+
+        # ``batch_size=-1`` pools every frame into one batch, so
+        # there's nothing to parallelise across — n_jobs is ignored.
+        # Warn loudly because the user is probably expecting speedup.
+        if (
+            n_jobs is not None
+            and n_jobs > 1
+            and self.temporal_aggregator.batch_size == -1
+        ):
+            warnings.warn(
+                f"n_jobs={n_jobs} was requested but batch_size=-1 pools all "
+                f"frames into a single batch — there is no parallelism "
+                f"available and the analysis will run inline. Use a finite "
+                f"batch_size (or remove n_jobs) to silence this warning.",
+                UserWarning,
+                stacklevel=2,
+            )
 
         init_args = self._init_args()
         if n_jobs == 1 or len(batches) == 1:
@@ -279,19 +301,44 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         batches: list[list[int]],
         init_args: tuple,
     ) -> list[Any]:
-        """In-process batch loop; avoids ``Pool`` spawn overhead."""
+        """In-process batch loop; avoids ``Pool`` spawn overhead.
+
+        Progress is reported in frames rather than batches. To keep
+        the meter informative even when one batch contains many
+        frames (e.g. ``batch_size=-1`` would otherwise show no
+        progress until the entire batch completes), we publish a
+        progress callback into the per-class ``_WORKER_STATE`` dict.
+        Workers that read it (``gather_batch_coords`` and the
+        coupled-binning per-frame loops) call it once per frame; the
+        callback advances the same tqdm bar. The callback lives only
+        for the duration of this inline run — it's not picklable and
+        wouldn't survive a ``Pool.imap`` round-trip anyway.
+        """
         self._init_worker(*init_args)
         results: list[Any] = []
+        total_frames = sum(len(b) for b in batches)
+        worker_state = type(self)._WORKER_STATE
         with tqdm(
-            total=len(batches),
+            total=total_frames,
             desc=self._tqdm_desc(),
-            unit="batch",
+            unit="frame",
         ) as pbar:
-            for batch in batches:
-                result = self._process_batch_worker(batch)
-                if result is not None:
-                    results.append(result)
-                pbar.update(1)
+            worker_state["progress_callback"] = pbar.update
+            try:
+                for batch in batches:
+                    pre = pbar.n
+                    result = self._process_batch_worker(batch)
+                    if result is not None:
+                        results.append(result)
+                    # Workers that honour the callback have already
+                    # advanced the bar one frame at a time; workers
+                    # that don't (or batches that errored early)
+                    # leave it behind, so we close the gap here.
+                    deficit = len(batch) - (pbar.n - pre)
+                    if deficit > 0:
+                        pbar.update(deficit)
+            finally:
+                worker_state.pop("progress_callback", None)
         return results
 
     def _run_parallel(
@@ -300,8 +347,16 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         init_args: tuple,
         n_jobs: int | None,
     ) -> list[Any]:
-        """Multi-process batch loop via ``multiprocessing.Pool``."""
+        """Multi-process batch loop via ``multiprocessing.Pool``.
+
+        Uses ordered :meth:`Pool.imap` so each completion can be
+        zipped with its input batch — that lets the progress meter
+        advance by the batch's frame count (informative for any
+        batch size) without requiring workers to return their frame
+        count alongside the result.
+        """
         results: list[Any] = []
+        total_frames = sum(len(b) for b in batches)
         with (
             _MP_CONTEXT.Pool(
                 processes=n_jobs,
@@ -309,15 +364,19 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 initargs=init_args,
             ) as pool,
             tqdm(
-                total=len(batches),
+                total=total_frames,
                 desc=self._tqdm_desc(),
-                unit="batch",
+                unit="frame",
             ) as pbar,
         ):
-            for result in pool.imap_unordered(self._process_batch_worker, batches):
+            for batch, result in zip(
+                batches,
+                pool.imap(self._process_batch_worker, batches),
+                strict=True,
+            ):
                 if result is not None:
                     results.append(result)
-                pbar.update(1)
+                pbar.update(len(batch))
         return results
 
     def _tqdm_desc(self) -> str:

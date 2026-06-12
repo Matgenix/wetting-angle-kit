@@ -180,13 +180,17 @@ class TrajectoryAnalyzer(_BatchedTrajectoryAnalyzer):
         fitter: SurfaceFitter = state["surface_fitter"]
         detector: WallDetector = state["wall_detector"]
         precentered: bool = state["precentered"]
+        # Optional per-frame progress callback published by the
+        # inline-mode runner; absent in parallel mode (not picklable).
+        progress_callback = state.get("progress_callback")
         try:
-            coords, center, max_dist = gather_batch_coords(
+            coords, center = gather_batch_coords(
                 parser=parser,
                 frame_indices=frame_indices,
                 atom_indices=atom_indices,
                 droplet_geometry=droplet_geometry,
                 precentered=precentered,
+                progress_callback=progress_callback,
             )
             wall_coords = (
                 gather_wall_coords(
@@ -202,7 +206,6 @@ class TrajectoryAnalyzer(_BatchedTrajectoryAnalyzer):
                 liquid_coordinates=coords,
                 center_geom=center,
                 droplet_geometry=droplet_geometry,
-                max_dist=max_dist,
                 surface_kind=fitter.kind,
             )
             z_wall = detector.detect(

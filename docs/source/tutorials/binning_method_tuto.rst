@@ -77,10 +77,10 @@ Example trajectory::
    binning_params = {
        "xi_0": 0.0,
        "xi_f": 100.0,
-       "nbins_xi": 50,
+       "bin_width_x": 2.0,
        "zi_0": 0.0,
        "zi_f": 100.0,
-       "nbins_zi": 25,
+       "bin_width_z": 4.0,
    }
 
    # --- Step 4: Build the analyzer ---
@@ -134,11 +134,17 @@ Example printed output::
 5. Tips
 -------
 
-- **Grid bounds and bin counts**: pick ``xi_f`` and ``zi_f`` so the
-  droplet sits well inside the grid; pick ``nbins_xi`` and
-  ``nbins_zi`` so each cell receives many atoms when pooling. As a
-  rule of thumb, aim for at least 20 atoms per occupied cell after
-  pooling across the batch.
+- **Grid bounds and cell width**: pick ``xi_f`` and ``zi_f`` so the
+  droplet sits well inside the grid; pick ``bin_width_x`` and
+  ``bin_width_z`` so each cell receives many atoms when pooling. As
+  a rule of thumb, aim for at least 20 atoms per occupied cell after
+  pooling across the batch. The range bounds are honoured exactly;
+  the effective cell width is rounded so an integer number of cells
+  fits, and may differ from the requested value by a few percent.
+- **No ``binning_params``?** Leaving it ``None`` uses an atom-derived
+  default: lateral half-box for ``xi``/``zi``, ``bin_width = 0.5 Å``
+  (half the model's default interface thickness ``t1``). A warning
+  is emitted to flag that the user didn't tune the grid.
 - **Batch size**: the joint fit benefits from statistics, so pool as
   many frames as your time-resolution needs allow. ``batch_size=-1``
   (the default) pools everything into one batch and returns a single
@@ -182,10 +188,10 @@ along the cylinder axis):
        binning_params={
            "xi_0": 0.0,
            "xi_f": 100.0,
-           "nbins_xi": 50,
+           "bin_width_x": 2.0,
            "zi_0": 0.0,
            "zi_f": 100.0,
-           "nbins_zi": 25,
+           "bin_width_z": 4.0,
        },
    )
 

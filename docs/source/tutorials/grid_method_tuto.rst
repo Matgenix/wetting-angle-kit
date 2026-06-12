@@ -7,9 +7,15 @@ This tutorial covers the **grid-based interface extractors** —
 the ray-fan extractors used in the
 :doc:`slicing_method_tuto` and
 :doc:`whole_fit_tuto`: instead of locating the interface as the
-half-density point of a 1D tanh fit along each ray, they build a
-2D or 3D density grid and recover the interface as the iso-density
-contour at the half-bulk level.
+half-density point of a 1D tanh fit along each ray, they evaluate a
+density at each cell of a fixed grid and recover the interface as
+the iso-density contour at the half-bulk level.
+
+In slicing mode both grid extractors iterate per slice — per
+azimuthal angle for spherical droplets, per axial step for cylinder
+droplets — so the downstream :class:`SurfaceFitter.slicing` sees one
+contour per slice and can expose per-slice asymmetry, exactly like
+the rays variants.
 
 ----
 
@@ -22,14 +28,11 @@ about how the noise/cost trade-off lands on your system:
 
 * **Ray fans** sample density along a small number of well-chosen
   directions; each ray's 1D tanh fit is cheap. Best when atom
-  statistics per frame are high and the droplet has well-defined
-  symmetry.
+  statistics per frame are high and you want sub-frame resolution.
 * **Grids** estimate density on every cell of a fixed mesh, then
   trace an iso-contour. Closer to the "average over many frames"
   intuition; the per-cell density gets smoother as more frames are
-  pooled. Robust when individual frames are sparse, but it scales
-  with the number of cells rather than the number of rays so the
-  grid resolution matters more than in the ray case.
+  pooled.
 
 The grid extractors require ``scikit-image`` for the iso-contour
 tracing (marching squares in 2D, marching cubes in 3D). Install via
@@ -42,11 +45,9 @@ the ``grid3d`` extra::
 2. Worked example: ``grid_gaussian`` + slicing fit
 ---------------------------------------------------
 
-A spherical droplet, with a 2D density grid in the
-:math:`(r, z)` plane (the slicing-mode grid extractor projects atoms
-to ``(r, z)`` via the droplet's radial symmetry — see
-:doc:`../introduction/theoretical_foundations` section 4.2 for the
-volume normalisation):
+A spherical droplet, with per-azimuthal-slice 2D density grids in the
+``(s, z)`` plane — same density estimator as ``rays_gaussian``, just
+sampled on a fixed grid rather than along rays:
 
 .. code-block:: python
 
@@ -64,17 +65,16 @@ volume normalisation):
        filename, oxygen_type=1, hydrogen_type=2
    ).get_water_oxygen_ids(frame_index=0)
 
-   # 2D grid for slicing-mode extraction: (xi, zi) cells.
-   # Aim for cells small enough to resolve the interface (~1 Å is plenty
-   # for a Gaussian-smoothed grid) but large enough that occupied cells
-   # carry many atoms.
+   # 2D grid for each slice plane: ``s`` (in-plane radial) spans
+   # ``[xi_0, xi_f]`` symmetrically around the slice centre to cover
+   # the full diameter; ``z`` stays in the lab frame.
    grid_params = {
-       "xi_0": 0.0,
+       "xi_0": -40.0,
        "xi_f": 40.0,
-       "nbins_xi": 26,
+       "bin_width_x": 3.0,  # 3 Å cells in s
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "nbins_zi": 26,
+       "bin_width_z": 1.6,  # 1.6 Å cells in z
    }
 
    analyzer = TrajectoryAnalyzer(
@@ -83,7 +83,8 @@ volume normalisation):
        droplet_geometry="spherical",
        interface_extractor=InterfaceExtractor.grid_gaussian(
            grid_params=grid_params,
-           density_sigma=3.0,
+           delta_azimuthal=20.0,  # 9 azimuthal slices
+           density_sigma=2.0,
        ),
        surface_fitter=SurfaceFitter.slicing(surface_filter_offset=3.0),
        wall_detector=WallDetector.min_plus_offset(offset=0.0),
@@ -91,7 +92,8 @@ volume normalisation):
    )
    batch = analyzer.analyze([1]).batches[0]
    print(
-       f"Angle (grid_gaussian + slicing): {batch.angle:.2f}° " f"± {batch.angle_std:.2f}°"
+       f"Angle (grid_gaussian + slicing): {batch.angle:.2f}° "
+       f"± {batch.angle_std:.2f}° across {len(batch.per_slice_angles)} slices"
    )
 
 ----
@@ -99,30 +101,34 @@ volume normalisation):
 3. Histogram alternative: ``grid_binning``
 ------------------------------------------
 
-Same flow but the density estimator is a 1D top-hat
-(``rho = counts / dV``) rather than a Gaussian KDE. Numerically
-cheaper but noisier per cell. Use a smaller grid to keep enough
-atoms per cell:
+Same per-slice iteration, but the density estimator is a top-hat
+histogram of atoms within the slab ``|perp| ≤ bin_width_x / 2`` of
+the slice plane. Numerically cheaper than the KDE; intrinsically
+noisier because only atoms in the slab contribute (not all atoms
+along the slice direction the way they do for ``rays_binning``).
+Use coarser cells (thicker slab) than for ``grid_gaussian``:
 
 .. code-block:: python
 
    from wetting_angle_kit.analysis import InterfaceExtractor
 
    grid_params = {
-       "xi_0": 0.0,
+       "xi_0": -40.0,
        "xi_f": 40.0,
-       "nbins_xi": 16,  # coarser
+       "bin_width_x": 8.0,  # thick slab
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "nbins_zi": 16,
+       "bin_width_z": 3.0,
    }
+   extractor = InterfaceExtractor.grid_binning(
+       grid_params=grid_params,
+       delta_azimuthal=60.0,  # fewer slices → more atoms per slab
+   )
 
-   extractor = InterfaceExtractor.grid_binning(grid_params=grid_params)
-   # ... plug into TrajectoryAnalyzer exactly as above.
-
-The slicing fitter's ``surface_filter_offset`` is a useful knob
-here: histogram-based grids tend to have an iso-contour "floor"
-just above the wall, which the filter drops out of the circle fit.
+The slab thickness perpendicular to each slice plane is
+``bin_width_x``, so refining the in-plane grid also thins the slab.
+For systems with limited atom statistics per slab, the answer is
+either coarser cells or fewer slices, not a finer grid.
 
 ----
 
@@ -131,20 +137,21 @@ just above the wall, which the filter drops out of the circle fit.
 
 The grid extractors also work in whole-fit mode for spherical
 droplets — the 2D density grid is replaced by a 3D one, and the
-half-bulk iso-surface is traced via marching cubes:
+half-bulk iso-surface is traced via marching cubes. Whole mode
+takes no ``delta_azimuthal`` / ``delta_cylinder``:
 
 .. code-block:: python
 
    grid_params_3d = {
        "xi_0": -30.0,
        "xi_f": 30.0,
-       "nbins_xi": 26,
+       "bin_width_x": 2.5,
        "yi_0": -30.0,
        "yi_f": 30.0,
-       "nbins_yi": 26,
+       "bin_width_y": 2.5,
        "zi_0": 0.0,
        "zi_f": 35.0,
-       "nbins_zi": 26,
+       "bin_width_z": 2.0,
    }
 
    analyzer = TrajectoryAnalyzer(
@@ -172,35 +179,37 @@ Three notes on the 3D case:
 * ``xi/yi`` are in the **droplet-centred frame** (the per-frame COM
   is subtracted before binning); ``zi`` stays in the lab frame so
   the wall position keeps its physical meaning.
-* ``grid + whole-fit`` is currently spherical-only — cylindrical
-  droplets need the ray-fan extractor because the centred-grid
-  convention doesn't accommodate the cylinder axis spanning the
-  full box. For cylinder whole fits use
-  :meth:`InterfaceExtractor.rays_gaussian` with ``delta_cylinder``.
+* ``grid + whole-fit`` works for both spherical and cylinder
+  droplets. For a cylinder, the user must pick ``yi_0`` / ``yi_f``
+  to span the full cylinder axis (typically ``[-box_y / 2, +box_y /
+  2]``); the centred-grid convention puts the droplet COM at the
+  midpoint along ``y``, so a symmetric range covers the whole
+  ridge. The fitter projects the 3D shell onto the ``(x, z)`` plane
+  and does a 2D circle fit by translational invariance along
+  ``y``.
 * Marching cubes can be slow on dense 3D grids; if performance
-  matters, start with 20–30 bins per axis and only refine if the
-  recovered angle is grid-resolution-limited.
+  matters, start with 2–3 Å cells and only refine if the recovered
+  angle is grid-resolution-limited.
 
 ----
 
 5. Tips
 -------
 
-- **Grid bounds**: always pick ``xi_f``, ``yi_f``, ``zi_f`` so the
-  full droplet fits comfortably inside the grid; the iso-contour
-  tracer can't extrapolate.
-- **Smoothing**: ``density_sigma`` on the Gaussian variant
-  controls cell smoothing; values around the interface thickness
-  (~1–3 Å for water) work well. The histogram variant exposes no
-  smoothing knob — choose the cell size accordingly.
-- **Cell size vs ``surface_filter_offset``**: rows of the 2D grid
-  closest to the wall are normalised by a narrow annular volume
-  (``2π r dr dz``) which inflates noise. The slicing fitter's
-  ``surface_filter_offset=3.0`` (instead of the default 2.0)
-  reliably drops the noisy floor.
-- **Comparison plot**: it's often useful to run the same trajectory
-  through both ``rays_gaussian`` and ``grid_gaussian`` and check
-  the two angles agree within method-dependent tolerance (a few
-  degrees on 4k-atom droplets). If they diverge more than ~5°, one
-  of them is misconfigured (most often the grid bounds are too
-  tight or ``surface_filter_offset`` is too small).
+- **Grid bounds**: pick ``xi_f``, ``yi_f``, ``zi_f`` so the full
+  droplet fits comfortably inside the grid (signed ``xi_0`` for the
+  slicing case so the slice spans the full diameter). The
+  iso-contour tracer can't extrapolate.
+- **Cell sizes**: ``bin_width_x`` controls in-plane horizontal
+  resolution; ``bin_width_z`` controls vertical. The range bounds
+  are honoured exactly and the cell width is rounded to fit, so the
+  effective cell size may differ slightly from the value you pass.
+- **Comparison plot**: run the same trajectory through both
+  ``rays_gaussian`` and ``grid_gaussian`` and check the two angles
+  agree within method-dependent tolerance (a few degrees on
+  4k-atom droplets). If they diverge by more than ~8°, one of them
+  is misconfigured (most often the grid bounds are too tight or
+  ``surface_filter_offset`` is too small).
+- **grid_binning slab thickness**: the slab perpendicular to each
+  slice equals ``bin_width_x``. If you see a noisy iso-contour,
+  thicken it (larger ``bin_width_x``) before reaching for ``grid_gaussian``.

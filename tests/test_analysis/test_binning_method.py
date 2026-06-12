@@ -38,13 +38,18 @@ def oxygen_indices(filename: pathlib.Path) -> np.ndarray:
 
 @pytest.fixture
 def binning_params() -> dict:
+    # ``bin_width_*`` values are picked so the edge construction
+    # rounds to the same cell counts (49 / 24) as the legacy
+    # ``nbins_xi=50, nbins_zi=25`` spec — the per-frame tanh NLLS is
+    # sensitive to the grid layout on this fixture, so matching the
+    # legacy grid keeps the angle anchors meaningful.
     return {
         "xi_0": 0,
         "xi_f": 100.0,
-        "nbins_xi": 50,
+        "bin_width_x": 100.0 / 49.0,
         "zi_0": 0.0,
         "zi_f": 100.0,
-        "nbins_zi": 25,
+        "bin_width_z": 100.0 / 24.0,
     }
 
 

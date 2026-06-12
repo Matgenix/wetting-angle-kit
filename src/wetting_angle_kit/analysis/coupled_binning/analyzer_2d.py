@@ -33,8 +33,9 @@ from wetting_angle_kit.analysis._base import (
 )
 from wetting_angle_kit.analysis.coupled_binning._models import (
     _PARAM_NAMES,
-    _heuristic_binning_params,
+    _default_binning_params,
     _HyperbolicTangentModel2D,
+    edges_from_bin_width,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (
@@ -65,11 +66,14 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         ``xi = sqrt(x^2 + y^2)``; cylindrical droplets use the
         coordinate perpendicular to the cylinder axis.
     binning_params : dict, optional
-        2D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"nbins_xi"``,
-        ``"zi_0"``, ``"zi_f"``, ``"nbins_zi"``. If ``None``, a
-        heuristic default is used (a third of the largest in-plane box
-        dimension; 50 × 50 bins). The heuristic is rarely optimal for
-        a specific system and emits a warning when used.
+        2D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"bin_width_x"``,
+        ``"zi_0"``, ``"zi_f"``, ``"bin_width_z"``. The range bounds
+        are honoured exactly; the effective cell width is rounded to
+        fit and may differ slightly from the requested ``bin_width_*``.
+        If ``None``, an atom-derived default is used: ``xi/zi`` span
+        half the largest in-plane box dimension, with ``bin_width =
+        0.5 Å`` (half the model's default interface thickness ``t1``).
+        A warning is emitted when the default is used.
     initial_params : list[float], optional
         Initial guess for the seven tanh-model parameters
         ``[rho1, rho2, R_eq, zi_c, zi_0, t1, t2]``. Defaults to the
@@ -110,7 +114,7 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
             precentered=precentered,
         )
         if binning_params is None:
-            binning_params = _heuristic_binning_params(parser)
+            binning_params = _default_binning_params(parser)
         self.binning_params = binning_params
         self.initial_params = initial_params
         # Cylinder dV normalisation needs the box length along the
@@ -176,6 +180,9 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
         initial_params: list[float] | None = state["initial_params"]
         precentered: bool = state["precentered"]
         box_dimension: float | None = state["box_dimension"]
+        # Per-frame progress callback (inline mode only); see
+        # :meth:`_BatchedTrajectoryAnalyzer._run_inline`.
+        progress_callback = state.get("progress_callback")
         try:
             # Per-frame ``(xi, zi)`` projection, matching the legacy
             # ``BinningBatchFitter.get_profile_coordinates`` so the
@@ -195,21 +202,25 @@ class CoupledBinning2DAnalyzer(_BatchedTrajectoryAnalyzer):
                 )
                 r_chunks.append(r_frame)
                 z_chunks.append(z_frame)
+                if progress_callback is not None:
+                    progress_callback(1)
             r_values = np.concatenate(r_chunks) if r_chunks else np.empty(0)
             z_values = np.concatenate(z_chunks) if z_chunks else np.empty(0)
             n_frames = len(frame_indices)
 
             # Build the 2D density grid + apply geometry-aware dV
-            # normalisation, mirroring ``BinningBatchFitter.binning``.
-            xi_edges = np.linspace(
+            # normalisation. Cell width comes from binning_params;
+            # the range bounds are honoured exactly and the effective
+            # cell width may differ by a few percent.
+            xi_edges = edges_from_bin_width(
                 binning_params["xi_0"],
                 binning_params["xi_f"],
-                int(binning_params["nbins_xi"]),
+                binning_params["bin_width_x"],
             )
-            zi_edges = np.linspace(
+            zi_edges = edges_from_bin_width(
                 binning_params["zi_0"],
                 binning_params["zi_f"],
-                int(binning_params["nbins_zi"]),
+                binning_params["bin_width_z"],
             )
             counts, _, _ = np.histogram2d(r_values, z_values, bins=(xi_edges, zi_edges))
             dxi = float(xi_edges[1] - xi_edges[0])

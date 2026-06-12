@@ -123,7 +123,6 @@ def test_whole_fitter_end_to_end_atom_sphere() -> None:
         liquid_coordinates=atoms,
         center_geom=np.zeros(3),
         droplet_geometry=geom,
-        max_dist=R_truth + 10.0,
         surface_kind="whole",
     )
 

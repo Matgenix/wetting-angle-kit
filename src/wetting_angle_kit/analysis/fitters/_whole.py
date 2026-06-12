@@ -33,7 +33,10 @@ class _WholeFitter(SurfaceFitter):
                 f"bootstrap_samples must be >= 0; got {self.bootstrap_samples}."
             )
 
-    def validate_compatibility(self, droplet_geometry: DropletGeometry) -> None:
+    def validate_compatibility(
+        self,
+        droplet_geometry: DropletGeometry,  # noqa: ARG002 — ABC contract
+    ) -> None:
         # Whole-fit covers spherical (sphere fit) and both cylinder
         # orientations (cylinder fit with the standard axis swap);
         # nothing geometry-specific to reject.

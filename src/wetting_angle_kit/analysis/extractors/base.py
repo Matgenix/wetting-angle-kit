@@ -48,7 +48,6 @@ class InterfaceExtractor(ABC):
         liquid_coordinates: np.ndarray,
         center_geom: np.ndarray,
         droplet_geometry: DropletGeometry,
-        max_dist: float,
         surface_kind: SurfaceKind,
     ) -> InterfaceData:
         """Build the interface point set for one batch.
@@ -62,8 +61,6 @@ class InterfaceExtractor(ABC):
         droplet_geometry : DropletGeometry
             Droplet symmetry; drives the per-slice axis choice for
             slicing modes and the ray-fan layout for whole modes.
-        max_dist : float
-            Maximum radial distance sampled along each ray (Å).
         surface_kind : {"slicing", "whole"}
             What the downstream :class:`SurfaceFitter` will consume.
             Determines the output shape (per-slice 2D points vs 3D
@@ -214,33 +211,48 @@ class InterfaceExtractor(ABC):
     def grid_gaussian(
         cls,
         *,
-        grid_params: dict[str, Any],
+        grid_params: dict[str, Any] | None = None,
+        delta_azimuthal: float | None = None,
+        delta_cylinder: float | None = None,
         density_sigma: float = 3.0,
         cutoff_sigma: float = 5.0,
     ) -> "InterfaceExtractor":
-        """Gaussian-KDE density grid + isocontour interface extraction.
+        """3D Gaussian-KDE density on a fixed grid + isocontour extraction.
 
-        Supports both slicing and whole fitters:
+        Same density estimator as :meth:`rays_gaussian`, evaluated at
+        grid cell centres rather than along rays.
 
-        - For ``surface_kind="slicing"``, the grid is 2D in the slice
-          ``(x, z)`` plane and a marching-squares-style isocontour gives
-          one ``(M, 2)`` interface curve per slice.
-        - For ``surface_kind="whole"``, the grid is 3D in
-          ``(x, y, z)`` and the interface shell is recovered by
-          :func:`skimage.measure.marching_cubes`. This requires the
-          optional ``grid3d`` extra (``scikit-image``); construction
-          via :class:`TrajectoryAnalyzer` raises a clear
-          :class:`ImportError` if it is missing.
+        Per-slice in slicing mode: spherical droplets iterate over
+        azimuthal angles ``γ ∈ [0°, 180°)`` controlled by
+        ``delta_azimuthal``; cylindrical droplets iterate over axial
+        steps controlled by ``delta_cylinder``. Each slice produces an
+        ``(s, z)`` density grid and one iso-contour. Whole mode builds
+        a 3D ``(x, y, z)`` grid centred laterally on the droplet COM
+        and runs marching cubes.
 
         Parameters
         ----------
-        grid_params : dict
+        grid_params : dict, optional
             Grid spec. For slicing, six keys: ``"xi_0"``, ``"xi_f"``,
-            ``"nbins_xi"``, ``"zi_0"``, ``"zi_f"``, ``"nbins_zi"``.
-            For whole, add three more: ``"yi_0"``, ``"yi_f"``,
-            ``"nbins_yi"``.
+            ``"bin_width_x"``, ``"zi_0"``, ``"zi_f"``,
+            ``"bin_width_z"``. ``xi_0`` should be negative for a
+            centred slice that spans both halves of the diameter. For
+            whole, add three more: ``"yi_0"``, ``"yi_f"``,
+            ``"bin_width_y"`` (xi/yi grids are in the droplet-centred
+            lateral frame; zi stays in the lab frame). If ``None``
+            (default), the grid is auto-derived per batch from the
+            atom bounding box plus a 5 Å buffer, with cell width set
+            to ``density_sigma / 2``.
+        delta_azimuthal : float, optional
+            Azimuthal step (degrees) between slicing planes for
+            ``slicing + spherical``. Required for that case; ignored
+            otherwise.
+        delta_cylinder : float, optional
+            Step (Å) along the cylinder axis between slicing planes
+            for ``slicing + cylinder``. Required for that case;
+            ignored otherwise.
         density_sigma : float, default 3.0
-            Gaussian kernel width (Å) for the density smoothing.
+            Gaussian kernel width (Å) for the KDE.
         cutoff_sigma : float, default 5.0
             Per-atom kernel truncation in units of ``density_sigma``.
         """
@@ -249,7 +261,9 @@ class InterfaceExtractor(ABC):
         )
 
         return _GridGaussianExtractor(
-            grid_params=dict(grid_params),
+            grid_params=dict(grid_params) if grid_params is not None else None,
+            delta_azimuthal=delta_azimuthal,
+            delta_cylinder=delta_cylinder,
             density_sigma=density_sigma,
             cutoff_sigma=cutoff_sigma,
         )
@@ -258,21 +272,48 @@ class InterfaceExtractor(ABC):
     def grid_binning(
         cls,
         *,
-        grid_params: dict[str, Any],
+        grid_params: dict[str, Any] | None = None,
+        delta_azimuthal: float | None = None,
+        delta_cylinder: float | None = None,
     ) -> "InterfaceExtractor":
-        """Histogram density grid + isocontour interface extraction.
+        """Histogram density on a fixed grid + isocontour extraction.
 
-        Same dimensionality + dependency rules as
-        :meth:`grid_gaussian`: 2D grid for slicing, 3D grid + marching
-        cubes (via optional ``scikit-image``) for whole.
+        Same per-slice iteration scheme as :meth:`grid_gaussian` in
+        slicing mode (``delta_azimuthal`` for spherical,
+        ``delta_cylinder`` for cylinder), but the per-cell density is
+        a top-hat histogram count divided by the cell volume.
+
+        For slicing mode, the bin attached to each ``(s, z)`` cell is a
+        ``ds × dz × bin_width_x`` box: atoms within
+        ``±bin_width_x/2`` of the slice plane contribute. The
+        perpendicular slab thickness re-uses ``grid_params["bin_width_x"]``
+        — refining the in-plane grid also thins the slab, so coarser
+        grids reduce per-bin Poisson noise.
+
+        For whole mode, the 3D cells defined by ``grid_params`` are the
+        bins directly (``bin_width_x`` is then unused).
 
         Parameters
         ----------
-        grid_params : dict
-            Grid spec; see :meth:`grid_gaussian` for the required keys.
+        grid_params : dict, optional
+            Same shape as :meth:`grid_gaussian`'s ``grid_params``.
+            If ``None`` (default), the grid is auto-derived per batch
+            from the atom bounding box plus a 5 Å buffer, with a flat
+            ``2 Å`` cell width. The histogram estimator is
+            intrinsically noisy for single-frame slicing-mode
+            analyses (the slab cut leaves few atoms per cell); for
+            that case pool multiple frames per batch or supply a
+            hand-tuned ``grid_params`` rather than relying on the
+            default.
+        delta_azimuthal, delta_cylinder : float, optional
+            See :meth:`grid_gaussian`.
         """
         from wetting_angle_kit.analysis.extractors._grid import (
             _GridBinningExtractor,
         )
 
-        return _GridBinningExtractor(grid_params=dict(grid_params))
+        return _GridBinningExtractor(
+            grid_params=dict(grid_params) if grid_params is not None else None,
+            delta_azimuthal=delta_azimuthal,
+            delta_cylinder=delta_cylinder,
+        )

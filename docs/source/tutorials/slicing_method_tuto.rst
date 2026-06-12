@@ -171,7 +171,16 @@ circle, see :doc:`visualization_slicing_droplet`.
 For a cylindrical droplet (e.g. water on a periodic stripe), swap
 ``delta_azimuthal`` for ``delta_cylinder`` (the step along the
 cylinder axis) and tell the analyzer which axis the cylinder runs
-along:
+along. Pick ``"cylinder_y"`` if the periodic ridge spans the box
+along the lab-frame ``y`` axis; pick ``"cylinder_x"`` if it spans
+along ``x``. The package handles ``cylinder_x`` by applying a
+self-inverse ``x↔y`` column swap at the parser/analyzer boundary so
+all downstream code can assume the cylinder axis is ``y`` —
+analysis logic isn't duplicated between the two cases. Picking the
+wrong axis is the cylinder analogue of confusing the in-plane
+radial direction with the symmetry axis; symptoms are slicing
+planes that go across the ridge (almost no atoms per slice) and a
+fitter that either NaNs out or returns a non-physical angle:
 
 .. code-block:: python
 
@@ -230,6 +239,32 @@ per fit, less per-angle noise but no within-batch time resolution.
 .. code-block:: python
 
    temporal_aggregator = TemporalAggregator(batch_size=5)
+
+.. note::
+
+   With ``batch_size > 1``, the temporal aggregator pools
+   **atom positions** across frames (after per-frame PBC recentring)
+   before the extractor runs. The slicing pipeline then operates on
+   a single density field built from the union of frames, giving one
+   angle per batch with ``angle_std`` reflecting the spatial
+   asymmetry of the *pooled* density — not per-frame variability.
+   This is the right tool if you want a robust single angle over a
+   steady-state window, with the per-slice scatter as an asymmetry
+   diagnostic.
+
+   If you want per-frame angles plus their across-frame mean and
+   standard error, use ``batch_size=1`` and aggregate the angles
+   yourself from the returned ``per_batch_angles`` array. The two
+   modes are statistically different: pooled-atoms averages the
+   density before measuring; pooled-angles measures each frame and
+   then averages.
+
+   Two subtle caveats of pooled-atoms mode: translational drift
+   across the batch is handled (per-frame PBC recentring), but
+   rotational drift and shape oscillations are smeared together
+   with the spatial asymmetry. For steady-state droplets this is
+   harmless; for transient regimes (wetting, dewetting, vibration)
+   ``batch_size=1`` is the correct choice.
 
 For physical context on the trade-off see
 :doc:`../introduction/theoretical_foundations` section 9.

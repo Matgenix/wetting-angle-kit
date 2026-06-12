@@ -151,29 +151,42 @@ equal-area coverage with no clustering anywhere.
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The :meth:`InterfaceExtractor.grid_gaussian` /
-:meth:`grid_binning` factories build a 2D or 3D density grid by
-histogramming the atom positions and (optionally) smoothing with a
-Gaussian. The interface is then recovered as the iso-density
-contour at the half-bulk level, via
+:meth:`grid_binning` factories build a fixed-cell grid in space and
+compute a density value at each cell, then recover the interface as
+the iso-density contour at the half-bulk level via
 :func:`skimage.measure.find_contours` in 2D (marching squares) or
 :func:`skimage.measure.marching_cubes` in 3D.
 
-Closer to the "average over many frames" intuition than ray fans;
-works well when atom statistics are limited per frame.
+The two estimators differ only in how the per-cell density is
+computed:
 
-For slicing-mode grid extraction the atoms are projected onto
-2D ``(r, z)`` via the droplet's symmetry (radial for spherical,
-``|x - x_c|`` for cylinder). The density grid is normalised by
+* ``grid_gaussian`` evaluates the same Gaussian KDE described in
+  §3 at each cell centre — exactly the estimator
+  :meth:`rays_gaussian` uses, just sampled on a grid rather than
+  along rays. No additional smoothing step.
+* ``grid_binning`` is a histogram: for slicing mode, atoms within
+  ``±bin_width_x/2`` of the slice plane contribute to the 2D
+  histogram in ``(s, z)`` (the slab cut); for whole mode, atoms are
+  binned directly into 3D ``(x, y, z)`` cells. Density is
+  ``counts / cell_volume``.
 
-.. math::
+In slicing mode both grid extractors iterate **per slice** —
+azimuthal angles ``γ ∈ [0°, 180°)`` for spherical droplets, axial
+steps along ``y`` for cylinder droplets — exactly like the rays
+variants. Each slice yields an ``(s, z)`` density field and one
+iso-contour; the downstream :class:`SurfaceFitter.slicing` averages
+the per-slice angles and reports the inter-slice scatter, which is
+how the slicing method exposes droplet asymmetry.
 
-   dV_{\rm cell} \;=\;
-   \begin{cases}
-     2\pi\,r\,d r\,d z & \text{spherical} \\
-     d r\,d z & \text{cylinder}
-   \end{cases}
+Two volume-normalisation notes:
 
-so the annular volume of each cell is accounted for.
+* ``grid_gaussian`` returns 3D density per Å³ directly from the KDE
+  evaluation; no extra volume normalisation needed.
+* ``grid_binning``'s slab-cut histogram divides by
+  ``ds × dz × bin_width_x`` so the recovered field is also in
+  atoms/Å³. The slab thickness equals ``bin_width_x`` (the in-plane
+  horizontal cell width), which keeps the bin's cross-section in the
+  ``(s, perpendicular)`` directions square.
 
 5. Fitting the cap: algebraic Kasa fits
 ---------------------------------------

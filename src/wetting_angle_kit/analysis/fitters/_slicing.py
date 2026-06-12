@@ -23,7 +23,10 @@ class _SlicingFitter(SurfaceFitter):
 
     surface_filter_offset: float
 
-    def validate_compatibility(self, droplet_geometry: DropletGeometry) -> None:
+    def validate_compatibility(
+        self,
+        droplet_geometry: DropletGeometry,  # noqa: ARG002 — ABC contract
+    ) -> None:
         # Slicing handles all three geometries (spherical and both
         # cylinder orientations); nothing geometry-specific to reject.
         return None
@@ -32,7 +35,7 @@ class _SlicingFitter(SurfaceFitter):
         self,
         interface_data: InterfaceData,
         z_wall: float,
-        droplet_geometry: DropletGeometry,
+        droplet_geometry: DropletGeometry,  # noqa: ARG002 — ABC contract
     ) -> SlicingFitOutput:
         if not isinstance(interface_data, list):
             raise TypeError(

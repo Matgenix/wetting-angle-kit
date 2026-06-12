@@ -10,9 +10,9 @@ Three flavors:
   ``grid_gaussian`` whole extractor with ``SurfaceFitter.whole`` —
   the angle should land in the same physically plausible band as
   ``rays_gaussian``.
-- **Cylinder geometry is rejected.** Whole + grid + cylinder raises
-  ``NotImplementedError`` with a clear pointer to the ``rays_*``
-  fallback.
+- **Cylinder geometry recovers a known horizontal ridge.** The 3D
+  grid extracts a tube-like shell whose 2D ``(x, z)`` projection is
+  a circle of the known cylinder radius.
 """
 
 import pathlib
@@ -51,16 +51,19 @@ def _spherical_cap_atoms(
 
 
 def _whole_grid_params(half_xy: float, z_lo: float, z_hi: float, nbins: int) -> dict:
+    """3D grid with cell sizes derived to give ``nbins`` cells per axis."""
+    bw_xy = 2.0 * half_xy / nbins
+    bw_z = (z_hi - z_lo) / nbins
     return {
         "xi_0": -half_xy,
         "xi_f": half_xy,
-        "nbins_xi": nbins,
+        "bin_width_x": bw_xy,
         "yi_0": -half_xy,
         "yi_f": half_xy,
-        "nbins_yi": nbins,
+        "bin_width_y": bw_xy,
         "zi_0": z_lo,
         "zi_f": z_hi,
-        "nbins_zi": nbins,
+        "bin_width_z": bw_z,
     }
 
 
@@ -80,7 +83,6 @@ def test_grid_gaussian_whole_recovers_known_spherical_cap() -> None:
         liquid_coordinates=atoms,
         center_geom=np.zeros(3),
         droplet_geometry=geom,
-        max_dist=35.0,
         surface_kind="whole",
     )
     assert isinstance(shell, np.ndarray)
@@ -118,7 +120,6 @@ def test_grid_binning_whole_recovers_known_spherical_cap() -> None:
         liquid_coordinates=atoms,
         center_geom=np.zeros(3),
         droplet_geometry=geom,
-        max_dist=35.0,
         surface_kind="whole",
     )
     fitter = SurfaceFitter.whole(surface_filter_offset=3.0)
@@ -133,25 +134,66 @@ def test_grid_binning_whole_recovers_known_spherical_cap() -> None:
     assert drift < 5.0
 
 
-def test_grid_whole_cylinder_raises_not_implemented() -> None:
-    """Whole + grid + cylinder is intentionally unsupported."""
-    grid_params = _whole_grid_params(half_xy=20.0, z_lo=0.0, z_hi=20.0, nbins=15)
+def test_grid_gaussian_whole_cylinder_recovers_horizontal_ridge() -> None:
+    """``grid_gaussian`` + whole + cylinder recovers a known cylindrical ridge.
+
+    A uniformly-filled cylinder of radius ``R_truth`` running along the
+    ``y`` axis is binned on a 3D grid whose ``y`` extent spans the
+    full cylinder. The recovered shell's ``(x, z)`` projection should
+    be a circle of radius ``R_truth``.
+    """
+    R_truth = 12.0
+    y_extent = 30.0
+    n_atoms = 20000
+    rng = np.random.default_rng(0)
+    cross = []
+    while sum(c.shape[0] for c in cross) < n_atoms:
+        cand = rng.uniform(-R_truth, R_truth, size=(2 * n_atoms, 2))
+        inside = np.hypot(cand[:, 0], cand[:, 1]) < R_truth
+        cross.append(cand[inside])
+    xz = np.concatenate(cross, axis=0)[:n_atoms]
+    y = rng.uniform(-y_extent / 2, y_extent / 2, size=n_atoms)
+    # Atoms occupy the cylinder centred on (x=0, z=R_truth) so the
+    # ridge sits above z=0 (no atoms below z=0).
+    atoms = np.column_stack([xz[:, 0], y, xz[:, 1] + R_truth])
+
+    # 3D grid: y span covers the whole cylinder; x, z span the
+    # cross-section with some margin.
+    grid_params = {
+        "xi_0": -1.5 * R_truth,
+        "xi_f": 1.5 * R_truth,
+        "bin_width_x": 1.0,
+        "yi_0": -y_extent / 2,
+        "yi_f": y_extent / 2,
+        "bin_width_y": 1.5,
+        "zi_0": 0.0,
+        "zi_f": 2.5 * R_truth,
+        "bin_width_z": 1.0,
+    }
     extractor = InterfaceExtractor.grid_gaussian(
-        grid_params=grid_params, density_sigma=2.0
+        grid_params=grid_params, density_sigma=1.5
     )
     geom = DropletGeometry.coerce("cylinder_y")
-    # validate_compatibility itself accepts the pairing (grid_params
-    # have the 9 keys); the NotImplementedError fires inside
-    # ``extract`` once the geometry is observed.
-    atoms = np.random.default_rng(0).uniform(-10, 10, size=(100, 3))
-    with pytest.raises(NotImplementedError, match="cylinder"):
-        extractor.extract(
-            liquid_coordinates=atoms,
-            center_geom=np.zeros(3),
-            droplet_geometry=geom,
-            max_dist=20.0,
-            surface_kind="whole",
-        )
+    extractor.validate_compatibility(surface_kind="whole", droplet_geometry=geom)
+    shell = extractor.extract(
+        liquid_coordinates=atoms,
+        center_geom=np.array([0.0, 0.0, R_truth]),
+        droplet_geometry=geom,
+        surface_kind="whole",
+    )
+    assert isinstance(shell, np.ndarray)
+    assert shell.ndim == 2 and shell.shape[1] == 3
+
+    # In-plane radius (x, z relative to the ridge axis at (0, R_truth)).
+    in_plane_r = np.hypot(shell[:, 0], shell[:, 2] - R_truth)
+    mean_r = float(np.mean(in_plane_r))
+    print(
+        f"\ngrid_gaussian whole+cylinder: n_points = {shell.shape[0]}, "
+        f"R_truth = {R_truth}, R_mean = {mean_r:.3f} Å"
+    )
+    # Gaussian smoothing (σ=1.5) places the iso-contour slightly inside
+    # the geometric edge; allow ±2 Å.
+    assert abs(mean_r - R_truth) < 2.0
 
 
 @pytest.mark.integration

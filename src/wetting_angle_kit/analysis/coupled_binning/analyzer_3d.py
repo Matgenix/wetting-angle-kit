@@ -31,8 +31,9 @@ from wetting_angle_kit.analysis._base import (
 )
 from wetting_angle_kit.analysis.coupled_binning._models import (
     _PARAM_NAMES_3D,
-    _heuristic_binning_params_3d,
+    _default_binning_params_3d,
     _HyperbolicTangentModel3D,
+    edges_from_bin_width,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (
@@ -62,9 +63,13 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
         collapses the 3D problem onto the 2D one solved by
         :class:`CoupledBinning2DAnalyzer`.
     binning_params : dict, optional
-        3D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"nbins_xi"``,
-        ``"yi_0"``, ``"yi_f"``, ``"nbins_yi"``, ``"zi_0"``, ``"zi_f"``,
-        ``"nbins_zi"``. ``xi``/``yi`` are in the droplet-centred frame
+        3D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"bin_width_x"``,
+        ``"yi_0"``, ``"yi_f"``, ``"bin_width_y"``, ``"zi_0"``, ``"zi_f"``,
+        ``"bin_width_z"``. The range bounds are honoured exactly; the
+        effective cell width is rounded to fit. If ``None``, an
+        atom-derived default is used (lateral half-box for all axes,
+        ``bin_width = 1 Å`` to keep the 9-parameter NLLS tractable).
+        ``xi``/``yi`` are in the droplet-centred frame
         (atoms are recentred on the per-frame COM before binning); ``zi``
         is in the lab frame so the wall position retains physical
         meaning. If ``None``, a heuristic default is used.
@@ -111,7 +116,7 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
                 "symmetry along the cylinder axis."
             )
         if binning_params is None:
-            binning_params = _heuristic_binning_params_3d(parser)
+            binning_params = _default_binning_params_3d(parser)
         self.binning_params = binning_params
         self.initial_params = initial_params
 
@@ -163,6 +168,9 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
         binning_params: dict[str, Any] = state["binning_params"]
         initial_params: list[float] | None = state["initial_params"]
         precentered: bool = state["precentered"]
+        # Per-frame progress callback (inline mode only); see
+        # :meth:`_BatchedTrajectoryAnalyzer._run_inline`.
+        progress_callback = state.get("progress_callback")
         try:
             # Per-frame PBC recentering, then drop each frame's atoms
             # in the droplet-centred ``(x, y)`` frame (z stays in the
@@ -182,6 +190,8 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
                     )
                 positions_centered = positions - np.array([com[0], com[1], 0.0])
                 coord_chunks.append(positions_centered)
+                if progress_callback is not None:
+                    progress_callback(1)
             coords = (
                 np.concatenate(coord_chunks, axis=0)
                 if coord_chunks
@@ -189,20 +199,20 @@ class CoupledBinning3DAnalyzer(_BatchedTrajectoryAnalyzer):
             )
             n_frames = len(frame_indices)
 
-            xi_edges = np.linspace(
+            xi_edges = edges_from_bin_width(
                 binning_params["xi_0"],
                 binning_params["xi_f"],
-                int(binning_params["nbins_xi"]),
+                binning_params["bin_width_x"],
             )
-            yi_edges = np.linspace(
+            yi_edges = edges_from_bin_width(
                 binning_params["yi_0"],
                 binning_params["yi_f"],
-                int(binning_params["nbins_yi"]),
+                binning_params["bin_width_y"],
             )
-            zi_edges = np.linspace(
+            zi_edges = edges_from_bin_width(
                 binning_params["zi_0"],
                 binning_params["zi_f"],
-                int(binning_params["nbins_zi"]),
+                binning_params["bin_width_z"],
             )
             counts, _ = np.histogramdd(coords, bins=(xi_edges, yi_edges, zi_edges))
             dxi = float(xi_edges[1] - xi_edges[0])

@@ -207,7 +207,6 @@ def fit_tanh_profiles_batched(
     distances: np.ndarray,
     densities: np.ndarray,
     *,
-    max_dist: float,
     max_iter: int = 25,
     tol: float = 1e-9,
 ) -> np.ndarray:
@@ -225,18 +224,17 @@ def fit_tanh_profiles_batched(
     the basin of the global minimum, so plain Gauss–Newton without
     damping converges in 3–6 iterations. Rays whose normal equations
     become singular (e.g. constant density) fall back to the initial
-    guess.
+    guess. The recovered ``zd`` is clipped to ``[0, distances[-1]]``
+    to keep ill-fit rays from escaping the sampling envelope.
 
     Parameters
     ----------
     distances : ndarray, shape (M,)
         Sample distances along the ray (same for every ray of a slice).
+        Must be monotonically increasing; the last entry sets the
+        clip bound on the recovered interface position.
     densities : ndarray, shape (R, M)
         Density values per ray.
-    max_dist : float
-        Upper bound on the fitted interface position; the returned
-        ``zd`` is clipped to ``[0, max_dist]`` to keep ill-fit rays
-        from escaping the sampling envelope.
     max_iter : int, default 25
         Hard cap on Gauss–Newton iterations.
     tol : float, default 1e-9
@@ -247,18 +245,19 @@ def fit_tanh_profiles_batched(
     -------
     ndarray, shape (R,)
         Fitted ``zd`` (interface position) per ray, clipped to
-        ``[0, max_dist]``.
+        ``[0, distances[-1]]``.
     """
     z = np.ascontiguousarray(distances, dtype=np.float64)
     y = np.ascontiguousarray(densities, dtype=np.float64)
     n_rays, n_samples = y.shape
+    max_dist = float(z[-1])
 
     rho_max = y.max(axis=1)
     rho_min = y.min(axis=1)
     h0 = 0.5 * (rho_max + rho_min)
     d0 = 0.5 * (rho_max - rho_min)
     zd0 = z[np.argmin(np.abs(y - h0[:, None]), axis=1)]
-    zd0 = np.clip(zd0, 0.0, float(max_dist))
+    zd0 = np.clip(zd0, 0.0, max_dist)
     params = np.stack([zd0, d0, h0], axis=1)
     params_init = params.copy()
 
@@ -300,4 +299,4 @@ def fit_tanh_profiles_batched(
         if np.max(np.abs(step)) < tol:
             break
 
-    return np.clip(params[:, 0], 0.0, float(max_dist))
+    return np.clip(params[:, 0], 0.0, max_dist)
