@@ -12,7 +12,9 @@ to render the contour over a smoothed density field instead.
 
 from wetting_angle_kit.analysis import (
     CoupledFit2DAnalyzer,
+    DensityEstimator,
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -35,8 +37,9 @@ slicing = TrajectoryAnalyzer(
     parser=LammpsDumpParser(filename),
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",
-    interface_extractor=InterfaceExtractor.rays_gaussian(
-        delta_azimuthal=20.0, delta_polar=8.0
+    interface_extractor=InterfaceExtractor(
+        sampling=SpaceSampling.rays(delta_azimuthal=20.0, delta_polar=8.0),
+        density=DensityEstimator.gaussian(),
     ),
     surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
     wall_detector=WallDetector.min_plus_offset(offset=0.0),

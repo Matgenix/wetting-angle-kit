@@ -1,4 +1,4 @@
-"""Phase 4 quantification: ``SurfaceFitter.whole()`` correctness + bootstrap.
+"""``SurfaceFitter.whole()`` correctness + bootstrap.
 
 Four flavors:
 
@@ -6,7 +6,7 @@ Four flavors:
   shell points; verify the recovered angle matches truth to numerical
   precision and the RMS residual sits near zero.
 - **Exact-cylinder recovery.** Same for a straight cylinder along ``y``.
-- **End-to-end with the rays_gaussian extractor.** Synthetic atom sphere
+- **End-to-end with the rays + Gaussian extractor.** Synthetic atom sphere
   → extractor → fitter; angle should track truth within the
   density-smoothing budget.
 - **Bootstrap σ scaling.** On a noisy shell, the bootstrap σ_θ should
@@ -15,12 +15,13 @@ Four flavors:
 
 import numpy as np
 
-from wetting_angle_kit.analysis.extractors import InterfaceExtractor
-from wetting_angle_kit.analysis.extractors._sampling import (
-    _fibonacci_sphere_directions,
-)
+from wetting_angle_kit.analysis.density_estimator import DensityEstimator
 from wetting_angle_kit.analysis.fitters import SurfaceFitter
 from wetting_angle_kit.analysis.geometry import DropletGeometry
+from wetting_angle_kit.analysis.interface import InterfaceExtractor, SpaceSampling
+from wetting_angle_kit.analysis.interface._rays import (
+    _fibonacci_sphere_directions,
+)
 
 
 def _uniform_sphere_atoms(radius: float, n_atoms: int, seed: int = 0) -> np.ndarray:
@@ -117,7 +118,10 @@ def test_whole_fitter_end_to_end_atom_sphere() -> None:
     truth_angle = float(np.degrees(np.arccos(z_wall / R_truth)))
     atoms = _uniform_sphere_atoms(radius=R_truth, n_atoms=15000, seed=0)
 
-    extractor = InterfaceExtractor.rays_gaussian(n_rays_sphere=400, density_sigma=3.0)
+    extractor = InterfaceExtractor(
+        sampling=SpaceSampling.rays(n_rays_sphere=400),
+        density=DensityEstimator.gaussian(density_sigma=3.0),
+    )
     geom = DropletGeometry.coerce("spherical")
     shell = extractor.extract(
         liquid_coordinates=atoms,

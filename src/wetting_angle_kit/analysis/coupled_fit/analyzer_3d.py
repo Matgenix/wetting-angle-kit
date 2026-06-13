@@ -29,14 +29,14 @@ from wetting_angle_kit.analysis._base import (
     _BatchedTrajectoryAnalyzer,
     build_parser,
 )
-from wetting_angle_kit.analysis.coupled_fit._density_estimator import (
-    DensityEstimator,
-)
 from wetting_angle_kit.analysis.coupled_fit._models import (
     _PARAM_NAMES_3D,
     _default_binning_params_3d,
     _HyperbolicTangentModel3D,
     edges_from_bin_width,
+)
+from wetting_angle_kit.analysis.density_estimator import (
+    DensityEstimator,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (

@@ -168,7 +168,7 @@ def test_batch_surface_area_whole_unknown_popt_returns_nan() -> None:
 
 
 def test_batch_surface_area_coupled_fit_2d_uses_model_params() -> None:
-    """Both 2D and 3D coupled-binning batches share the dispatch arm."""
+    """Both 2D and 3D coupled-fit batches share the dispatch arm."""
     batch = CoupledFit2DBatchResult(
         frames=[0],
         angle=90.0,

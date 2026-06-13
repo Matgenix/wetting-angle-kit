@@ -16,8 +16,14 @@ wetting-angle-kit parses MD trajectories (LAMMPS dump, XYZ, ASE) and computes th
 
 The liquid-vapor interface isn't a sharp surface in an MD simulation — the density drops smoothly over ~1 Å. Two extraction strategies recover a clean set of interface points from the noisy atom cloud:
 
-- **Ray-fan extractors** emit a fan of rays from the droplet centre of mass and locate the interface along each ray as the half-density point of a 1D tanh fit. The fan is azimuthal slices in the `(x, z)` plane (for a per-slice fit) or a Fibonacci sphere of directions (for a whole-shape fit). The density along each ray comes from either a Gaussian KDE (`rays_gaussian`) or a 1D histogram (`rays_binning`); both produce interface points robust to thermal noise.
-- **Grid extractors** build a fixed-cell grid in space, compute a density value at each cell, and then trace the iso-density contour at the half-bulk level via marching squares (`grid_*` in slicing mode) or marching cubes (`grid_*` in whole mode). Two ways to fill the cells: `grid_gaussian` evaluates a Gaussian KDE (sum of Gaussians centred on atoms) at each cell centre — the same density estimator `rays_gaussian` uses, just sampled on a grid; `grid_binning` is a histogram where each cell counts the atoms inside it. In slicing mode both extractors iterate per slice (per azimuthal angle for spherical droplets, per axial step for cylinder droplets), so the slicing fit sees one `(s, z)` contour per slice and can expose per-slice asymmetry. Closer to the "average over many frames" intuition than ray fans; works well when atom statistics are limited per frame.
+The package exposes two orthogonal strategy axes for interface extraction. A `SpaceSampling` decides *where* density is evaluated; a `DensityEstimator` decides *how*. An `InterfaceExtractor` composes one of each.
+
+- **Sampling: `SpaceSampling.rays(...)`** emits a fan of rays from the droplet centre of mass; the interface along each ray is the half-density point of a 1D tanh fit. The fan layout is azimuthal slices in the `(x, z)` plane (for a per-slice fit) or a Fibonacci sphere of directions (for a whole-shape fit).
+- **Sampling: `SpaceSampling.grid(...)`** builds a fixed-cell grid in space; the interface is the iso-density contour at the half-bulk level, traced via marching squares (slicing mode) or marching cubes (whole mode). In slicing mode the grid iterates per slice (per azimuthal angle for spherical droplets, per axial step for cylinder droplets), so the slicing fit sees one `(s, z)` contour per slice and can expose per-slice asymmetry. Closer to the "average over many frames" intuition than ray fans; works well when atom statistics are limited per frame.
+- **Density: `DensityEstimator.gaussian(density_sigma=…)`** is a 3D Gaussian KDE (smooth, no per-cell Poisson noise).
+- **Density: `DensityEstimator.binning(bin_width=…)`** is a 3D top-hat histogram (cheap; bin_width required only for the rays sampling, where it sets the pointwise kernel size).
+
+Any sampling × any density is a valid extractor.
 
 ### Surface fitting: what geometric shape do we fit to those points?
 
@@ -88,6 +94,7 @@ from wetting_angle_kit.analysis import (
     CoupledFit2DAnalyzer,
     DensityEstimator,
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -109,9 +116,12 @@ slicing = TrajectoryAnalyzer(
     parser=parser,
     atom_indices=oxygen_ids,
     droplet_geometry="spherical",
-    interface_extractor=InterfaceExtractor.rays_gaussian(
-        delta_azimuthal=5.0,  # 5° between slicing planes
-        delta_polar=8.0,
+    interface_extractor=InterfaceExtractor(
+        sampling=SpaceSampling.rays(
+            delta_azimuthal=5.0,  # 5° between slicing planes
+            delta_polar=8.0,
+        ),
+        density=DensityEstimator.gaussian(),
     ),
     surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
     wall_detector=WallDetector.min_plus_offset(offset=0.0),

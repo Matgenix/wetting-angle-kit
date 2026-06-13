@@ -1,9 +1,8 @@
 """Density-field contour plot with the fitted spherical cap overlay.
 
-Mirrors the visuals of the legacy
-``BinningTrajectoryPlotter.plot_density_contour`` (Jet colormap,
-dashed cap arc, dotted wall line, equal x/y aspect) while accepting
-the new coupled-binning result shapes:
+Renders a 2D density contour with the fitted cap arc (dashed) and
+wall line (dotted) overlaid (equal x/y aspect, Jet colormap by
+default). Accepts any of the coupled-fit result types:
 
 - :class:`CoupledFit2DBatchResult` — single batch, plotted directly.
 - :class:`CoupledFit2DResults` — densities averaged across batches.
@@ -37,8 +36,7 @@ class DensityContourPlotter:
     label : str, default ``"trajectory"``
         Display label used in the figure title.
     colorscale : str, default ``"Jet"``
-        Plotly colorscale for the density contour. The legacy plotter
-        used ``"Jet"``; the default is kept for visual continuity.
+        Plotly colorscale for the density contour.
     """
 
     def __init__(

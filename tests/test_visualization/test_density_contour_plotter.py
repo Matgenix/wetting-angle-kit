@@ -115,7 +115,7 @@ def test_density_contour_plotter_2d_empty_results_raises() -> None:
         DensityContourPlotter(results).plot()
 
 
-def test_density_contour_plotter_legacy_visuals() -> None:
+def test_density_contour_plotter_visual_defaults() -> None:
     """Cap is dashed black, wall is dotted black, colorbar shows ρ."""
     fig = DensityContourPlotter(_make_2d_batch()).plot()
     contour, cap, wall = fig.data
@@ -123,9 +123,8 @@ def test_density_contour_plotter_legacy_visuals() -> None:
     assert wall.line.dash == "dot"
     assert cap.line.color == "black"
     assert wall.line.color == "black"
-    # Colorbar title preserves the legacy ρ glyph.
     assert contour.colorbar.title.text == "ρ"
-    # Equal x/y aspect ratio is preserved.
+    # Equal x/y aspect ratio.
     assert fig.layout.yaxis.scaleanchor == "x"
     assert fig.layout.yaxis.scaleratio == 1
 

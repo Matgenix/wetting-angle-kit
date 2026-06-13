@@ -1,4 +1,4 @@
-"""Phase 8 quantification: 3D grid extractors via marching cubes.
+"""3D grid extractors via marching cubes.
 
 Three flavors:
 
@@ -7,9 +7,9 @@ Three flavors:
   ``SurfaceFitter.whole`` should recover the cap angle within a few
   degrees.
 - **End-to-end on the LAMMPS fixture.** Smoke test pairing the
-  ``grid_gaussian`` whole extractor with ``SurfaceFitter.whole`` —
+  ``grid`` + Gaussian whole extractor with ``SurfaceFitter.whole`` —
   the angle should land in the same physically plausible band as
-  ``rays_gaussian``.
+  ``rays`` + Gaussian.
 - **Cylinder geometry recovers a known horizontal ridge.** The 3D
   grid extracts a tube-like shell whose 2D ``(x, z)`` projection is
   a circle of the known cylinder radius.
@@ -22,8 +22,11 @@ import pytest
 
 pytest.importorskip("skimage")
 
-from wetting_angle_kit.analysis import (  # noqa: E402
+from wetting_angle_kit.analysis import (
+    DensityEstimator,
+    # noqa: E402
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     WallDetector,
 )
@@ -67,15 +70,16 @@ def _whole_grid_params(half_xy: float, z_lo: float, z_hi: float, nbins: int) -> 
     }
 
 
-def test_grid_gaussian_whole_recovers_known_spherical_cap() -> None:
+def test_grid_with_gaussian_whole_recovers_known_spherical_cap() -> None:
     """3D grid + marching cubes + sphere fit recovers a known cap angle."""
     R, zc, z_wall = 25.0, 0.0, 5.0
     truth_angle = float(np.degrees(np.arccos((z_wall - zc) / R)))
     atoms = _spherical_cap_atoms(R=R, zc=zc, z_wall=z_wall, n_atoms=80000, seed=0)
 
     grid_params = _whole_grid_params(half_xy=30.0, z_lo=0.0, z_hi=35.0, nbins=31)
-    extractor = InterfaceExtractor.grid_gaussian(
-        grid_params=grid_params, density_sigma=2.0
+    extractor = InterfaceExtractor(
+        sampling=SpaceSampling.grid(grid_params=grid_params),
+        density=DensityEstimator.gaussian(density_sigma=2.0),
     )
     geom = DropletGeometry.coerce("spherical")
     extractor.validate_compatibility(surface_kind="whole", droplet_geometry=geom)
@@ -96,7 +100,7 @@ def test_grid_gaussian_whole_recovers_known_spherical_cap() -> None:
     out = fitter.fit(interface_data=shell, z_wall=z_wall, droplet_geometry=geom)
     drift = abs(out.angle - truth_angle)
     print(
-        f"\ngrid_gaussian whole cap recovery: truth = {truth_angle:.3f}°, "
+        f"\ngrid + Gaussian (whole) cap recovery: truth = {truth_angle:.3f}°, "
         f"recovered = {out.angle:.3f}°, |drift| = {drift:.3f}°, "
         f"R_fit = {out.popt[3]:.3f} (truth {R}), "
         f"zc_fit = {out.popt[2]:.3f} (truth {zc}), "
@@ -107,14 +111,17 @@ def test_grid_gaussian_whole_recovers_known_spherical_cap() -> None:
     assert drift < 5.0
 
 
-def test_grid_binning_whole_recovers_known_spherical_cap() -> None:
+def test_grid_with_binning_whole_recovers_known_spherical_cap() -> None:
     """No-smoothing variant also recovers truth at suitable atom density."""
     R, zc, z_wall = 25.0, 0.0, 5.0
     truth_angle = float(np.degrees(np.arccos((z_wall - zc) / R)))
     atoms = _spherical_cap_atoms(R=R, zc=zc, z_wall=z_wall, n_atoms=200000, seed=1)
 
     grid_params = _whole_grid_params(half_xy=30.0, z_lo=0.0, z_hi=35.0, nbins=25)
-    extractor = InterfaceExtractor.grid_binning(grid_params=grid_params)
+    extractor = InterfaceExtractor(
+        sampling=SpaceSampling.grid(grid_params=grid_params),
+        density=DensityEstimator.binning(),
+    )
     geom = DropletGeometry.coerce("spherical")
     shell = extractor.extract(
         liquid_coordinates=atoms,
@@ -126,7 +133,7 @@ def test_grid_binning_whole_recovers_known_spherical_cap() -> None:
     out = fitter.fit(interface_data=shell, z_wall=z_wall, droplet_geometry=geom)
     drift = abs(out.angle - truth_angle)
     print(
-        f"\ngrid_binning whole cap recovery: truth = {truth_angle:.3f}°, "
+        f"\ngrid + binning (whole) cap recovery: truth = {truth_angle:.3f}°, "
         f"recovered = {out.angle:.3f}°, |drift| = {drift:.3f}°, "
         f"R_fit = {out.popt[3]:.3f}, "
         f"shell_points = {len(shell)}, rms = {out.rms_residual:.3f} Å"
@@ -134,8 +141,8 @@ def test_grid_binning_whole_recovers_known_spherical_cap() -> None:
     assert drift < 5.0
 
 
-def test_grid_gaussian_whole_cylinder_recovers_horizontal_ridge() -> None:
-    """``grid_gaussian`` + whole + cylinder recovers a known cylindrical ridge.
+def test_grid_with_gaussian_whole_cylinder_recovers_horizontal_ridge() -> None:
+    """``grid`` + Gaussian + whole + cylinder recovers a known cylindrical ridge.
 
     A uniformly-filled cylinder of radius ``R_truth`` running along the
     ``y`` axis is binned on a 3D grid whose ``y`` extent spans the
@@ -170,8 +177,9 @@ def test_grid_gaussian_whole_cylinder_recovers_horizontal_ridge() -> None:
         "zi_f": 2.5 * R_truth,
         "bin_width_z": 1.0,
     }
-    extractor = InterfaceExtractor.grid_gaussian(
-        grid_params=grid_params, density_sigma=1.5
+    extractor = InterfaceExtractor(
+        sampling=SpaceSampling.grid(grid_params=grid_params),
+        density=DensityEstimator.gaussian(density_sigma=1.5),
     )
     geom = DropletGeometry.coerce("cylinder_y")
     extractor.validate_compatibility(surface_kind="whole", droplet_geometry=geom)
@@ -188,7 +196,7 @@ def test_grid_gaussian_whole_cylinder_recovers_horizontal_ridge() -> None:
     in_plane_r = np.hypot(shell[:, 0], shell[:, 2] - R_truth)
     mean_r = float(np.mean(in_plane_r))
     print(
-        f"\ngrid_gaussian whole+cylinder: n_points = {shell.shape[0]}, "
+        f"\ngrid + Gaussian (whole+cylinder): n_points = {shell.shape[0]}, "
         f"R_truth = {R_truth}, R_mean = {mean_r:.3f} Å"
     )
     # Gaussian smoothing (σ=1.5) places the iso-contour slightly inside
@@ -198,8 +206,8 @@ def test_grid_gaussian_whole_cylinder_recovers_horizontal_ridge() -> None:
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_grid_gaussian_whole_end_to_end_on_lammps_fixture() -> None:
-    """``grid_gaussian`` whole pipeline on the water/graphene fixture."""
+def test_grid_with_gaussian_whole_end_to_end_on_lammps_fixture() -> None:
+    """``grid`` + Gaussian whole pipeline on the water/graphene fixture."""
     pytest.importorskip("ovito")
     from wetting_angle_kit.analysis import TrajectoryAnalyzer
     from wetting_angle_kit.parsers import (
@@ -230,16 +238,22 @@ def test_grid_gaussian_whole_end_to_end_on_lammps_fixture() -> None:
         return float(analyzer.analyze([1]).per_batch_angles[0])
 
     angle_rays_whole = _angle(
-        InterfaceExtractor.rays_gaussian(n_rays_sphere=400, density_sigma=3.0),
+        InterfaceExtractor(
+            sampling=SpaceSampling.rays(n_rays_sphere=400),
+            density=DensityEstimator.gaussian(density_sigma=3.0),
+        ),
         SurfaceFitter.whole(surface_filter_offset=3.0),
     )
     angle_grid_whole = _angle(
-        InterfaceExtractor.grid_gaussian(grid_params=grid_params, density_sigma=2.0),
+        InterfaceExtractor(
+            sampling=SpaceSampling.grid(grid_params=grid_params),
+            density=DensityEstimator.gaussian(density_sigma=2.0),
+        ),
         SurfaceFitter.whole(surface_filter_offset=3.0),
     )
     print(
-        f"\nrays_gaussian (whole)  angle = {angle_rays_whole:.3f}°"
-        f"\ngrid_gaussian (whole)  angle = {angle_grid_whole:.3f}°  "
+        f"\nrays + Gaussian (whole)  angle = {angle_rays_whole:.3f}°"
+        f"\ngrid + Gaussian (whole)  angle = {angle_grid_whole:.3f}°  "
         f"|drift| = {abs(angle_grid_whole - angle_rays_whole):.3f}°"
     )
     # Both should land in the physically plausible band. The drift

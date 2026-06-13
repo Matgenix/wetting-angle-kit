@@ -1,4 +1,4 @@
-"""Phase 10 quantification: ``CoupledFit3DAnalyzer``.
+"""``CoupledFit3DAnalyzer``.
 
 Three flavors:
 
@@ -139,13 +139,13 @@ def test_coupled_fit_3d_close_to_2d_on_lammps_fixture() -> None:
         "zi_f": 40.0,
         "bin_width_z": 1.0,
     }
-    legacy_2d = CoupledFit2DAnalyzer(
+    analyzer_2d = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
         binning_params=binning_params_2d,
     )
-    angle_2d = float(legacy_2d.analyze([1]).batches[0].angle)
+    angle_2d = float(analyzer_2d.analyze([1]).batches[0].angle)
 
     # 3D analyzer — full (xi, yi, zi).
     binning_params_3d = {

@@ -44,8 +44,9 @@ mean with its own cumulative ``±σ`` band).
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       interface_extractor=InterfaceExtractor.rays_gaussian(
-           delta_azimuthal=20.0, delta_polar=8.0
+       interface_extractor=InterfaceExtractor(
+           sampling=SpaceSampling.rays(delta_azimuthal=20.0, delta_polar=8.0),
+           density=DensityEstimator.gaussian(),
        ),
        surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
        wall_detector=WallDetector.min_plus_offset(offset=0.0),
@@ -145,7 +146,6 @@ azimuthal collapse so plots are unambiguous.
   :class:`AngleEvolutionPlotter` to plot the per-batch median across
   slices instead of the mean (slicing results only; ignored for
   other result types).
-- The legacy ``BinningTrajectoryPlotter`` and
-  ``SlicingTrajectoryPlotter`` have been replaced by these two
-  classes; the new pattern is one plotter per concern rather than
-  per analyzer.
+- The package follows a "one plotter per concern" pattern rather
+  than per analyzer — pass any analyzer's results object to either
+  plotter, and the plotter dispatches on the result type.

@@ -35,7 +35,7 @@ deviation of the angles is reported as
 -------------------------
 
 The full-sphere Fibonacci ray fan
-(:meth:`InterfaceExtractor.rays_gaussian` with ``n_rays_sphere=...``)
+(:meth:`InterfaceExtractor.rays` (Gaussian) with ``n_rays_sphere=...``)
 emits rays from the droplet COM in all directions, including
 downward. Those downward rays hit the wall plane and contribute
 interface points right at the wall, so the lowest shell point lands
@@ -93,9 +93,11 @@ the wall position.
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       interface_extractor=InterfaceExtractor.rays_gaussian(
-           n_rays_sphere=400,  # 400 rays uniformly over the full sphere
-           density_sigma=3.0,
+       interface_extractor=InterfaceExtractor(
+           sampling=SpaceSampling.rays(
+               n_rays_sphere=400,  # 400 rays uniformly over the full sphere
+           ),
+           density=DensityEstimator.gaussian(density_sigma=3.0),
        ),
        surface_fitter=SurfaceFitter.whole(
            surface_filter_offset=3.0,
@@ -167,7 +169,7 @@ want to report:
   reliable to two significant figures; 1000 will tighten that but
   costs ~10× more.
 - **Cylinder droplets** still work — pair the whole fitter with
-  :meth:`InterfaceExtractor.rays_gaussian` configured with
+  :meth:`InterfaceExtractor.rays` (Gaussian) configured with
   ``delta_cylinder`` and ``delta_polar`` instead of ``n_rays_sphere``.
   The fitter automatically does a 2D circle fit per the cylinder
   axis convention.
@@ -192,10 +194,9 @@ cylinder-mode extractor parameters:
        parser=LammpsDumpParser(cylinder_fixture),
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",  # or "cylinder_x"
-       interface_extractor=InterfaceExtractor.rays_gaussian(
-           delta_cylinder=5.0,
-           delta_polar=8.0,
-           density_sigma=3.0,
+       interface_extractor=InterfaceExtractor(
+           sampling=SpaceSampling.rays(delta_cylinder=5.0, delta_polar=8.0),
+           density=DensityEstimator.gaussian(density_sigma=3.0),
        ),
        surface_fitter=SurfaceFitter.whole(
            surface_filter_offset=3.0,
@@ -224,7 +225,7 @@ No ``wall_atom_indices`` argument needed on the analyzer in this
 case — the explicit detector ignores any wall-atom data. Useful
 both for whole-fit and slicing pipelines.
 
-7.3 ``rays_binning`` alternative
+7.3 ``rays`` (binning) alternative
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Same Fibonacci-sphere geometry, but the density along each ray is
@@ -232,7 +233,7 @@ estimated with a 1D top-hat histogram instead of a Gaussian KDE:
 
 .. code-block:: python
 
-   interface_extractor = InterfaceExtractor.rays_binning(
-       n_rays_sphere=400,
-       bin_width=3.0,
+   interface_extractor = InterfaceExtractor(
+       sampling=SpaceSampling.rays(n_rays_sphere=400),
+       density=DensityEstimator.binning(bin_width=3.0),
    )

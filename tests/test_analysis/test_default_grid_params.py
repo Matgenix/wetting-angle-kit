@@ -1,6 +1,6 @@
 """Auto-derived ``grid_params`` / ``binning_params`` defaults.
 
-When the user constructs a grid extractor or a coupled-binning
+When the user constructs a grid extractor or a coupled-fit
 analyzer without specifying the spatial grid spec, the package picks
 one from the atom bounding box (extractors) or the box dimensions
 (analyzers). These tests verify that the auto-derived defaults
@@ -21,10 +21,13 @@ import pytest
 pytest.importorskip("ovito")
 pytest.importorskip("skimage")
 
-from wetting_angle_kit.analysis import (  # noqa: E402
+from wetting_angle_kit.analysis import (
+    # noqa: E402
     CoupledFit2DAnalyzer,
     CoupledFit3DAnalyzer,
+    DensityEstimator,
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -79,15 +82,18 @@ def test_coupled_fit_3d_auto_default(oxygen_indices: np.ndarray) -> None:
 
 
 @pytest.mark.integration
-def test_grid_gaussian_slicing_auto_default(
+def test_grid_with_gaussian_slicing_auto_default(
     oxygen_indices: np.ndarray,
 ) -> None:
-    """``grid_gaussian`` slicing pipeline with no ``grid_params`` lands at ~95°."""
+    """``grid`` + Gaussian slicing pipeline with no ``grid_params`` lands at ~95°."""
     analyzer = TrajectoryAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.grid_gaussian(delta_azimuthal=20.0),
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.grid(delta_azimuthal=20.0),
+            density=DensityEstimator.gaussian(),
+        ),
         surface_fitter=SurfaceFitter.slicing(surface_filter_offset=3.0),
         wall_detector=WallDetector.min_plus_offset(offset=0.0),
     )
@@ -96,15 +102,17 @@ def test_grid_gaussian_slicing_auto_default(
 
 
 @pytest.mark.integration
-def test_grid_gaussian_whole_auto_default(
+def test_grid_with_gaussian_whole_auto_default(
     oxygen_indices: np.ndarray,
 ) -> None:
-    """``grid_gaussian`` whole-fit pipeline with no ``grid_params`` lands at ~95°."""
+    """``grid`` + Gaussian whole-fit pipeline with no ``grid_params`` lands at ~95°."""
     analyzer = TrajectoryAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.grid_gaussian(),
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.grid(), density=DensityEstimator.gaussian()
+        ),
         surface_fitter=SurfaceFitter.whole(surface_filter_offset=3.0),
         wall_detector=WallDetector.min_plus_offset(offset=0.0),
     )
@@ -114,17 +122,17 @@ def test_grid_gaussian_whole_auto_default(
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_grid_binning_whole_auto_default(
+def test_grid_with_binning_whole_auto_default(
     oxygen_indices: np.ndarray,
 ) -> None:
-    """``grid_binning`` whole-fit pipeline with no ``grid_params``.
+    """``grid`` + binning whole-fit pipeline with no ``grid_params``.
 
     Whole mode bins the full 3D density (no slab cut), so the
     auto-default holds up where per-frame slicing-mode
-    ``grid_binning`` doesn't. The recovered angle should sit in the
+    ``grid`` + binning doesn't. The recovered angle should sit in the
     physically-acceptable band.
 
-    Note: ``grid_binning`` + slicing-mode + ``grid_params=None`` is
+    Note: ``grid`` + binning + slicing-mode + ``grid_params=None`` is
     intrinsically unreliable for single-frame analyses (the slab cut
     leaves few atoms per cell); that combination has no dedicated
     test because there is no robust default for it.
@@ -133,7 +141,9 @@ def test_grid_binning_whole_auto_default(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.grid_binning(),
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.grid(), density=DensityEstimator.binning()
+        ),
         surface_fitter=SurfaceFitter.whole(surface_filter_offset=3.0),
         wall_detector=WallDetector.min_plus_offset(offset=0.0),
     )

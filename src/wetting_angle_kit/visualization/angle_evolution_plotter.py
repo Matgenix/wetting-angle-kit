@@ -1,11 +1,10 @@
 """Trajectory-level contact-angle evolution plot.
 
-Mirrors the visual conventions of the legacy
-``SlicingTrajectoryPlotter.plot_angle_evolution`` — a per-batch
-contact-angle line with an optional inter-batch ``±σ`` band and a
-cumulative running mean overlay — but consumes the new
-:class:`TrajectoryResults` / :class:`CoupledFit2DResults` /
-:class:`CoupledFit3DResults` shapes.
+Renders a per-batch contact-angle line with an optional inter-batch
+``±σ`` band and a cumulative running mean overlay. Consumes any of
+the package's per-batch result types
+(:class:`TrajectoryResults`, :class:`CoupledFit2DResults`,
+:class:`CoupledFit3DResults`).
 
 The plotter implements :class:`BaseTrajectoryPlotter`, so callers can
 also fetch a :class:`TrajectoryStats` summary alongside the figure.

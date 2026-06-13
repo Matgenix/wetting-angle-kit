@@ -75,7 +75,7 @@ To fit the tanh profile to a sampled density, we first need a local
 density estimate at each sample point. Two estimators are available,
 swappable via :class:`InterfaceExtractor`:
 
-**Gaussian KDE** (``rays_gaussian`` / ``grid_gaussian``)
+**Gaussian KDE** (``rays`` (Gaussian) / ``grid`` (Gaussian))
    Each atom contributes a normalised 3D Gaussian of width
    :math:`\sigma`:
 
@@ -89,7 +89,7 @@ swappable via :class:`InterfaceExtractor`:
    which makes it the default choice. For efficiency, a per-atom
    cut-off at :math:`5\sigma` is applied via a cKDTree.
 
-**3D top-hat** (``rays_binning`` / ``grid_binning``)
+**3D top-hat** (``rays`` (binning) / ``grid`` (binning))
    Atoms within :math:`{\rm bin\_width}/2` of the sample contribute
    uniformly:
 
@@ -101,7 +101,6 @@ swappable via :class:`InterfaceExtractor`:
    Fast and conceptually simple, but the hard cut-off introduces
    Poisson noise that can interfere with the tanh fit unless the bin
    width is matched to the smoothing length you'd otherwise pick.
-   The legacy binning analyzer used this estimator.
 
 Both estimators implement the same
 :class:`DensityFieldProtocol`, so the analysis pipeline can plug
@@ -116,8 +115,8 @@ the interface:
 4.1 Ray fans
 ^^^^^^^^^^^^
 
-The :meth:`InterfaceExtractor.rays_gaussian` /
-:meth:`rays_binning` factories emit a fan of rays from the droplet
+The :meth:`InterfaceExtractor.rays` (Gaussian) /
+:meth:`InterfaceExtractor.rays` (binning) factories emit a fan of rays from the droplet
 COM, sample the density along each ray, and recover the interface
 position as the half-density point of a 1D tanh fit on that ray.
 
@@ -150,8 +149,8 @@ equal-area coverage with no clustering anywhere.
 4.2 Grid + iso-contour
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The :meth:`InterfaceExtractor.grid_gaussian` /
-:meth:`grid_binning` factories build a fixed-cell grid in space and
+The :meth:`InterfaceExtractor.grid` (Gaussian) /
+:meth:`InterfaceExtractor.grid` (binning) factories build a fixed-cell grid in space and
 compute a density value at each cell, then recover the interface as
 the iso-density contour at the half-bulk level via
 :func:`skimage.measure.find_contours` in 2D (marching squares) or
@@ -160,11 +159,11 @@ the iso-density contour at the half-bulk level via
 The two estimators differ only in how the per-cell density is
 computed:
 
-* ``grid_gaussian`` evaluates the same Gaussian KDE described in
+* ``grid`` (Gaussian) evaluates the same Gaussian KDE described in
   §3 at each cell centre — exactly the estimator
-  :meth:`rays_gaussian` uses, just sampled on a grid rather than
+  :meth:`InterfaceExtractor.rays` (Gaussian) uses, just sampled on a grid rather than
   along rays. No additional smoothing step.
-* ``grid_binning`` is a histogram: for slicing mode, atoms within
+* ``grid`` (binning) is a histogram: for slicing mode, atoms within
   ``±bin_width_x/2`` of the slice plane contribute to the 2D
   histogram in ``(s, z)`` (the slab cut); for whole mode, atoms are
   binned directly into 3D ``(x, y, z)`` cells. Density is
@@ -180,9 +179,9 @@ how the slicing method exposes droplet asymmetry.
 
 Two volume-normalisation notes:
 
-* ``grid_gaussian`` returns 3D density per Å³ directly from the KDE
+* ``grid`` (Gaussian) returns 3D density per Å³ directly from the KDE
   evaluation; no extra volume normalisation needed.
-* ``grid_binning``'s slab-cut histogram divides by
+* ``grid`` (binning)'s slab-cut histogram divides by
   ``ds × dz × bin_width_x`` so the recovered field is also in
   atoms/Å³. The slab thickness equals ``bin_width_x`` (the in-plane
   horizontal cell width), which keeps the bin's cross-section in the
@@ -259,8 +258,8 @@ to roughly a 3° shift in the recovered angle. So either pick the
 wall detector that matches your trust budget, or report the angle
 for two choices to make the dependence visible.
 
-7. Joint coupled-binning fit
-----------------------------
+7. Joint coupled fit
+--------------------
 
 The :class:`CoupledFit2DAnalyzer` and
 :class:`CoupledFit3DAnalyzer` skip the
@@ -391,9 +390,9 @@ batches before the full pipeline runs. Three regimes are useful:
 
 ``batch_size=-1``
    Pool every requested frame into a single batch — one angle for
-   the whole trajectory. The default for the coupled-binning
-   analyzers; useful for the slicing/whole pipeline too when you
-   only want a representative angle.
+   the whole trajectory. The default for the coupled-fit analyzers;
+   useful for the slicing/whole pipeline too when you only want a
+   representative angle.
 
 The trade-off: the per-batch fit cost scales with the number of
 atoms in the batch (roughly linearly for ray fans, sub-linearly

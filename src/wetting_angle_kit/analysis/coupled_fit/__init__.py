@@ -23,14 +23,14 @@ single robust estimate; use :class:`TrajectoryAnalyzer` with
 separable strategies for per-frame time resolution.
 """
 
-from wetting_angle_kit.analysis.coupled_fit._density_estimator import (
-    DensityEstimator,
-)
 from wetting_angle_kit.analysis.coupled_fit.analyzer_2d import (
     CoupledFit2DAnalyzer,
 )
 from wetting_angle_kit.analysis.coupled_fit.analyzer_3d import (
     CoupledFit3DAnalyzer,
+)
+from wetting_angle_kit.analysis.density_estimator import (
+    DensityEstimator,
 )
 
 __all__ = [

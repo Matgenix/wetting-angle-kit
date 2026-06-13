@@ -1,4 +1,4 @@
-"""Hyperbolic-tangent models + heuristic-grid helpers for the coupled-binning analyzers.
+"""Hyperbolic-tangent models + grid helpers for the coupled-fit analyzers.
 
 Both the 2D (seven-parameter) and 3D (nine-parameter) joint density
 models are kept in this module so the shared bounds / warning / cap-angle
@@ -271,12 +271,12 @@ class _HyperbolicTangentModel3D:
 # ----------------------------------------------------------------------
 
 
-#: Default cell width in 2D coupled binning (Å). Matches ``t1 / 2`` from
+#: Default cell width for the 2D coupled fit (Å). Matches ``t1 / 2`` from
 #: :class:`_HyperbolicTangentModel2D.DEFAULT_INITIAL_PARAMS` so the
 #: per-bin density resolves the tanh interface profile.
 _DEFAULT_BIN_WIDTH_2D = 0.5
 
-#: Default cell width in 3D coupled binning (Å). Coarser than the 2D
+#: Default cell width for the 3D coupled fit (Å). Coarser than the 2D
 #: default to keep the total cell count tractable for the 9-parameter
 #: NLLS fit (3D grids at 0.5 Å cells would give ~1.7M cells for a
 #: typical box).

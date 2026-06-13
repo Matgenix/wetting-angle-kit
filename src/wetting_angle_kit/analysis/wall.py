@@ -27,7 +27,7 @@ from typing import Literal
 
 import numpy as np
 
-from wetting_angle_kit.analysis.extractors.base import InterfaceData
+from wetting_angle_kit.analysis.interface.base import InterfaceData
 
 
 @dataclass(frozen=True)

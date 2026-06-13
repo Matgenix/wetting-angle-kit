@@ -32,7 +32,7 @@ Top-level analyzers
 Strategy components
 ^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.analysis.extractors
+.. automodule:: wetting_angle_kit.analysis.interface
    :members:
    :show-inheritance:
 

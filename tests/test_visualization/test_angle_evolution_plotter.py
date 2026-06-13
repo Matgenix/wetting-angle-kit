@@ -92,7 +92,7 @@ def test_angle_evolution_plotter_stat_mean_matches_batch_angle() -> None:
 
 
 def test_angle_evolution_plotter_coupled_results_no_band() -> None:
-    """Coupled-binning batches have no angle_std → no within-batch band."""
+    """Coupled-fit batches have no angle_std → no within-batch band."""
     plotter = AngleEvolutionPlotter(_coupled_2d_results())
     fig = plotter.plot(per_frame_std=True, running_mean=False)
     # One main line, no band.

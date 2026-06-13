@@ -77,15 +77,18 @@ Example trajectory::
    print("Number of water molecules:", len(oxygen_indices))
 
    # --- Step 3: Build the trajectory analyzer ---
-   # Strategies: rays_gaussian extractor + slicing fitter +
+   # Strategies: rays extractor (Gaussian) + slicing fitter +
    # interface-derived wall + per-frame batching.
    analyzer = TrajectoryAnalyzer(
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       interface_extractor=InterfaceExtractor.rays_gaussian(
-           delta_azimuthal=20.0,  # 20° between slicing planes
-           delta_polar=8.0,  # 8° in-plane ray step
+       interface_extractor=InterfaceExtractor(
+           sampling=SpaceSampling.rays(
+               delta_azimuthal=20.0,  # 20° between slicing planes
+               delta_polar=8.0,  # 8° in-plane ray step
+           ),
+           density=DensityEstimator.gaussian(),
        ),
        surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
        wall_detector=WallDetector.min_plus_offset(offset=0.0),
@@ -188,9 +191,12 @@ fitter that either NaNs out or returns a non-physical angle:
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",  # or "cylinder_x"
-       interface_extractor=InterfaceExtractor.rays_gaussian(
-           delta_cylinder=5.0,  # 5 Å between slicing planes
-           delta_polar=8.0,
+       interface_extractor=InterfaceExtractor(
+           sampling=SpaceSampling.rays(
+               delta_cylinder=5.0,  # 5 Å between slicing planes
+               delta_polar=8.0,
+           ),
+           density=DensityEstimator.gaussian(),
        ),
        surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
        wall_detector=WallDetector.min_plus_offset(offset=0.0),
@@ -204,7 +210,7 @@ fixture ``tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj``
 in the repository is a cylindrical-droplet trajectory you can use
 as a worked example.
 
-6.2 ``rays_binning`` alternative
+6.2 ``rays`` (binning) alternative
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The same ray-fan geometry is available with a 1D histogram density
@@ -214,18 +220,20 @@ the bin width):
 
 .. code-block:: python
 
-   interface_extractor = InterfaceExtractor.rays_binning(
-       delta_azimuthal=20.0,
-       delta_polar=8.0,
-       bin_width=3.0,  # 3 Å diameter top-hat
-       points_per_angstrom=1.0,
+   interface_extractor = InterfaceExtractor(
+       sampling=SpaceSampling.rays(
+           delta_azimuthal=20.0,
+           delta_polar=8.0,
+           points_per_angstrom=1.0,
+       ),
+       density=DensityEstimator.binning(bin_width=3.0),  # 3 Å diameter top-hat
    )
 
 The ``bin_width`` parameter sets the diameter of the 3D top-hat
 counted at each sample point along the ray; matching it to the
 interface thickness (~1–3 Å for water) keeps the tanh fit
 well-conditioned. Numerically the bin width plays the same role
-``density_sigma`` plays for ``rays_gaussian``.
+``density_sigma`` plays for ``rays`` (Gaussian).
 
 6.3 Pooled batches
 ^^^^^^^^^^^^^^^^^^
@@ -272,7 +280,7 @@ For physical context on the trade-off see
 6.4 Grid alternative
 ^^^^^^^^^^^^^^^^^^^^
 
-The grid extractors (:meth:`InterfaceExtractor.grid_gaussian` and
-:meth:`grid_binning`) pair with the slicing fitter exactly the same
+The grid extractors (:meth:`InterfaceExtractor.grid` (Gaussian) and
+:meth:`InterfaceExtractor.grid` (binning)) pair with the slicing fitter exactly the same
 way and are covered in :doc:`grid_method_tuto`. Use them when
 ray-fan sampling is too sparse to resolve the interface.

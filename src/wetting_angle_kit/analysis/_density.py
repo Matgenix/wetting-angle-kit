@@ -2,15 +2,15 @@
 
 Used by both the slicing method (re-imported by
 :class:`wetting_angle_kit.analysis.slicing.surface_definition.SurfaceDefinition`)
-and the new ``rays_gaussian`` / ``rays_binning`` extractors that fit
-a hyperbolic-tangent profile to the density along a ray.
+and the rays/grid extractors that fit a hyperbolic-tangent profile
+to the density along a ray or sample it on a grid of cell centres.
 
 :class:`GaussianDensityField` wraps a ``cKDTree`` over the atom cloud
 plus the kernel-width parameters. :class:`HistogramDensityField` is
-the equivalent for the histogram-style estimator used by
-``rays_binning``. Both expose the same ``evaluate(positions)`` method
-so the ray-fan geometry helpers in
-:mod:`wetting_angle_kit.analysis.extractors` can take either one.
+the equivalent for the histogram-style estimator. Both expose the
+same ``evaluate(positions)`` method so the ray-fan geometry helpers
+in :mod:`wetting_angle_kit.analysis.interface` and the
+:class:`DensityEstimator` strategy can take either one.
 :func:`fit_tanh_profiles_batched` solves the per-ray tanh fit for an
 entire slice in one batched Gauss–Newton call.
 """
@@ -119,13 +119,13 @@ class HistogramDensityField:
     """Top-hat (histogram-style) density evaluator over a fixed atom cloud.
 
     The natural counterpart of :class:`GaussianDensityField` for the
-    ``rays_binning`` extractor. Conceptually a 1D histogram of atoms
+    ``rays`` extractor with a binning density. Conceptually a 1D histogram of atoms
     projected onto each ray, implemented as a 3D top-hat kernel:
     each sample position counts atoms within a sphere of radius
     ``bin_width / 2`` and divides by the sphere's volume. This shares
     the ``cKDTree.sparse_distance_matrix`` machinery used by the
     Gaussian field and exposes the same ``evaluate`` interface so the
-    ray-fan geometry helpers in :mod:`wetting_angle_kit.analysis.extractors`
+    ray-fan geometry helpers in :mod:`wetting_angle_kit.analysis.interface`
     can take either field.
 
     Parameters

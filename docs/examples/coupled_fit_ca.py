@@ -46,11 +46,11 @@ binning_params = {
 }
 
 # --- Step 4: Pick a density estimator ---
-# The histogram is the default and matches the legacy numerics:
+# Top-hat histogram on the binning grid (default):
 estimator = DensityEstimator.binning()
-# Swap in the Gaussian KDE for smoother per-cell density. Picks the
-# same ``density_sigma`` you would for ``rays_gaussian`` on the same
-# system (3 Å is a sensible default for room-temperature water):
+# Swap in the Gaussian KDE for smoother per-cell density. ``density_sigma``
+# is the Gaussian kernel width; 3 Å is a sensible default for
+# room-temperature water:
 # estimator = DensityEstimator.gaussian(density_sigma=2.5)
 
 # --- Step 5: Build the analyzer ---

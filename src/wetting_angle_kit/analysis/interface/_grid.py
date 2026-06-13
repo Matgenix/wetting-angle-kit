@@ -7,14 +7,11 @@ spherical droplets, axial steps for cylindrical droplets — so the
 downstream :class:`SurfaceFitter.slicing` sees one ``(s, z)`` contour
 per slice and can report per-slice scatter.
 
-Density estimators:
-
-* ``grid_gaussian`` — 3D Gaussian KDE (sum of Gaussians centred on
-  atoms), evaluated at each cell centre. Uses the same
-  :class:`GaussianDensityField` machinery as ``rays_gaussian``.
-* ``grid_binning`` — top-hat per cell. For slicing mode, atoms within
-  ``bin_width_x / 2`` of the slice plane contribute. For whole mode,
-  atoms binned directly into 3D cells.
+The per-cell density comes from the :class:`DensityEstimator`
+strategy passed via :meth:`SpaceSampling.grid` × :class:`DensityEstimator`. The Gaussian
+variant samples the KDE at cell centres; the binning variant
+histograms atoms into cells (with a slab cut perpendicular to the
+slice plane for slicing mode).
 """
 
 from collections.abc import Iterator
@@ -23,22 +20,26 @@ from typing import Any, ClassVar
 
 import numpy as np
 
-from wetting_angle_kit.analysis._density import GaussianDensityField
-from wetting_angle_kit.analysis.extractors.base import (
-    InterfaceData,
-    InterfaceExtractor,
-    SamplingKind,
-    SurfaceKind,
+from wetting_angle_kit.analysis.density_estimator import (
+    DensityEstimator,
+    _GaussianDensityEstimator,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
+from wetting_angle_kit.analysis.interface.base import (
+    InterfaceData,
+    SamplingKind,
+    SpaceSampling,
+    SurfaceKind,
+)
 
 _GRID_KEYS_2D = frozenset(
     {"xi_0", "xi_f", "bin_width_x", "zi_0", "zi_f", "bin_width_z"}
 )
 _GRID_KEYS_3D = _GRID_KEYS_2D | {"yi_0", "yi_f", "bin_width_y"}
 
-#: Default cell width for ``grid_binning`` (Å). The histogram estimator
-#: has no smoothing scale to anchor to, so a flat default is used.
+#: Default cell width for the grid + binning combination (Å). The
+#: histogram estimator has no smoothing scale to anchor to, so a
+#: flat default is used.
 #:
 #: 2 Å is the compromise for *pooled-batch* analyses; for
 #: per-frame slicing-mode use the slab cut leaves too few atoms
@@ -272,8 +273,8 @@ def _iter_slice_planes(
 
     ``in_plane_axis`` is the unit vector defining the in-plane radial
     coordinate ``s``. The perpendicular-to-plane axis is recovered as
-    ``(-in_plane_axis[1], in_plane_axis[0], 0)`` by callers that need
-    it (e.g. the slab cut in :func:`_histogram_on_slice`).
+    ``(-in_plane_axis[1], in_plane_axis[0], 0)`` by the binning
+    estimator's slab cut.
     """
     if droplet_geometry.is_spherical:
         assert delta_azimuthal is not None
@@ -293,105 +294,6 @@ def _iter_slice_planes(
             [float(center_geom[0]), float(y), float(center_geom[2])]
         )
         yield slice_center, in_plane
-
-
-# ---------------------------------------------------------------------------
-# Density estimation per slice
-# ---------------------------------------------------------------------------
-
-
-def _evaluate_kde_on_slice(
-    field: GaussianDensityField,
-    slice_center: np.ndarray,
-    in_plane_axis: np.ndarray,
-    s_centers: np.ndarray,
-    z_centers: np.ndarray,
-) -> np.ndarray:
-    """3D KDE evaluated at ``(s, z)`` cell centres on a slice plane.
-
-    Cell centre ``(s, z)`` maps to the 3D point
-    ``(sc.x + s · ax.x, sc.y + s · ax.y, z)`` for a horizontal
-    ``in_plane_axis``.
-    """
-    S, Z = np.meshgrid(s_centers, z_centers, indexing="ij")
-    positions = np.column_stack(
-        [
-            slice_center[0] + S.ravel() * in_plane_axis[0],
-            slice_center[1] + S.ravel() * in_plane_axis[1],
-            Z.ravel(),
-        ]
-    )
-    return field.evaluate(positions).reshape(S.shape)
-
-
-def _histogram_on_slice(
-    atoms: np.ndarray,
-    slice_center: np.ndarray,
-    in_plane_axis: np.ndarray,
-    s_edges: np.ndarray,
-    z_edges: np.ndarray,
-    slab_thickness: float,
-) -> np.ndarray:
-    """2D histogram of atoms inside the slab ``|perp| ≤ slab_thickness/2``.
-
-    Each cell's bin is a ``ds × dz × slab_thickness`` box; density is
-    ``counts / (ds × dz × slab_thickness)``.
-    """
-    perp_axis = np.array([-in_plane_axis[1], in_plane_axis[0], 0.0])
-    rel = atoms - slice_center[None, :]
-    s_coord = rel @ in_plane_axis
-    perp_coord = rel @ perp_axis
-    mask = np.abs(perp_coord) <= 0.5 * slab_thickness
-    counts, _, _ = np.histogram2d(
-        s_coord[mask], atoms[mask, 2], bins=(s_edges, z_edges)
-    )
-    ds = float(s_edges[1] - s_edges[0])
-    dz = float(z_edges[1] - z_edges[0])
-    return counts / (ds * dz * slab_thickness)
-
-
-# ---------------------------------------------------------------------------
-# 3D density helpers (whole mode)
-# ---------------------------------------------------------------------------
-
-
-def _evaluate_kde_on_3d_grid(
-    field: GaussianDensityField,
-    x_centers: np.ndarray,
-    y_centers: np.ndarray,
-    z_centers: np.ndarray,
-    *,
-    x_offset: float,
-    y_offset: float,
-) -> np.ndarray:
-    """3D KDE at cell centres of a droplet-centred grid."""
-    X, Y, Z = np.meshgrid(x_centers, y_centers, z_centers, indexing="ij")
-    positions = np.column_stack(
-        [
-            (X + x_offset).ravel(),
-            (Y + y_offset).ravel(),
-            Z.ravel(),
-        ]
-    )
-    return field.evaluate(positions).reshape(X.shape)
-
-
-def _histogram_3d(
-    atoms: np.ndarray,
-    center_geom: np.ndarray,
-    x_edges: np.ndarray,
-    y_edges: np.ndarray,
-    z_edges: np.ndarray,
-) -> np.ndarray:
-    """3D histogram in the droplet-centred ``(x, y, z)`` frame."""
-    atoms_centered = atoms - np.array(
-        [float(center_geom[0]), float(center_geom[1]), 0.0]
-    )
-    counts, _ = np.histogramdd(atoms_centered, bins=(x_edges, y_edges, z_edges))
-    dx = float(x_edges[1] - x_edges[0])
-    dy = float(y_edges[1] - y_edges[0])
-    dz = float(z_edges[1] - z_edges[0])
-    return counts / (dx * dy * dz)
 
 
 # ---------------------------------------------------------------------------
@@ -468,14 +370,19 @@ def _extract_isosurface_3d(
 
 
 @dataclass(frozen=True, eq=False, kw_only=True)
-class _GridGaussianExtractor(InterfaceExtractor):
-    """Concrete extractor for :meth:`InterfaceExtractor.grid_gaussian`."""
+class _GridSampling(SpaceSampling):
+    """Concrete sampling for :meth:`SpaceSampling.grid`.
 
-    sampling: ClassVar[SamplingKind] = "grid"
+    Dispatches the per-cell density computation to the
+    :class:`DensityEstimator` strategy received at extract time: the
+    Gaussian variant samples the KDE at cell centres, the binning
+    variant histograms atoms into cells (with a slab cut for slicing
+    mode).
+    """
+
+    kind: ClassVar[SamplingKind] = "grid"
 
     grid_params: dict[str, Any] | None
-    density_sigma: float
-    cutoff_sigma: float
     delta_azimuthal: float | None
     delta_cylinder: float | None
 
@@ -490,7 +397,7 @@ class _GridGaussianExtractor(InterfaceExtractor):
         # construction.
         if self.grid_params is not None:
             _validate_grid_params(
-                name="grid_gaussian",
+                name="grid",
                 grid_params=self.grid_params,
                 surface_kind=surface_kind,
             )
@@ -499,17 +406,25 @@ class _GridGaussianExtractor(InterfaceExtractor):
                 import skimage.measure  # noqa: F401
             except ImportError as e:
                 raise ImportError(
-                    "grid_gaussian for whole-kind extraction requires "
+                    "grid for whole-kind extraction requires "
                     "scikit-image (used for marching_cubes). Install with: "
                     "pip install 'wetting-angle-kit[grid3d]'."
                 ) from e
         if surface_kind == "slicing":
             _validate_per_slice_params(
-                name="grid_gaussian",
+                name="grid",
                 delta_azimuthal=self.delta_azimuthal,
                 delta_cylinder=self.delta_cylinder,
                 droplet_geometry=droplet_geometry,
             )
+
+    def _auto_grid_bin_width(self, density: DensityEstimator) -> float:
+        # Pick the auto-derived bin_width that matches the estimator:
+        # Gaussian uses density_sigma / 2 (Nyquist-ish for the KDE);
+        # histograms use a flat 2 Å (no smoothing scale to anchor to).
+        if isinstance(density, _GaussianDensityEstimator):
+            return density.density_sigma / 2.0
+        return _DEFAULT_BIN_WIDTH_BINNING
 
     def extract(
         self,
@@ -517,112 +432,24 @@ class _GridGaussianExtractor(InterfaceExtractor):
         center_geom: np.ndarray,
         droplet_geometry: DropletGeometry,
         surface_kind: SurfaceKind,
+        density: DensityEstimator,
     ) -> InterfaceData:
-        field = GaussianDensityField(
-            atom_coords=liquid_coordinates,
-            density_sigma=self.density_sigma,
-            cutoff_sigma=self.cutoff_sigma,
-        )
         grid_params = self.grid_params or _default_grid_params(
             liquid_coordinates,
             center_geom,
             droplet_geometry,
             surface_kind=surface_kind,
-            bin_width=self.density_sigma / 2.0,
+            bin_width=self._auto_grid_bin_width(density),
         )
         if surface_kind == "slicing":
             s_centers, z_centers = _slice_grid_centres(grid_params)
-            contours: list[np.ndarray] = []
-            for slice_center, in_plane_axis in _iter_slice_planes(
-                liquid_coordinates,
-                center_geom,
-                droplet_geometry,
-                delta_azimuthal=self.delta_azimuthal,
-                delta_cylinder=self.delta_cylinder,
-            ):
-                density = _evaluate_kde_on_slice(
-                    field, slice_center, in_plane_axis, s_centers, z_centers
-                )
-                contours.append(_extract_isocontour_2d(s_centers, z_centers, density))
-            return contours
-        x_centers, y_centers, z_centers = _whole_grid_centres(grid_params)
-        density3d = _evaluate_kde_on_3d_grid(
-            field,
-            x_centers,
-            y_centers,
-            z_centers,
-            x_offset=float(center_geom[0]),
-            y_offset=float(center_geom[1]),
-        )
-        return _extract_isosurface_3d(
-            x_centers,
-            y_centers,
-            z_centers,
-            density3d,
-            center_geom=center_geom,
-        )
-
-
-@dataclass(frozen=True, eq=False, kw_only=True)
-class _GridBinningExtractor(InterfaceExtractor):
-    """Concrete extractor for :meth:`InterfaceExtractor.grid_binning`."""
-
-    sampling: ClassVar[SamplingKind] = "grid"
-
-    grid_params: dict[str, Any] | None
-    delta_azimuthal: float | None
-    delta_cylinder: float | None
-
-    def validate_compatibility(
-        self,
-        surface_kind: SurfaceKind,
-        droplet_geometry: DropletGeometry,
-    ) -> None:
-        if self.grid_params is not None:
-            _validate_grid_params(
-                name="grid_binning",
-                grid_params=self.grid_params,
-                surface_kind=surface_kind,
-            )
-        elif surface_kind == "whole":
-            try:
-                import skimage.measure  # noqa: F401
-            except ImportError as e:
-                raise ImportError(
-                    "grid_binning for whole-kind extraction requires "
-                    "scikit-image (used for marching_cubes). Install with: "
-                    "pip install 'wetting-angle-kit[grid3d]'."
-                ) from e
-        if surface_kind == "slicing":
-            _validate_per_slice_params(
-                name="grid_binning",
-                delta_azimuthal=self.delta_azimuthal,
-                delta_cylinder=self.delta_cylinder,
-                droplet_geometry=droplet_geometry,
-            )
-
-    def extract(
-        self,
-        liquid_coordinates: np.ndarray,
-        center_geom: np.ndarray,
-        droplet_geometry: DropletGeometry,
-        surface_kind: SurfaceKind,
-    ) -> InterfaceData:
-        grid_params = self.grid_params or _default_grid_params(
-            liquid_coordinates,
-            center_geom,
-            droplet_geometry,
-            surface_kind=surface_kind,
-            bin_width=_DEFAULT_BIN_WIDTH_BINNING,
-        )
-        if surface_kind == "slicing":
-            s_edges, z_edges = _slice_grid_edges(grid_params)
-            s_centers = 0.5 * (s_edges[:-1] + s_edges[1:])
-            z_centers = 0.5 * (z_edges[:-1] + z_edges[1:])
             # Slab thickness perpendicular to the slice plane equals
             # the in-plane horizontal cell width, so each cell's bin
             # is a ``ds × dz × ds`` box (square cross-section in the
-            # ``(s, perp)`` plane).
+            # ``(s, perp)`` plane). The Gaussian estimator ignores
+            # this parameter — its kernel size is set by
+            # ``density_sigma`` on the estimator itself.
+            s_edges, _z_edges = _slice_grid_edges(grid_params)
             slab = float(s_edges[1] - s_edges[0])
             contours: list[np.ndarray] = []
             for slice_center, in_plane_axis in _iter_slice_planes(
@@ -632,20 +459,26 @@ class _GridBinningExtractor(InterfaceExtractor):
                 delta_azimuthal=self.delta_azimuthal,
                 delta_cylinder=self.delta_cylinder,
             ):
-                density = _histogram_on_slice(
+                slice_density = density.evaluate_on_slice(
                     liquid_coordinates,
                     slice_center,
                     in_plane_axis,
-                    s_edges,
-                    z_edges,
+                    s_centers,
+                    z_centers,
                     slab,
                 )
-                contours.append(_extract_isocontour_2d(s_centers, z_centers, density))
+                contours.append(
+                    _extract_isocontour_2d(s_centers, z_centers, slice_density)
+                )
             return contours
-        x_edges, y_edges, z_edges = _whole_grid_edges(grid_params)
         x_centers, y_centers, z_centers = _whole_grid_centres(grid_params)
-        density3d = _histogram_3d(
-            liquid_coordinates, center_geom, x_edges, y_edges, z_edges
+        density3d = density.evaluate_on_3d_grid(
+            liquid_coordinates,
+            x_centers,
+            y_centers,
+            z_centers,
+            x_offset=float(center_geom[0]),
+            y_offset=float(center_geom[1]),
         )
         return _extract_isosurface_3d(
             x_centers,

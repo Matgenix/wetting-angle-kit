@@ -31,14 +31,14 @@ from wetting_angle_kit.analysis._base import (
     _BatchedTrajectoryAnalyzer,
     build_parser,
 )
-from wetting_angle_kit.analysis.coupled_fit._density_estimator import (
-    DensityEstimator,
-)
 from wetting_angle_kit.analysis.coupled_fit._models import (
     _PARAM_NAMES,
     _default_binning_params,
     _HyperbolicTangentModel2D,
     edges_from_bin_width,
+)
+from wetting_angle_kit.analysis.density_estimator import (
+    DensityEstimator,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.results import (
@@ -83,7 +83,7 @@ class CoupledFit2DAnalyzer(_BatchedTrajectoryAnalyzer):
         default, top-hat histogram with geometry-aware ``dV``
         normalisation) or :meth:`DensityEstimator.gaussian`
         (3D Gaussian KDE evaluated at the cell centres; same kernel
-        the ``rays_gaussian`` / ``grid_gaussian`` extractors use).
+        the ``rays`` / ``grid`` with the Gaussian extractors use).
         Switching to the Gaussian variant smooths out per-cell
         Poisson noise — useful on per-frame / small-batch analyses
         where the histogram density is degenerate.
@@ -133,7 +133,7 @@ class CoupledFit2DAnalyzer(_BatchedTrajectoryAnalyzer):
         self.density_estimator = density_estimator or DensityEstimator.binning()
         self.initial_params = initial_params
         # Cylinder dV normalisation needs the box length along the
-        # cylinder axis; read it once at construction (per legacy).
+        # cylinder axis; read it once at construction.
         self.box_dimension: float | None
         if self.droplet_geometry.is_cylinder:
             if self.droplet_geometry.cylinder_axis == "x":
@@ -260,8 +260,8 @@ class CoupledFit2DAnalyzer(_BatchedTrajectoryAnalyzer):
             )
 
             # Joint tanh fit. ``_HyperbolicTangentModel2D`` expects the
-            # density and grid axes flattened in Fortran order — same
-            # as the legacy ``BinningBatchFitter.process_batch``.
+            # density and grid axes flattened in Fortran order so the
+            # ``(xi, zi)`` pairs line up with their density values.
             model = _HyperbolicTangentModel2D(initial_params=initial_params)
             msh_zi_grid, msh_xi_grid = np.meshgrid(zi_cc, xi_cc)
             n_flat = len(xi_cc) * len(zi_cc)

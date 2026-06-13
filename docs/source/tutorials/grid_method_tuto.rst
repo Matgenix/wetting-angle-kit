@@ -2,8 +2,8 @@ Tutorial: Grid-Based Interface Extraction
 ==========================================
 
 This tutorial covers the **grid-based interface extractors** —
-:meth:`InterfaceExtractor.grid_gaussian` and
-:meth:`InterfaceExtractor.grid_binning`. They are an alternative to
+:meth:`InterfaceExtractor.grid` (Gaussian) and
+:meth:`InterfaceExtractor.grid` (binning). They are an alternative to
 the ray-fan extractors used in the
 :doc:`slicing_method_tuto` and
 :doc:`whole_fit_tuto`: instead of locating the interface as the
@@ -42,11 +42,11 @@ the ``grid3d`` extra::
 
 ----
 
-2. Worked example: ``grid_gaussian`` + slicing fit
+2. Worked example: ``grid`` (Gaussian) + slicing fit
 ---------------------------------------------------
 
 A spherical droplet, with per-azimuthal-slice 2D density grids in the
-``(s, z)`` plane — same density estimator as ``rays_gaussian``, just
+``(s, z)`` plane — same density estimator as ``rays`` (Gaussian), just
 sampled on a fixed grid rather than along rays:
 
 .. code-block:: python
@@ -81,10 +81,12 @@ sampled on a fixed grid rather than along rays:
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       interface_extractor=InterfaceExtractor.grid_gaussian(
-           grid_params=grid_params,
-           delta_azimuthal=20.0,  # 9 azimuthal slices
-           density_sigma=2.0,
+       interface_extractor=InterfaceExtractor(
+           sampling=SpaceSampling.grid(
+               grid_params=grid_params,
+               delta_azimuthal=20.0,  # 9 azimuthal slices
+           ),
+           density=DensityEstimator.gaussian(density_sigma=2.0),
        ),
        surface_fitter=SurfaceFitter.slicing(surface_filter_offset=3.0),
        wall_detector=WallDetector.min_plus_offset(offset=0.0),
@@ -92,25 +94,29 @@ sampled on a fixed grid rather than along rays:
    )
    batch = analyzer.analyze([1]).batches[0]
    print(
-       f"Angle (grid_gaussian + slicing): {batch.angle:.2f}° "
+       f"Angle (grid (Gaussian) + slicing): {batch.angle:.2f}° "
        f"± {batch.angle_std:.2f}° across {len(batch.per_slice_angles)} slices"
    )
 
 ----
 
-3. Histogram alternative: ``grid_binning``
+3. Histogram alternative: ``grid`` (binning)
 ------------------------------------------
 
 Same per-slice iteration, but the density estimator is a top-hat
 histogram of atoms within the slab ``|perp| ≤ bin_width_x / 2`` of
 the slice plane. Numerically cheaper than the KDE; intrinsically
 noisier because only atoms in the slab contribute (not all atoms
-along the slice direction the way they do for ``rays_binning``).
-Use coarser cells (thicker slab) than for ``grid_gaussian``:
+along the slice direction the way they do for ``rays`` (binning)).
+Use coarser cells (thicker slab) than for ``grid`` (Gaussian):
 
 .. code-block:: python
 
-   from wetting_angle_kit.analysis import InterfaceExtractor
+   from wetting_angle_kit.analysis import (
+       DensityEstimator,
+       InterfaceExtractor,
+       SpaceSampling,
+   )
 
    grid_params = {
        "xi_0": -40.0,
@@ -120,9 +126,12 @@ Use coarser cells (thicker slab) than for ``grid_gaussian``:
        "zi_f": 40.0,
        "bin_width_z": 3.0,
    }
-   extractor = InterfaceExtractor.grid_binning(
-       grid_params=grid_params,
-       delta_azimuthal=60.0,  # fewer slices → more atoms per slab
+   extractor = InterfaceExtractor(
+       sampling=SpaceSampling.grid(
+           grid_params=grid_params,
+           delta_azimuthal=60.0,  # fewer slices → more atoms per slab
+       ),
+       density=DensityEstimator.binning(),
    )
 
 The slab thickness perpendicular to each slice plane is
@@ -158,9 +167,9 @@ takes no ``delta_azimuthal`` / ``delta_cylinder``:
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       interface_extractor=InterfaceExtractor.grid_gaussian(
-           grid_params=grid_params_3d,
-           density_sigma=3.0,
+       interface_extractor=InterfaceExtractor(
+           sampling=SpaceSampling.grid(grid_params=grid_params_3d),
+           density=DensityEstimator.gaussian(density_sigma=3.0),
        ),
        surface_fitter=SurfaceFitter.whole(
            surface_filter_offset=3.0,
@@ -170,7 +179,7 @@ takes no ``delta_azimuthal`` / ``delta_cylinder``:
    )
    batch = analyzer.analyze([1]).batches[0]
    print(
-       f"Angle (grid_gaussian + whole-fit): "
+       f"Angle (grid (Gaussian) + whole-fit): "
        f"{batch.angle:.2f}° ± {batch.angle_std:.2f}°"
    )
 
@@ -205,11 +214,11 @@ Three notes on the 3D case:
   are honoured exactly and the cell width is rounded to fit, so the
   effective cell size may differ slightly from the value you pass.
 - **Comparison plot**: run the same trajectory through both
-  ``rays_gaussian`` and ``grid_gaussian`` and check the two angles
+  ``rays`` (Gaussian) and ``grid`` (Gaussian) and check the two angles
   agree within method-dependent tolerance (a few degrees on
   4k-atom droplets). If they diverge by more than ~8°, one of them
   is misconfigured (most often the grid bounds are too tight or
   ``surface_filter_offset`` is too small).
-- **grid_binning slab thickness**: the slab perpendicular to each
+- **grid + binning slab thickness**: the slab perpendicular to each
   slice equals ``bin_width_x``. If you see a noisy iso-contour,
-  thicken it (larger ``bin_width_x``) before reaching for ``grid_gaussian``.
+  thicken it (larger ``bin_width_x``) before reaching for ``grid`` (Gaussian).

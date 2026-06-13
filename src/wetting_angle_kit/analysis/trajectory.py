@@ -30,9 +30,9 @@ from wetting_angle_kit.analysis._base import (
     gather_batch_coords,
     gather_wall_coords,
 )
-from wetting_angle_kit.analysis.extractors import InterfaceExtractor
 from wetting_angle_kit.analysis.fitters import SurfaceFitter
 from wetting_angle_kit.analysis.geometry import DropletGeometry
+from wetting_angle_kit.analysis.interface import InterfaceExtractor
 from wetting_angle_kit.analysis.results import BatchResult, TrajectoryResults
 from wetting_angle_kit.analysis.temporal import TemporalAggregator
 from wetting_angle_kit.analysis.wall import WallContext, WallDetector
@@ -57,10 +57,11 @@ class TrajectoryAnalyzer(_BatchedTrajectoryAnalyzer):
         string. Drives the internal axis convention and the per-slice
         layout used by the extractor.
     interface_extractor : InterfaceExtractor
-        Built via one of :meth:`InterfaceExtractor.rays_gaussian` /
-        :meth:`InterfaceExtractor.rays_binning` /
-        :meth:`InterfaceExtractor.grid_gaussian` /
-        :meth:`InterfaceExtractor.grid_binning`.
+        Composes a :class:`SpaceSampling` (built via
+        :meth:`SpaceSampling.rays` or :meth:`SpaceSampling.grid`)
+        with a :class:`DensityEstimator` (built via
+        :meth:`DensityEstimator.gaussian` or
+        :meth:`DensityEstimator.binning`).
     surface_fitter : SurfaceFitter
         Built via :meth:`SurfaceFitter.slicing` or
         :meth:`SurfaceFitter.whole`. Its :attr:`kind` must match the
@@ -130,7 +131,7 @@ class TrajectoryAnalyzer(_BatchedTrajectoryAnalyzer):
     def _tqdm_desc(self) -> str:
         return (
             f"TrajectoryAnalyzer ({self.surface_fitter.kind} / "
-            f"{self.interface_extractor.sampling})"
+            f"{self.interface_extractor.sampling_kind})"
         )
 
     def _init_args(self) -> tuple:
@@ -229,7 +230,7 @@ class TrajectoryAnalyzer(_BatchedTrajectoryAnalyzer):
             batches=batches,
             method_metadata={
                 "kind": self.surface_fitter.kind,
-                "sampling": self.interface_extractor.sampling,
+                "sampling": self.interface_extractor.sampling_kind,
                 "droplet_geometry": self.droplet_geometry.name,
                 "batch_size": self.temporal_aggregator.batch_size,
             },

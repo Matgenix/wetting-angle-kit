@@ -1,12 +1,12 @@
-"""Phase 6 quantification: ``rays_binning`` extractor + parity vs ``rays_gaussian``.
+"""``rays`` + binning extractor + parity vs ``rays`` + Gaussian.
 
 Four flavors:
 
 - **HistogramDensityField unit test.** Top-hat evaluator returns the
   uniform bulk density inside a dense atom box and zero well outside.
-- **Fibonacci sphere recovery.** ``rays_binning`` + whole+spherical
+- **Fibonacci sphere recovery.** ``rays`` + binning + whole+spherical
   on a known sphere; recovered R sits near truth.
-- **Slicing-mode parity vs rays_gaussian.** Same atom cloud, same
+- **Slicing-mode parity vs rays + Gaussian.** Same atom cloud, same
   ray fan, comparable kernel widths (top-hat diameter chosen to match
   Gaussian FWHM). Recovered per-slice interface points should agree
   within a small absolute tolerance.
@@ -23,8 +23,9 @@ import pytest
 from wetting_angle_kit.analysis._density import (
     HistogramDensityField,
 )
-from wetting_angle_kit.analysis.extractors import InterfaceExtractor
+from wetting_angle_kit.analysis.density_estimator import DensityEstimator
 from wetting_angle_kit.analysis.geometry import DropletGeometry
+from wetting_angle_kit.analysis.interface import InterfaceExtractor, SpaceSampling
 
 
 def _uniform_sphere_atoms(radius: float, n_atoms: int, seed: int = 0) -> np.ndarray:
@@ -73,8 +74,8 @@ def test_histogram_density_field_uniform_box() -> None:
     assert np.all(dens_out == 0.0)
 
 
-def test_rays_binning_whole_spherical_recovers_sphere() -> None:
-    """rays_binning + whole+spherical on a known sphere → R near truth.
+def test_rays_with_binning_whole_spherical_recovers_sphere() -> None:
+    """rays + binning + whole+spherical on a known sphere → R near truth.
 
     Top-hat radius ``bin_width / 2`` defines the per-sample
     neighbourhood; pick it big enough that each bin captures O(50)
@@ -85,8 +86,9 @@ def test_rays_binning_whole_spherical_recovers_sphere() -> None:
     bin_width = 8.0  # ~270 Å³ bin volume × 0.45 atoms/Å³ ≈ 120 atoms / bin
     atoms = _uniform_sphere_atoms(radius=radius, n_atoms=15000, seed=0)
 
-    extractor = InterfaceExtractor.rays_binning(
-        n_rays_sphere=400, bin_width=bin_width, points_per_angstrom=2.0
+    extractor = InterfaceExtractor(
+        sampling=SpaceSampling.rays(n_rays_sphere=400, points_per_angstrom=2.0),
+        density=DensityEstimator.binning(bin_width=bin_width),
     )
     geom = DropletGeometry.coerce("spherical")
     shell = extractor.extract(
@@ -99,7 +101,7 @@ def test_rays_binning_whole_spherical_recovers_sphere() -> None:
     assert shell.shape == (400, 3)
     r = np.linalg.norm(shell, axis=1)
     print(
-        f"\nrays_binning sphere recovery: R_truth = {radius} Å, "
+        f"\nrays + binning sphere recovery: R_truth = {radius} Å, "
         f"R_mean = {float(np.mean(r)):.3f} Å, R_std = {float(np.std(r)):.3f} Å"
     )
     # The half-density point sits ≤ d/2 = 4 Å from the geometric edge
@@ -108,8 +110,8 @@ def test_rays_binning_whole_spherical_recovers_sphere() -> None:
     assert float(np.std(r)) < 1.5
 
 
-def test_rays_binning_matches_rays_gaussian_slicing_spherical() -> None:
-    """rays_binning ≈ rays_gaussian within a small tolerance on a slicing fixture.
+def test_rays_with_binning_matches_rays_with_gaussian_slicing_spherical() -> None:
+    """rays + binning ≈ rays + Gaussian within a small tolerance on a slicing fixture.
 
     Top-hat diameter is chosen by variance match
     (``d ≈ σ √12``) so the two kernels produce comparable smoothing.
@@ -123,17 +125,21 @@ def test_rays_binning_matches_rays_gaussian_slicing_spherical() -> None:
     delta_polar = 8.0
 
     geom = DropletGeometry.coerce("spherical")
-    g = InterfaceExtractor.rays_gaussian(
-        delta_azimuthal=delta_azimuthal,
-        delta_polar=delta_polar,
-        density_sigma=sigma,
-        points_per_angstrom=2.0,
+    g = InterfaceExtractor(
+        sampling=SpaceSampling.rays(
+            delta_azimuthal=delta_azimuthal,
+            delta_polar=delta_polar,
+            points_per_angstrom=2.0,
+        ),
+        density=DensityEstimator.gaussian(density_sigma=sigma),
     )
-    b = InterfaceExtractor.rays_binning(
-        delta_azimuthal=delta_azimuthal,
-        delta_polar=delta_polar,
-        bin_width=bin_width,
-        points_per_angstrom=2.0,
+    b = InterfaceExtractor(
+        sampling=SpaceSampling.rays(
+            delta_azimuthal=delta_azimuthal,
+            delta_polar=delta_polar,
+            points_per_angstrom=2.0,
+        ),
+        density=DensityEstimator.binning(bin_width=bin_width),
     )
     gauss_slices = g.extract(
         liquid_coordinates=atoms,
@@ -183,10 +189,11 @@ _FIXTURE = (
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_rays_binning_end_to_end_angle_close_to_rays_gaussian() -> None:
+def test_rays_with_binning_end_to_end_angle_close_to_rays_with_gaussian() -> None:
     """Both ray extractors → similar angle on the LAMMPS water/graphene fixture."""
     pytest.importorskip("ovito")
     from wetting_angle_kit.analysis import (
+        DensityEstimator,
         SurfaceFitter,
         TrajectoryAnalyzer,
         WallDetector,
@@ -214,25 +221,25 @@ def test_rays_binning_end_to_end_angle_close_to_rays_gaussian() -> None:
     sigma = 3.0
     bin_width = sigma * float(np.sqrt(12.0))  # variance-matched top-hat
     angle_g = _angle(
-        InterfaceExtractor.rays_gaussian(
-            delta_azimuthal=20.0,
-            delta_polar=8.0,
-            density_sigma=sigma,
-            points_per_angstrom=2.0,
+        InterfaceExtractor(
+            sampling=SpaceSampling.rays(
+                delta_azimuthal=20.0, delta_polar=8.0, points_per_angstrom=2.0
+            ),
+            density=DensityEstimator.gaussian(density_sigma=sigma),
         )
     )
     angle_b = _angle(
-        InterfaceExtractor.rays_binning(
-            delta_azimuthal=20.0,
-            delta_polar=8.0,
-            bin_width=bin_width,
-            points_per_angstrom=2.0,
+        InterfaceExtractor(
+            sampling=SpaceSampling.rays(
+                delta_azimuthal=20.0, delta_polar=8.0, points_per_angstrom=2.0
+            ),
+            density=DensityEstimator.binning(bin_width=bin_width),
         )
     )
     drift = abs(angle_g - angle_b)
     print(
-        f"\nrays_gaussian (σ={sigma})    angle = {angle_g:.3f}°"
-        f"\nrays_binning (d={bin_width:.3f}) angle = {angle_b:.3f}°"
+        f"\nrays + Gaussian (σ={sigma})    angle = {angle_g:.3f}°"
+        f"\nrays + binning (d={bin_width:.3f}) angle = {angle_b:.3f}°"
         f"\n|drift|                     = {drift:.3f}°"
     )
     # Both fall in the same physically-plausible band, drift is a few °.

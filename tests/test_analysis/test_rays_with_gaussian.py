@@ -1,4 +1,4 @@
-"""Quantification tests for the ``rays_gaussian`` extractor.
+"""Quantification tests for the ``rays`` + Gaussian extractor.
 
 - **Fibonacci correctness** for the whole+spherical case: build a
   synthetic uniform-volume sphere of atoms and verify the recovered
@@ -9,8 +9,9 @@
 import numpy as np
 import pytest
 
-from wetting_angle_kit.analysis.extractors import InterfaceExtractor
+from wetting_angle_kit.analysis.density_estimator import DensityEstimator
 from wetting_angle_kit.analysis.geometry import DropletGeometry
+from wetting_angle_kit.analysis.interface import InterfaceExtractor, SpaceSampling
 
 
 def _uniform_sphere_atoms(radius: float, n_atoms: int, seed: int = 0) -> np.ndarray:
@@ -42,9 +43,9 @@ def test_whole_spherical_recovers_known_sphere_radius() -> None:
     atoms = _uniform_sphere_atoms(radius=radius, n_atoms=15000, seed=0)
 
     n_rays = 400
-    extractor = InterfaceExtractor.rays_gaussian(
-        n_rays_sphere=n_rays,
-        density_sigma=sigma,
+    extractor = InterfaceExtractor(
+        sampling=SpaceSampling.rays(n_rays_sphere=n_rays),
+        density=DensityEstimator.gaussian(density_sigma=sigma),
     )
     geom = DropletGeometry.coerce("spherical")
     extractor.validate_compatibility(surface_kind="whole", droplet_geometry=geom)
@@ -108,9 +109,9 @@ def test_whole_cylinder_recovers_horizontal_ridge() -> None:
     atoms = np.column_stack([xz[:, 0], y, xz[:, 1] + R_truth])
     # Shift so atoms sit above z = 0 to mimic the sessile-droplet frame.
 
-    extractor = InterfaceExtractor.rays_gaussian(
-        delta_cylinder=3.0,
-        delta_polar=8.0,
+    extractor = InterfaceExtractor(
+        sampling=SpaceSampling.rays(delta_cylinder=3.0, delta_polar=8.0),
+        density=DensityEstimator.gaussian(),
     )
     geom = DropletGeometry.coerce("cylinder_y")
     extractor.validate_compatibility(surface_kind="whole", droplet_geometry=geom)

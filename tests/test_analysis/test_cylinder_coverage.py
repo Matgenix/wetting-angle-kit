@@ -1,6 +1,6 @@
 """End-to-end coverage for cylinder droplet × every extractor combination.
 
-The slicing / whole / coupled-binning paths are all designed to handle
+The slicing / whole / coupled-fit paths are all designed to handle
 ``cylinder_y`` droplets, but several extractor × surface_kind cells
 gained cylinder support without dedicated tests — this file fills the
 gap. Each test runs the full pipeline on the LAMMPS cylinder fixture
@@ -12,7 +12,7 @@ Fixture geometry (frame 1, after PBC recentring):
     atoms x ∈ [43, 159]  (centred on ~100, radial extent ~±58 Å)
           y ∈ [ 0,  21]  (spans the full y-box)
           z ∈ [ 8,  72]  (apex at ~72)
-Reference angle from rays_gaussian + slicing: ~95-100°.
+Reference angle from rays + Gaussian + slicing: ~95-100°.
 
 Slicing-mode grid extractors evaluate at ``(s, z)`` cell centres
 where ``s`` is relative to the cylinder axis at ``center_geom.x``,
@@ -30,8 +30,11 @@ import pytest
 
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import (  # noqa: E402
+from wetting_angle_kit.analysis import (
+    DensityEstimator,
+    # noqa: E402
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -60,7 +63,7 @@ def oxygen_indices() -> np.ndarray:
 #: Known wall position on the LAMMPS cylinder fixture (z of the
 #: graphene plane). Pinning this isolates the extractor/fitter chain
 #: from wall-detection robustness — some extractors (notably
-#: ``rays_binning`` whole-mode for cylinder) produce shell points
+#: ``rays`` + binning whole-mode for cylinder) produce shell points
 #: with outlier z values that fool ``min_plus_offset``.
 _WALL_Z = 5.0
 
@@ -83,15 +86,16 @@ def _make_analyzer(
     )
 
 
-# --- rays_binning ------------------------------------------------------------
+# --- rays + binning ------------------------------------------------------------
 
 
 @pytest.mark.integration
-def test_rays_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
-    """``rays_binning`` + slicing on the cylinder fixture."""
+def test_rays_with_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
+    """``rays`` + binning + slicing on the cylinder fixture."""
     analyzer = _make_analyzer(
-        InterfaceExtractor.rays_binning(
-            delta_cylinder=5.0, delta_polar=8.0, bin_width=3.0
+        InterfaceExtractor(
+            sampling=SpaceSampling.rays(delta_cylinder=5.0, delta_polar=8.0),
+            density=DensityEstimator.binning(bin_width=3.0),
         ),
         SurfaceFitter.slicing(surface_filter_offset=2.0),
         oxygen_indices,
@@ -103,27 +107,28 @@ def test_rays_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
 @pytest.mark.integration
 @pytest.mark.xfail(
     reason=(
-        "rays_binning + whole + cylinder is a known-fragile combination. "
+        "rays + binning + whole + cylinder is a known-fragile combination. "
         "Per-y-slice ray fans pointing into vacuum (polar angles in "
         "[180°, 360°] below the wall) produce outlier shell points that "
         "spread z over ~150 Å (vs ~65 Å for the physical droplet), and "
         "the 2D circle fit in (x, z) converges to a non-intersecting "
-        "sphere. rays_gaussian + whole + cylinder works because the KDE "
+        "sphere. rays + Gaussian + whole + cylinder works because the KDE "
         "density gives the tanh fit something physical to converge to "
         "even on rays into vacuum. Documented as a method limitation "
         "rather than a code bug."
     ),
     strict=True,
 )
-def test_rays_binning_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
-    """``rays_binning`` + whole-fit on the cylinder fixture (xfail).
+def test_rays_with_binning_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
+    """``rays`` + binning + whole-fit on the cylinder fixture (xfail).
 
     See the ``xfail`` reason for why this combination doesn't produce
     a usable angle on the LAMMPS fixture.
     """
     analyzer = _make_analyzer(
-        InterfaceExtractor.rays_binning(
-            delta_cylinder=5.0, delta_polar=8.0, bin_width=3.0
+        InterfaceExtractor(
+            sampling=SpaceSampling.rays(delta_cylinder=5.0, delta_polar=8.0),
+            density=DensityEstimator.binning(bin_width=3.0),
         ),
         SurfaceFitter.whole(surface_filter_offset=2.0),
         oxygen_indices,
@@ -133,12 +138,12 @@ def test_rays_binning_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
     assert batch.popt.shape == (4,)
 
 
-# --- grid_gaussian -----------------------------------------------------------
+# --- grid + Gaussian -----------------------------------------------------------
 
 
 @pytest.mark.integration
-def test_grid_gaussian_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
-    """``grid_gaussian`` + slicing on the cylinder fixture."""
+def test_grid_with_gaussian_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
+    """``grid`` + Gaussian + slicing on the cylinder fixture."""
     pytest.importorskip("skimage")
     grid_params = {
         "xi_0": -70.0,
@@ -149,8 +154,9 @@ def test_grid_gaussian_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
         "bin_width_z": 1.5,
     }
     analyzer = _make_analyzer(
-        InterfaceExtractor.grid_gaussian(
-            grid_params=grid_params, delta_cylinder=5.0, density_sigma=2.0
+        InterfaceExtractor(
+            sampling=SpaceSampling.grid(grid_params=grid_params, delta_cylinder=5.0),
+            density=DensityEstimator.gaussian(density_sigma=2.0),
         ),
         SurfaceFitter.slicing(surface_filter_offset=3.0),
         oxygen_indices,
@@ -160,8 +166,8 @@ def test_grid_gaussian_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
 
 
 @pytest.mark.integration
-def test_grid_gaussian_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
-    """``grid_gaussian`` + whole-fit on the cylinder fixture.
+def test_grid_with_gaussian_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
+    """``grid`` + Gaussian + whole-fit on the cylinder fixture.
 
     The cylinder spans ~21 Å along ``y`` and is droplet-centred at
     ``y ≈ 11`` Å, so a ``yi_0``/``yi_f`` range of ±12 Å covers it.
@@ -171,7 +177,7 @@ def test_grid_gaussian_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
     The grid whole-mode on a cylinder is method-biased on this
     fixture: marching cubes traces the iso-surface through the
     coarse 3D grid (~10⁵ cells), and the recovered angle is ~10°
-    higher than the rays_gaussian reference. That's a known bias of
+    higher than the rays + Gaussian reference. That's a known bias of
     grid-resolution-limited iso-surfaces, not a fit failure — the
     test accepts up to ~140°.
     """
@@ -188,7 +194,10 @@ def test_grid_gaussian_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
         "bin_width_z": 2.0,
     }
     analyzer = _make_analyzer(
-        InterfaceExtractor.grid_gaussian(grid_params=grid_params, density_sigma=2.5),
+        InterfaceExtractor(
+            sampling=SpaceSampling.grid(grid_params=grid_params),
+            density=DensityEstimator.gaussian(density_sigma=2.5),
+        ),
         SurfaceFitter.whole(surface_filter_offset=3.0),
         oxygen_indices,
     )
@@ -198,14 +207,14 @@ def test_grid_gaussian_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
     assert batch.popt.shape == (4,)
 
 
-# --- grid_binning ------------------------------------------------------------
+# --- grid + binning ------------------------------------------------------------
 
 
 @pytest.mark.integration
-def test_grid_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
-    """``grid_binning`` + slicing on the cylinder fixture.
+def test_grid_with_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
+    """``grid`` + binning + slicing on the cylinder fixture.
 
-    Coarser cells than ``grid_gaussian`` because the histogram has no
+    Coarser cells than ``grid`` + Gaussian because the histogram has no
     smoothing — the slab cut also needs to be thick enough to give
     enough atoms per cell on a per-frame basis.
     """
@@ -219,7 +228,10 @@ def test_grid_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
         "bin_width_z": 3.0,
     }
     analyzer = _make_analyzer(
-        InterfaceExtractor.grid_binning(grid_params=grid_params, delta_cylinder=10.0),
+        InterfaceExtractor(
+            sampling=SpaceSampling.grid(grid_params=grid_params, delta_cylinder=10.0),
+            density=DensityEstimator.binning(),
+        ),
         SurfaceFitter.slicing(surface_filter_offset=3.0),
         oxygen_indices,
     )
@@ -229,8 +241,8 @@ def test_grid_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
 
 
 @pytest.mark.integration
-def test_grid_binning_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
-    """``grid_binning`` + whole-fit on the cylinder fixture."""
+def test_grid_with_binning_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
+    """``grid`` + binning + whole-fit on the cylinder fixture."""
     pytest.importorskip("skimage")
     grid_params = {
         "xi_0": -70.0,
@@ -244,13 +256,16 @@ def test_grid_binning_whole_on_cylinder(oxygen_indices: np.ndarray) -> None:
         "bin_width_z": 2.5,
     }
     analyzer = _make_analyzer(
-        InterfaceExtractor.grid_binning(grid_params=grid_params),
+        InterfaceExtractor(
+            sampling=SpaceSampling.grid(grid_params=grid_params),
+            density=DensityEstimator.binning(),
+        ),
         SurfaceFitter.whole(surface_filter_offset=3.0),
         oxygen_indices,
     )
     batch = analyzer.analyze([1]).batches[0]
     # Histogram-iso whole-mode on a coarse 3D grid has a similar
-    # method bias to ``grid_gaussian`` whole + cylinder; band widened
+    # method bias to ``grid`` + Gaussian whole + cylinder; band widened
     # accordingly. The popt shape is the important contract here.
     assert 75.0 < batch.angle < 145.0
     assert batch.popt.shape == (4,)
@@ -280,8 +295,9 @@ def test_cylinder_x_end_to_end_runs_through_axis_swap(
     swap that propagated incorrectly would surface as a pipeline-
     level exception, not a silently-wrong angle.
     """
-    extractor = InterfaceExtractor.rays_gaussian(
-        delta_cylinder=5.0, delta_polar=8.0, density_sigma=3.0
+    extractor = InterfaceExtractor(
+        sampling=SpaceSampling.rays(delta_cylinder=5.0, delta_polar=8.0),
+        density=DensityEstimator.gaussian(density_sigma=3.0),
     )
     fitter = SurfaceFitter.slicing(surface_filter_offset=2.0)
     wall = WallDetector.explicit(z_wall=_WALL_Z)

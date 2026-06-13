@@ -13,13 +13,14 @@ Strategy components (compose into :class:`TrajectoryAnalyzer`)::
 
     DropletGeometry      # spherical / cylinder_x / cylinder_y
     TemporalAggregator   # per-frame / pooled batches
-    InterfaceExtractor   # rays / grid × gaussian / binning
+    InterfaceExtractor   # composes (sampling, density)
+    SpaceSampling        # rays / grid
+    DensityEstimator     # gaussian / binning
     SurfaceFitter        # slicing / whole
     WallDetector         # min_plus_offset / explicit / from_atoms
 
-Strategy components (compose into the coupled-fit analyzers)::
-
-    DensityEstimator     # binning / gaussian
+The coupled-fit analyzers also accept a :class:`DensityEstimator`
+directly (they have their own grid / projection logic).
 
 Results dataclasses returned by ``analyze()``::
 
@@ -28,7 +29,7 @@ Results dataclasses returned by ``analyze()``::
     CoupledFit3DResults, CoupledFit3DBatchResult
 """
 
-from wetting_angle_kit.analysis.analyzer import BaseTrajectoryAnalyzer
+from wetting_angle_kit.analysis._base import BaseTrajectoryAnalyzer
 
 # Top-level analyzers.
 from wetting_angle_kit.analysis.coupled_fit import DensityEstimator
@@ -38,9 +39,6 @@ from wetting_angle_kit.analysis.coupled_fit.analyzer_2d import (
 from wetting_angle_kit.analysis.coupled_fit.analyzer_3d import (
     CoupledFit3DAnalyzer,
 )
-
-# Strategy components.
-from wetting_angle_kit.analysis.extractors import InterfaceExtractor
 from wetting_angle_kit.analysis.fitters import (
     FitOutput,
     SlicingFitOutput,
@@ -48,6 +46,12 @@ from wetting_angle_kit.analysis.fitters import (
     WholeFitOutput,
 )
 from wetting_angle_kit.analysis.geometry import DropletGeometry
+
+# Strategy components.
+from wetting_angle_kit.analysis.interface import (
+    InterfaceExtractor,
+    SpaceSampling,
+)
 
 # Results dataclasses.
 from wetting_angle_kit.analysis.results import (
@@ -75,6 +79,7 @@ __all__ = [
     "DropletGeometry",
     "TemporalAggregator",
     "InterfaceExtractor",
+    "SpaceSampling",
     "SurfaceFitter",
     "FitOutput",
     "SlicingFitOutput",

@@ -5,10 +5,9 @@ from dataclasses import dataclass
 class TrajectoryStats:
     """Summary statistics for a single contact-angle trajectory.
 
-    Replaces the legacy ``output_stats.txt`` file: instead of writing to
-    disk, the plotter returns this dataclass so callers can both display
-    the block (``print(stats)``) and reuse the underlying numbers
-    programmatically.
+    A plotter's ``.summary()`` method returns this dataclass so callers
+    can both display the block (``print(stats)``) and reuse the
+    underlying numbers programmatically.
 
     Attributes
     ----------

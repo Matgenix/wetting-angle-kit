@@ -38,11 +38,10 @@ def oxygen_indices(filename: pathlib.Path) -> np.ndarray:
 
 @pytest.fixture
 def binning_params() -> dict:
-    # ``bin_width_*`` values are picked so the edge construction
-    # rounds to the same cell counts (49 / 24) as the legacy
-    # ``nbins_xi=50, nbins_zi=25`` spec — the per-frame tanh NLLS is
-    # sensitive to the grid layout on this fixture, so matching the
-    # legacy grid keeps the angle anchors meaningful.
+    # The per-frame tanh NLLS is sensitive to the grid layout on
+    # this fixture: ``bin_width_*`` values are chosen so the edge
+    # construction rounds to 49 × 24 cells, the grid the angle
+    # anchors below were calibrated against.
     return {
         "xi_0": 0,
         "xi_f": 100.0,
@@ -70,7 +69,7 @@ def test_coupled_fit_2d_with_cylinder_fixture(
 
     assert len(results) == 1
     angle = float(results.batches[0].angle)
-    # Coupled-binning angle on this fixture, frame 1: 99.110°. ±3° band.
+    # Coupled-fit angle on this fixture, frame 1: 99.110°. ±3° band.
     assert 96.0 <= angle <= 102.0
     assert np.isfinite(results.mean_angle)
     # Single batch → std across batches is 0.

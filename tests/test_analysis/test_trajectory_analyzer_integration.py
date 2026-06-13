@@ -1,11 +1,8 @@
-"""End-to-end integration coverage for the new methodology combinations.
+"""End-to-end integration coverage for :class:`TrajectoryAnalyzer`.
 
-The Phase 2–10 quantification tests exercise each new component
-individually (extractor, fitter, wall detector, analyzer scaffolding).
-This file fills in the matrix of *new* end-to-end combinations that
-have no legacy analogue:
+Covers the configurations not exercised by the per-component tests:
 
-- ``TrajectoryAnalyzer`` + whole-fit + ``rays_gaussian`` on real data;
+- ``TrajectoryAnalyzer`` + whole-fit + ``rays`` + Gaussian on real data;
 - slicing pipeline on a cylinder LAMMPS fixture;
 - bootstrap σ_θ flowing through the analyzer into ``WholeBatchResult``;
 - multi-frame pooled batches via ``TemporalAggregator(batch_size=N)``;
@@ -20,8 +17,11 @@ import pytest
 
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import (  # noqa: E402
+from wetting_angle_kit.analysis import (
+    DensityEstimator,
+    # noqa: E402
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -81,7 +81,7 @@ def spherical_carbon_ids() -> np.ndarray:
 
 @pytest.mark.integration
 @pytest.mark.slow
-def test_trajectory_analyzer_whole_fit_rays_gaussian_on_spherical(
+def test_trajectory_analyzer_whole_fit_rays_with_gaussian_on_spherical(
     spherical_oxygen_ids: np.ndarray,
 ) -> None:
     """End-to-end ``TrajectoryAnalyzer`` with ``SurfaceFitter.whole()``."""
@@ -89,8 +89,9 @@ def test_trajectory_analyzer_whole_fit_rays_gaussian_on_spherical(
         parser=LammpsDumpParser(_SPHERICAL_FIXTURE),
         atom_indices=spherical_oxygen_ids,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            n_rays_sphere=400, density_sigma=3.0
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(n_rays_sphere=400),
+            density=DensityEstimator.gaussian(density_sigma=3.0),
         ),
         surface_fitter=SurfaceFitter.whole(surface_filter_offset=3.0),
         wall_detector=WallDetector.min_plus_offset(offset=0.0),
@@ -136,8 +137,9 @@ def test_trajectory_analyzer_whole_fit_with_explicit_wall(
         parser=LammpsDumpParser(_SPHERICAL_FIXTURE),
         atom_indices=spherical_oxygen_ids,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            n_rays_sphere=400, density_sigma=3.0
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(n_rays_sphere=400),
+            density=DensityEstimator.gaussian(density_sigma=3.0),
         ),
         surface_fitter=SurfaceFitter.whole(surface_filter_offset=3.0),
         wall_detector=WallDetector.explicit(z_wall=4.9),
@@ -160,8 +162,9 @@ def test_whole_fitter_bootstrap_through_analyzer(
         parser=LammpsDumpParser(_SPHERICAL_FIXTURE),
         atom_indices=spherical_oxygen_ids,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            n_rays_sphere=400, density_sigma=3.0
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(n_rays_sphere=400),
+            density=DensityEstimator.gaussian(density_sigma=3.0),
         ),
         surface_fitter=SurfaceFitter.whole(
             surface_filter_offset=3.0, bootstrap_samples=100
@@ -189,8 +192,9 @@ def test_whole_fit_with_from_atoms_wall_detector(
         parser=LammpsDumpParser(_SPHERICAL_FIXTURE),
         atom_indices=spherical_oxygen_ids,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            n_rays_sphere=400, density_sigma=3.0
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(n_rays_sphere=400),
+            density=DensityEstimator.gaussian(density_sigma=3.0),
         ),
         surface_fitter=SurfaceFitter.whole(surface_filter_offset=3.0),
         wall_detector=WallDetector.from_atoms(
@@ -223,8 +227,9 @@ def test_slicing_pipeline_on_cylinder_lammps_fixture(
         parser=LammpsDumpParser(_CYLINDER_FIXTURE),
         atom_indices=cylinder_oxygen_ids,
         droplet_geometry="cylinder_y",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            delta_cylinder=4.0, delta_polar=8.0, density_sigma=3.0
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(delta_cylinder=4.0, delta_polar=8.0),
+            density=DensityEstimator.gaussian(density_sigma=3.0),
         ),
         surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
         wall_detector=WallDetector.min_plus_offset(offset=0.0),
@@ -254,8 +259,9 @@ def test_trajectory_analyzer_pooled_batches(
         parser=LammpsDumpParser(_SPHERICAL_FIXTURE),
         atom_indices=spherical_oxygen_ids,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            delta_azimuthal=20.0, delta_polar=8.0
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(delta_azimuthal=20.0, delta_polar=8.0),
+            density=DensityEstimator.gaussian(),
         ),
         surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
         wall_detector=WallDetector.min_plus_offset(offset=0.0),
@@ -282,8 +288,9 @@ def test_trajectory_analyzer_fully_pooled(
         parser=LammpsDumpParser(_SPHERICAL_FIXTURE),
         atom_indices=spherical_oxygen_ids,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            delta_azimuthal=20.0, delta_polar=8.0
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(delta_azimuthal=20.0, delta_polar=8.0),
+            density=DensityEstimator.gaussian(),
         ),
         surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
         wall_detector=WallDetector.min_plus_offset(offset=0.0),

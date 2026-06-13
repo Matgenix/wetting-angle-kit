@@ -95,9 +95,9 @@ The workflow:
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",
-       interface_extractor=InterfaceExtractor.rays_gaussian(
-           delta_cylinder=5.0,
-           delta_polar=8.0,
+       interface_extractor=InterfaceExtractor(
+           sampling=SpaceSampling.rays(delta_cylinder=5.0, delta_polar=8.0),
+           density=DensityEstimator.gaussian(),
        ),
        surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
        wall_detector=WallDetector.min_plus_offset(offset=0.0),

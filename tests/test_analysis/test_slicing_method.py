@@ -1,6 +1,6 @@
 """Slicing-method integration test on the LAMMPS water/graphene fixture.
 
-End-to-end ``TrajectoryAnalyzer`` with the slicing fitter + rays_gaussian
+End-to-end ``TrajectoryAnalyzer`` with the slicing fitter + rays + Gaussian
 extractor + min_plus_offset wall detector on the spherical-droplet
 fixture. Anchored against the well-characterised ~95° contact angle.
 """
@@ -15,8 +15,11 @@ import pytest
 # on macOS CI).
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import (  # noqa: E402
+from wetting_angle_kit.analysis import (
+    DensityEstimator,
+    # noqa: E402
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -49,13 +52,14 @@ def oxygen_indices(filename: pathlib.Path) -> np.ndarray:
 def test_trajectory_analyzer_slicing_with_real_data(
     filename: pathlib.Path, oxygen_indices: np.ndarray
 ) -> None:
-    """End-to-end ``TrajectoryAnalyzer`` (rays_gaussian + slicing fitter)."""
+    """End-to-end ``TrajectoryAnalyzer`` (rays + Gaussian + slicing fitter)."""
     analyzer = TrajectoryAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            delta_azimuthal=20.0, delta_polar=8.0
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(delta_azimuthal=20.0, delta_polar=8.0),
+            density=DensityEstimator.gaussian(),
         ),
         surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
         wall_detector=WallDetector.min_plus_offset(offset=0.0),

@@ -11,8 +11,8 @@ from typing import ClassVar, Literal
 
 import numpy as np
 
-from wetting_angle_kit.analysis.extractors.base import InterfaceData
 from wetting_angle_kit.analysis.geometry import DropletGeometry
+from wetting_angle_kit.analysis.interface.base import InterfaceData
 from wetting_angle_kit.analysis.results import (
     BatchResult,
     SlicingBatchResult,
@@ -20,7 +20,7 @@ from wetting_angle_kit.analysis.results import (
 )
 
 #: Surface-representation kind the fitter consumes. Mirrors
-#: :data:`wetting_angle_kit.analysis.extractors.SurfaceKind` — the two
+#: :data:`wetting_angle_kit.analysis.interface.SurfaceKind` — the two
 #: are kept in sync by the analyzer's compatibility check, which raises
 #: if ``extractor.kind != fitter.kind``.
 SurfaceKind = Literal["slicing", "whole"]

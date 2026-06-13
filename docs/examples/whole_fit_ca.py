@@ -6,7 +6,9 @@ with 100 bootstrap resamples for the angle uncertainty.
 """
 
 from wetting_angle_kit.analysis import (
+    DensityEstimator,
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -34,9 +36,9 @@ analyzer = TrajectoryAnalyzer(
     parser=LammpsDumpParser(filename),
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",
-    interface_extractor=InterfaceExtractor.rays_gaussian(
-        n_rays_sphere=400,
-        density_sigma=3.0,
+    interface_extractor=InterfaceExtractor(
+        sampling=SpaceSampling.rays(n_rays_sphere=400),
+        density=DensityEstimator.gaussian(density_sigma=3.0),
     ),
     surface_fitter=SurfaceFitter.whole(
         surface_filter_offset=3.0,

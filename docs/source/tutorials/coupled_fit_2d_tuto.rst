@@ -12,11 +12,11 @@ resolution.
 
 The per-cell density is computed by a pluggable
 :class:`DensityEstimator` strategy: the default
-:meth:`DensityEstimator.binning` is a top-hat histogram (legacy
-behaviour); :meth:`DensityEstimator.gaussian` evaluates a 3D Gaussian
-KDE at the cell centres for a smooth, Poisson-noise-free density —
-useful for per-frame analyses where the histogram occasionally
-collapses to a degenerate fit. See §6.2 for a worked example.
+:meth:`DensityEstimator.binning` is a top-hat histogram;
+:meth:`DensityEstimator.gaussian` evaluates a 3D Gaussian KDE at
+the cell centres for a smooth, Poisson-noise-free density — useful
+for per-frame analyses where the histogram occasionally collapses
+to a degenerate fit. See §6.2 for a worked example.
 
 ----
 
@@ -98,7 +98,7 @@ Example trajectory::
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",
        binning_params=binning_params,
-       # 10-frame pooled batches (legacy split_factor=10 analog)
+       # 10-frame pooled batches
        temporal_aggregator=TemporalAggregator(batch_size=10),
    )
 
@@ -179,7 +179,7 @@ overlaid, see :doc:`visualization_evolution_density`.
 6.1 Cylindrical droplet
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-The 2D coupled-binning analyzer handles cylindrical droplets out of
+The 2D coupled-fit analyzer handles cylindrical droplets out of
 the box — pass ``droplet_geometry="cylinder_y"`` (or
 ``"cylinder_x"``). The projection switches from radial
 (:math:`\xi = \sqrt{x^2 + y^2}`) to perpendicular-to-axis
@@ -219,7 +219,7 @@ where the histogram density has too many empty cells.
 
 Pass a :meth:`DensityEstimator.gaussian` instance to switch the
 per-cell density to a 3D Gaussian KDE evaluated at the grid cell
-centres — the same kernel ``rays_gaussian`` and ``grid_gaussian``
+centres — the same kernel ``rays`` (Gaussian) and ``grid`` (Gaussian)
 use. The density field becomes smooth; per-cell Poisson noise
 disappears at the cost of a small constant per-fit overhead:
 
@@ -239,7 +239,7 @@ disappears at the cost of a small constant per-fit overhead:
        temporal_aggregator=TemporalAggregator(batch_size=1),
    )
 
-Pick the same ``density_sigma`` you would for ``rays_gaussian`` on
+Pick the same ``density_sigma`` you would for ``rays`` (Gaussian) on
 the same system (3 Å is the default; smaller for finer features,
 larger for sparser systems). The recovered angle differs from the
 binning variant by at most ~1° on well-pooled batches, but the

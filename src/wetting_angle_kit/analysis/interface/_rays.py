@@ -1,4 +1,4 @@
-"""Ray-based extractor implementations + shared geometry/validation helpers."""
+"""Ray-based sampling: ``_RaysSampling`` + ray-fan geometry helpers."""
 
 from dataclasses import dataclass
 from typing import ClassVar
@@ -8,20 +8,44 @@ import numpy as np
 from wetting_angle_kit.analysis._density import (
     MIN_POINTS_PER_RAY,
     DensityFieldProtocol,
-    GaussianDensityField,
-    HistogramDensityField,
     fit_tanh_profiles_batched,
 )
-from wetting_angle_kit.analysis.extractors._sampling import (
-    _fibonacci_sphere_directions,
-)
-from wetting_angle_kit.analysis.extractors.base import (
+from wetting_angle_kit.analysis.density_estimator import DensityEstimator
+from wetting_angle_kit.analysis.geometry import DropletGeometry
+from wetting_angle_kit.analysis.interface.base import (
     InterfaceData,
-    InterfaceExtractor,
     SamplingKind,
+    SpaceSampling,
     SurfaceKind,
 )
-from wetting_angle_kit.analysis.geometry import DropletGeometry
+
+
+def _fibonacci_sphere_directions(n: int) -> np.ndarray:
+    """Equal-area Fibonacci-spiral directions on the full sphere.
+
+    ``cos θ`` is uniformly spaced over ``[-1, 1]`` (so the surface
+    density is uniform over the whole sphere) and ``φ`` is incremented
+    by the golden angle for low-discrepancy azimuthal coverage.
+    ``i = 0`` sits at the south pole (``cos θ = -1``) and
+    ``i = n - 1`` at the north pole (``cos θ = 1``).
+
+    The full sphere coverage is important for sessile droplets: rays
+    emitted from the droplet COM in downward directions traverse the
+    liquid, hit the wall plane, and contribute interface points at the
+    wall — making :meth:`WallDetector.min_plus_offset` work correctly
+    in the whole-fit pipeline. (Restricting to the upper hemisphere
+    misses the wall, so ``min(shell z)`` lands on ``COM_z`` instead.)
+    """
+    if n <= 0:
+        return np.empty((0, 3))
+    i = np.arange(n, dtype=np.float64)
+    cos_theta = 2.0 * i / (n - 1) - 1.0 if n > 1 else np.array([1.0])
+    sin_theta = np.sqrt(np.maximum(0.0, 1.0 - cos_theta * cos_theta))
+    golden_angle = np.pi * (3.0 - np.sqrt(5.0))
+    phi = (i * golden_angle) % (2.0 * np.pi)
+    return np.column_stack(
+        [sin_theta * np.cos(phi), sin_theta * np.sin(phi), cos_theta]
+    )
 
 
 def _validate_rays_params(
@@ -35,7 +59,7 @@ def _validate_rays_params(
 ) -> None:
     """Shared validation for the two ray-based extractors.
 
-    Both ``rays_gaussian`` and ``rays_binning`` use the same ray-fan
+    Both density estimators share the same ray-fan
     parameter set; only the density estimator differs.
     """
     if surface_kind == "slicing":
@@ -64,7 +88,7 @@ def _ray_slice_in_plane(
     """Per-slice ``(R, 2)`` interface from a tilted ray fan.
 
     Parameterised on a generic :class:`DensityFieldProtocol` so both
-    ``rays_gaussian`` and ``rays_binning`` can share the geometry.
+    the Gaussian and binning density paths can share the geometry.
     """
     polar = np.linspace(0, 360, int(360 / delta_polar), endpoint=False)
     cos_polar = np.cos(np.deg2rad(polar))
@@ -120,10 +144,9 @@ def _extract_rays(
 ) -> InterfaceData:
     """Dispatch a ray-fan extraction over the four ``(kind, geometry)`` cells.
 
-    Shared by :class:`_RaysGaussianExtractor` and
-    :class:`_RaysBinningExtractor` — only the density evaluator
-    differs between them, so the geometry, sampling cadence, and
-    tanh-fit invocation all live here.
+    The density evaluator is provided by the caller; the geometry,
+    sampling cadence, and tanh-fit invocation are shared across all
+    density estimators.
     """
     n_samples = max(int(max_dist * points_per_angstrom), MIN_POINTS_PER_RAY)
     distances = np.linspace(0.0, max_dist, n_samples)
@@ -194,18 +217,16 @@ def _extract_rays(
 
 
 @dataclass(frozen=True, eq=False, kw_only=True)
-class _RaysGaussianExtractor(InterfaceExtractor):
-    """Concrete extractor for :meth:`InterfaceExtractor.rays_gaussian`."""
+class _RaysSampling(SpaceSampling):
+    """Concrete sampling for :meth:`SpaceSampling.rays`."""
 
-    sampling: ClassVar[SamplingKind] = "rays"
+    kind: ClassVar[SamplingKind] = "rays"
 
     delta_azimuthal: float | None
     delta_cylinder: float | None
     n_rays_sphere: int | None
     delta_polar: float
     points_per_angstrom: float
-    density_sigma: float
-    cutoff_sigma: float
 
     def validate_compatibility(
         self,
@@ -213,7 +234,7 @@ class _RaysGaussianExtractor(InterfaceExtractor):
         droplet_geometry: DropletGeometry,
     ) -> None:
         _validate_rays_params(
-            name="rays_gaussian",
+            name="rays",
             delta_azimuthal=self.delta_azimuthal,
             delta_cylinder=self.delta_cylinder,
             n_rays_sphere=self.n_rays_sphere,
@@ -227,66 +248,9 @@ class _RaysGaussianExtractor(InterfaceExtractor):
         center_geom: np.ndarray,
         droplet_geometry: DropletGeometry,
         surface_kind: SurfaceKind,
+        density: DensityEstimator,
     ) -> InterfaceData:
-        field = GaussianDensityField(
-            atom_coords=liquid_coordinates,
-            density_sigma=self.density_sigma,
-            cutoff_sigma=self.cutoff_sigma,
-        )
-        max_dist = _compute_max_dist(liquid_coordinates, center_geom)
-        return _extract_rays(
-            field=field,
-            liquid_coordinates=liquid_coordinates,
-            center_geom=center_geom,
-            droplet_geometry=droplet_geometry,
-            max_dist=max_dist,
-            surface_kind=surface_kind,
-            points_per_angstrom=self.points_per_angstrom,
-            delta_azimuthal=self.delta_azimuthal,
-            delta_cylinder=self.delta_cylinder,
-            n_rays_sphere=self.n_rays_sphere,
-            delta_polar=self.delta_polar,
-        )
-
-
-@dataclass(frozen=True, eq=False, kw_only=True)
-class _RaysBinningExtractor(InterfaceExtractor):
-    """Concrete extractor for :meth:`InterfaceExtractor.rays_binning`."""
-
-    sampling: ClassVar[SamplingKind] = "rays"
-
-    delta_azimuthal: float | None
-    delta_cylinder: float | None
-    n_rays_sphere: int | None
-    delta_polar: float
-    bin_width: float
-    points_per_angstrom: float
-
-    def validate_compatibility(
-        self,
-        surface_kind: SurfaceKind,
-        droplet_geometry: DropletGeometry,
-    ) -> None:
-        _validate_rays_params(
-            name="rays_binning",
-            delta_azimuthal=self.delta_azimuthal,
-            delta_cylinder=self.delta_cylinder,
-            n_rays_sphere=self.n_rays_sphere,
-            surface_kind=surface_kind,
-            droplet_geometry=droplet_geometry,
-        )
-
-    def extract(
-        self,
-        liquid_coordinates: np.ndarray,
-        center_geom: np.ndarray,
-        droplet_geometry: DropletGeometry,
-        surface_kind: SurfaceKind,
-    ) -> InterfaceData:
-        field = HistogramDensityField(
-            atom_coords=liquid_coordinates,
-            bin_width=self.bin_width,
-        )
+        field = density.build_field(liquid_coordinates)
         max_dist = _compute_max_dist(liquid_coordinates, center_geom)
         return _extract_rays(
             field=field,

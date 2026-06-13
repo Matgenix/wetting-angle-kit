@@ -1,8 +1,9 @@
 """Unit tests for the shared (r, z) projection used by
 :class:`BaseParser.get_profile_coordinates`.
 
-These exercise all three droplet geometries (including ``cylinder_x``
-which was not previously covered by any test).
+Exercises all three droplet geometries (``spherical``,
+``cylinder_x``, ``cylinder_y``) under both the PBC-aware and
+no-PBC code paths.
 """
 
 import numpy as np
@@ -85,22 +86,22 @@ def _localized_cluster(box_length: float, n: int = 30) -> np.ndarray:
     return np.hstack([xy, z])
 
 
-def test_project_with_box_size_matches_legacy_for_mid_box_cluster():
+def test_project_with_box_size_matches_no_pbc_for_mid_box_cluster():
     """When the droplet sits comfortably away from the boundary, the
-    PBC-aware path returns the same radii as the legacy arithmetic-mean
-    path: minimum-image folding is a no-op and the circular mean coincides
-    with the arithmetic mean."""
+    PBC-aware path returns the same radii as the no-PBC (arithmetic-
+    mean) path: minimum-image folding is a no-op and the circular
+    mean coincides with the arithmetic mean."""
     box = (20.0, 20.0)
     pts = _localized_cluster(box[0])
-    r_legacy, z_legacy = project_to_profile(pts, "spherical")
+    r_no_pbc, z_no_pbc = project_to_profile(pts, "spherical")
     r_pbc, z_pbc = project_to_profile(pts, "spherical", box_size=box)
-    np.testing.assert_allclose(r_pbc, r_legacy, atol=1e-4)
-    np.testing.assert_allclose(z_pbc, z_legacy)
+    np.testing.assert_allclose(r_pbc, r_no_pbc, atol=1e-4)
+    np.testing.assert_allclose(z_pbc, z_no_pbc)
 
 
 def test_project_with_box_size_handles_droplet_straddling_boundary():
     """Atoms wrapped across the x=0 boundary must collapse onto sensible
-    radii under the PBC-aware path, whereas the legacy arithmetic mean
+    radii under the PBC-aware path, whereas the no-PBC arithmetic mean
     sees a spurious cluster centered in the empty middle of the box."""
     # Two tight rings of four atoms straddling the x=0 / x=L boundary on a
     # 10 Å box. Physically one ring of radius 0.5 centered on x=0.
@@ -117,18 +118,18 @@ def test_project_with_box_size_handles_droplet_straddling_boundary():
     # All atoms are at true radius 0.5 from the (wrapped) center.
     np.testing.assert_allclose(np.sort(r_pbc), np.full(4, 0.5), atol=1e-9)
     # Sanity check that this would have failed without the box-aware path:
-    # the legacy mean lands near x=2.5, putting two atoms at r >= 7.
-    r_legacy, _ = project_to_profile(pts, "spherical")
-    assert float(np.max(r_legacy)) > 5.0
+    # the arithmetic mean lands near x=2.5, putting two atoms at r >= 7.
+    r_no_pbc, _ = project_to_profile(pts, "spherical")
+    assert float(np.max(r_no_pbc)) > 5.0
 
 
 def test_project_cylinder_with_box_size_does_not_recenter_axial_axis():
     """The axial axis of a cylinder (x for cylinder_x, y for cylinder_y)
     must not be folded; only the cross-section axis is recentered, so the
-    radial values match the legacy path on a mid-box cluster."""
+    radial values match the no-PBC path on a mid-box cluster."""
     box = (20.0, 20.0)
     pts = _localized_cluster(box[0])
     for geom in ("cylinder_x", "cylinder_y"):
-        r_legacy, _ = project_to_profile(pts, geom)
+        r_no_pbc, _ = project_to_profile(pts, geom)
         r_pbc, _ = project_to_profile(pts, geom, box_size=box)
-        np.testing.assert_allclose(r_pbc, r_legacy, atol=1e-4)
+        np.testing.assert_allclose(r_pbc, r_no_pbc, atol=1e-4)

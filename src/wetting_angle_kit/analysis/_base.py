@@ -26,14 +26,13 @@ Subclasses fill in:
 import logging
 import multiprocessing as mp
 import warnings
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import Any, ClassVar
 
 import numpy as np
 from tqdm.auto import tqdm
 
-from wetting_angle_kit.analysis.analyzer import BaseTrajectoryAnalyzer
 from wetting_angle_kit.analysis.geometry import DropletGeometry
 from wetting_angle_kit.analysis.temporal import TemporalAggregator
 from wetting_angle_kit.io_utils import (
@@ -44,6 +43,22 @@ from wetting_angle_kit.parsers.ase import AseParser
 from wetting_angle_kit.parsers.base import BaseParser
 from wetting_angle_kit.parsers.lammps_dump import LammpsDumpParser
 from wetting_angle_kit.parsers.xyz import XYZParser
+
+
+class BaseTrajectoryAnalyzer(ABC):
+    """Abstract base for contact angle analysis across trajectory files.
+
+    Concrete analyzers are :class:`TrajectoryAnalyzer` and the two
+    coupled-fit analyzers; all three extend
+    :class:`_BatchedTrajectoryAnalyzer` below, which provides the
+    worker-pool / tqdm scaffolding.
+    """
+
+    @abstractmethod
+    def analyze(self, frame_range: list[int] | None = None) -> Any:
+        """Run the analysis and return a method-specific results object."""
+        pass
+
 
 # Spawn is required because parser instances may hold un-picklable
 # handles (OVITO pipelines, ASE Atoms with C extensions). A scoped
@@ -309,7 +324,7 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         progress until the entire batch completes), we publish a
         progress callback into the per-class ``_WORKER_STATE`` dict.
         Workers that read it (``gather_batch_coords`` and the
-        coupled-binning per-frame loops) call it once per frame; the
+        coupled-fit per-frame loops) call it once per frame; the
         callback advances the same tqdm bar. The callback lives only
         for the duration of this inline run — it's not picklable and
         wouldn't survive a ``Pool.imap`` round-trip anyway.

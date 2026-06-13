@@ -200,8 +200,8 @@ def project_to_profile(
         One of ``"spherical"``, ``"cylinder_x"``, ``"cylinder_y"``.
     box_size : (Lx, Ly), optional
         Lateral box lengths. If omitted, the arithmetic mean is used and no
-        PBC handling is applied (legacy behavior: only correct when the
-        trajectory already recenters the droplet at every frame).
+        PBC handling is applied — only correct when the trajectory
+        already recenters the droplet at every frame.
 
     Returns
     -------
@@ -216,7 +216,7 @@ def project_to_profile(
         return np.empty(0), np.empty(0)
 
     if box_size is None:
-        # Legacy path: arithmetic-mean centering on the confined axes only.
+        # No PBC info: arithmetic-mean centering on the confined axes only.
         x_centered = positions.copy()
         for axis in _confined_lateral_axes(droplet_geometry):
             x_centered[:, axis] = positions[:, axis] - np.mean(positions[:, axis])

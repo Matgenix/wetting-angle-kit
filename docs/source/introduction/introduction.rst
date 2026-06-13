@@ -95,8 +95,8 @@ aggregator, and the analyzer runs them per batch. Examples of useful
 combinations:
 
 * ray-fan extractor + slicing fit + ``min_plus_offset`` wall +
-  per-frame batches — the closest analogue of the legacy slicing
-  method;
+  per-frame batches — a per-frame angle trace with a per-slice ``±σ``
+  band;
 * ray-fan extractor + whole-fit + ``explicit`` wall + 10-frame pooled
   batches — a whole-shape sphere fit with the wall position imported
   from the simulation setup;
@@ -180,7 +180,7 @@ The two interact in three regimes:
   :doc:`../tutorials/slicing_method_tuto`).
 
 * **Fully pooled** (``batch_size=-1``, the default for the
-  coupled-binning analyzers): every frame goes into one batch and one
+  coupled-fit analyzers): every frame goes into one batch and one
   fit. Because there's only one unit of work, ``n_jobs`` is silently
   irrelevant — :meth:`analyze` always runs inline, and passing
   ``n_jobs > 1`` emits a ``UserWarning`` to flag the wasted

@@ -1,4 +1,4 @@
-"""Phase 5: end-to-end ``WallDetector.from_atoms`` through ``TrajectoryAnalyzer``.
+"""end-to-end ``WallDetector.from_atoms`` through ``TrajectoryAnalyzer``.
 
 Wires the ``from_atoms`` detector through the full pipeline:
 
@@ -27,8 +27,11 @@ import pytest
 
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import (  # noqa: E402
+from wetting_angle_kit.analysis import (
+    DensityEstimator,
+    # noqa: E402
     InterfaceExtractor,
+    SpaceSampling,
     SurfaceFitter,
     TrajectoryAnalyzer,
     WallDetector,
@@ -83,9 +86,9 @@ def _make_analyzer(
         parser=LammpsDumpParser(fixture_path),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        interface_extractor=InterfaceExtractor.rays_gaussian(
-            delta_azimuthal=20.0,
-            delta_polar=8.0,
+        interface_extractor=InterfaceExtractor(
+            sampling=SpaceSampling.rays(delta_azimuthal=20.0, delta_polar=8.0),
+            density=DensityEstimator.gaussian(),
         ),
         surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
         wall_detector=wall_detector,
