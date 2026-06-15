@@ -205,30 +205,37 @@ def fit_tanh_profiles_batched(
     distances: np.ndarray,
     densities: np.ndarray,
     *,
-    max_iter: int = 25,
+    max_iter: int = 50,
     tol: float = 1e-9,
+    rank_rtol: float = 1e-6,
 ) -> np.ndarray:
     """Fit ``rho(s) = d * tanh(zd - s) + h`` to every ray of a slice at once.
 
     All rays of a slice share the same sampling grid, so the Jacobian
     structure is identical across rays and the per-ray normal equations
-    are independent 3x3 systems. A batched Gauss–Newton solver
-    assembles those systems on numpy tensors and calls
-    :func:`numpy.linalg.solve` once per iteration — much faster than
-    per-ray :func:`scipy.optimize.curve_fit`.
+    are independent 3x3 systems. A batched Levenberg–Marquardt solver
+    advances every ray in lock-step on numpy tensors — much faster than
+    per-ray :func:`scipy.optimize.curve_fit`, while remaining a proper
+    damped nonlinear least squares: each ray keeps its own damping
+    ``λ``, every accepted step strictly decreases that ray's residual
+    sum of squares, and the damped normal matrix is positive-definite
+    so the batched solve never raises.
 
     The closed-form initial guess (``h ~ midpoint``, ``d ~
-    half-amplitude``, ``zd ~ midpoint crossing``) seeds each ray in
-    the basin of the global minimum, so plain Gauss–Newton without
-    damping converges in 3–6 iterations. The batched solve aborts the
-    iteration if any ray's normal equations become singular (e.g. a
-    near-constant density profile that never crosses the interface),
-    leaving every ray at its current parameters; a non-finite update
-    instead resets every ray to the closed-form initial guess. This
-    early stop also regularises the noisier histogram density, whose
-    fully converged per-ray optima can chase shot noise. The recovered
-    ``zd`` is clipped to ``[0, distances[-1]]`` to keep ill-fit rays
-    from escaping the sampling envelope.
+    half-amplitude``, ``zd ~ midpoint crossing``) seeds each ray in the
+    basin of the global minimum. Rays converge independently to their
+    own least-squares optimum; no global early stop and no implicit
+    regularisation is applied, so the recovered interface is the honest
+    fit — including on noisy histogram density, where it may differ
+    from a smoother estimator.
+
+    A ray whose density profile carries no resolvable interface (a flat
+    profile that never crosses from liquid to vapour) leaves ``zd``
+    undetermined: its normal matrix is rank-deficient. Such rays are
+    reported as ``nan`` rather than a fabricated position, so the
+    caller can drop them from the interface point set instead of
+    seeding a spurious point. Resolved ``zd`` values are clipped to
+    ``[0, distances[-1]]`` to keep them within the sampling envelope.
 
     Parameters
     ----------
@@ -238,22 +245,29 @@ def fit_tanh_profiles_batched(
         clip bound on the recovered interface position.
     densities : ndarray, shape (R, M)
         Density values per ray.
-    max_iter : int, default 25
-        Hard cap on Gauss–Newton iterations.
+    max_iter : int, default 50
+        Hard cap on Levenberg–Marquardt iterations.
     tol : float, default 1e-9
-        Convergence threshold on the max absolute parameter step
-        across all rays.
+        Convergence threshold on the max absolute parameter step of a
+        ray's accepted update.
+    rank_rtol : float, default 1e-6
+        Relative tolerance for the rank-deficiency test on each ray's
+        final normal matrix: a ray is treated as having no resolvable
+        interface (and returns ``nan``) when
+        ``|det(JᵀJ)| <= rank_rtol * prod(diag(JᵀJ))``.
 
     Returns
     -------
     ndarray, shape (R,)
         Fitted ``zd`` (interface position) per ray, clipped to
-        ``[0, distances[-1]]``.
+        ``[0, distances[-1]]``; ``nan`` for rays with no resolvable
+        interface.
     """
     z = np.ascontiguousarray(distances, dtype=np.float64)
     y = np.ascontiguousarray(densities, dtype=np.float64)
     n_rays, n_samples = y.shape
     max_dist = float(z[-1])
+    idx = np.arange(3)
 
     rho_max = y.max(axis=1)
     rho_min = y.min(axis=1)
@@ -262,50 +276,74 @@ def fit_tanh_profiles_batched(
     zd0 = z[np.argmin(np.abs(y - h0[:, None]), axis=1)]
     zd0 = np.clip(zd0, 0.0, max_dist)
     params = np.stack([zd0, d0, h0], axis=1)
-    params_init = params.copy()
+
+    def residuals_and_u(p: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        u = np.tanh(p[:, 0:1] - z[None, :])
+        return y - (p[:, 1:2] * u + p[:, 2:3]), u
+
+    def normal_and_grad(
+        u: np.ndarray, resid: np.ndarray, d_col: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        # J columns are d/dzd, d/dd, d/dh; J_h = 1 is folded into the
+        # sums / counts, so only J_zd and J_d are materialised.
+        j_zd = d_col * (1.0 - u * u)
+        j_d = u
+        a = np.empty((n_rays, 3, 3))
+        a[:, 0, 0] = np.einsum("rm,rm->r", j_zd, j_zd)
+        a[:, 0, 1] = a[:, 1, 0] = np.einsum("rm,rm->r", j_zd, j_d)
+        a[:, 0, 2] = a[:, 2, 0] = j_zd.sum(axis=1)
+        a[:, 1, 1] = np.einsum("rm,rm->r", j_d, j_d)
+        a[:, 1, 2] = a[:, 2, 1] = j_d.sum(axis=1)
+        a[:, 2, 2] = n_samples
+        g = np.empty((n_rays, 3))
+        g[:, 0] = np.einsum("rm,rm->r", j_zd, resid)
+        g[:, 1] = np.einsum("rm,rm->r", j_d, resid)
+        g[:, 2] = resid.sum(axis=1)
+        return a, g
+
+    resid, u = residuals_and_u(params)
+    cost = np.einsum("rm,rm->r", resid, resid)
+    lam: np.ndarray = np.full(n_rays, 1e-3)
 
     for _ in range(max_iter):
-        zd = params[:, 0]
-        d = params[:, 1]
-        h = params[:, 2]
-        # u = tanh(zd - z), shape (R, M).
-        u = np.tanh(zd[:, None] - z[None, :])
-        residuals = y - (d[:, None] * u + h[:, None])
-        # J columns are d/dzd, d/dd, d/dh. J_h = 1 is folded into
-        # the normal equations directly (sums / counts), so only
-        # J_zd and J_d are materialised here.
-        j_zd = d[:, None] * (1.0 - u * u)
-        j_d = u
-        # Symmetric 3x3 normal-equations matrix per ray.
-        normal = np.empty((n_rays, 3, 3))
-        normal[:, 0, 0] = np.einsum("rm,rm->r", j_zd, j_zd)
-        normal[:, 0, 1] = normal[:, 1, 0] = np.einsum("rm,rm->r", j_zd, j_d)
-        normal[:, 0, 2] = normal[:, 2, 0] = j_zd.sum(axis=1)
-        normal[:, 1, 1] = np.einsum("rm,rm->r", j_d, j_d)
-        normal[:, 1, 2] = normal[:, 2, 1] = j_d.sum(axis=1)
-        normal[:, 2, 2] = n_samples
-        rhs = np.empty((n_rays, 3))
-        rhs[:, 0] = np.einsum("rm,rm->r", j_zd, residuals)
-        rhs[:, 1] = np.einsum("rm,rm->r", j_d, residuals)
-        rhs[:, 2] = residuals.sum(axis=1)
-        try:
-            # ``solve`` interprets the last two axes of the RHS as
-            # ``(M, K)`` for batched LHS, so feed it a trailing K=1
-            # axis to keep each ray's RHS a 3-vector.
-            step = np.linalg.solve(normal, rhs[..., None])[..., 0]
-        except np.linalg.LinAlgError:
-            # A degenerate ray (e.g. near-constant density) makes its
-            # 3x3 system singular and aborts the whole batched solve.
-            # Stop iterating and keep the current per-ray parameters;
-            # for the dominant well-conditioned rays these have already
-            # converged, and the early stop keeps noise-driven rays near
-            # their robust closed-form seed.
-            break
-        params += step
-        if not np.isfinite(params).all():
-            params = params_init.copy()
-            break
-        if np.max(np.abs(step)) < tol:
+        normal, grad = normal_and_grad(u, resid, params[:, 1:2])
+        # Levenberg damping scaled by each ray's own matrix magnitude so
+        # the augmented system is positive-definite (always solvable),
+        # regardless of how ill-conditioned the undamped normal matrix is.
+        scale = np.maximum(normal[:, idx, idx].max(axis=1), 1e-30)
+        aug = normal.copy()
+        aug[:, idx, idx] += lam[:, None] * scale[:, None]
+        step = np.linalg.solve(aug, grad[..., None])[..., 0]
+        trial = params + step
+        trial_resid, trial_u = residuals_and_u(trial)
+        trial_cost = np.einsum("rm,rm->r", trial_resid, trial_resid)
+        # Accept a ray's step only if it strictly lowers that ray's SSR
+        # (the LM gain test); accepted rays loosen damping toward Gauss–
+        # Newton, rejected rays tighten it toward gradient descent.
+        improved = np.isfinite(trial_cost) & (trial_cost < cost)
+        imp = improved[:, None]
+        params = np.where(imp, trial, params)
+        u = np.where(imp, trial_u, u)
+        resid = np.where(imp, trial_resid, resid)
+        cost = np.where(improved, trial_cost, cost)
+        lam = np.where(
+            improved,
+            np.maximum(lam / 3.0, 1e-30),
+            np.minimum(lam * 3.0, 1e30),
+        )
+        # A ray is done when its accepted step is negligible or its
+        # damping has saturated (no further progress possible).
+        step_size = np.max(np.abs(np.where(imp, step, 0.0)), axis=1)
+        if np.all((step_size < tol) | (lam >= 1e30)):
             break
 
-    return np.clip(params[:, 0], 0.0, max_dist)
+    # Rank-deficiency gate: a ray with a flat profile leaves zd
+    # unconstrained (rank-deficient normal matrix); report nan so the
+    # caller drops it rather than treating the seed as an interface.
+    normal, _ = normal_and_grad(u, resid, params[:, 1:2])
+    det = np.linalg.det(normal)
+    diag_prod = normal[:, 0, 0] * normal[:, 1, 1] * normal[:, 2, 2]
+    with np.errstate(invalid="ignore"):
+        resolved = np.isfinite(det) & (np.abs(det) > rank_rtol * np.abs(diag_prod))
+    zd_out = np.where(resolved, params[:, 0], np.nan)
+    return np.clip(zd_out, 0.0, max_dist)

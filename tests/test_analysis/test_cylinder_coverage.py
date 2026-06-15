@@ -74,6 +74,7 @@ def _make_analyzer(
     oxygen_indices: np.ndarray,
     *,
     wall_detector: WallDetector | None = None,
+    temporal_aggregator: TemporalAggregator | None = None,
 ) -> TrajectoryAnalyzer:
     return TrajectoryAnalyzer(
         parser=LammpsDumpParser(_CYL_FIXTURE),
@@ -82,7 +83,7 @@ def _make_analyzer(
         interface_extractor=extractor,
         surface_fitter=fitter,
         wall_detector=wall_detector or WallDetector.explicit(z_wall=_WALL_Z),
-        temporal_aggregator=TemporalAggregator(batch_size=1),
+        temporal_aggregator=temporal_aggregator or TemporalAggregator(batch_size=1),
     )
 
 
@@ -91,16 +92,24 @@ def _make_analyzer(
 
 @pytest.mark.integration
 def test_rays_with_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> None:
-    """``rays`` + binning + slicing on the cylinder fixture."""
+    """``rays`` + binning + slicing on the cylinder fixture.
+
+    Histogram density is shot-noisy per frame, so a single frame leaves
+    too few rays with a resolvable interface (the per-ray tanh fit
+    honestly returns NaN for flat profiles). Pool the trajectory — as
+    the binning estimator is meant to be used — for an adequately
+    sampled density, with a slightly wider kernel (``bin_width=5``).
+    """
     analyzer = _make_analyzer(
         InterfaceExtractor(
             sampling=SpaceSampling.rays(delta_cylinder=5.0, delta_polar=8.0),
-            density=DensityEstimator.binning(bin_width=3.0),
+            density=DensityEstimator.binning(bin_width=5.0),
         ),
         SurfaceFitter.slicing(surface_filter_offset=2.0),
         oxygen_indices,
+        temporal_aggregator=TemporalAggregator(batch_size=-1),
     )
-    batch = analyzer.analyze([1]).batches[0]
+    batch = analyzer.analyze().batches[0]
     assert 80.0 < batch.angle < 115.0
 
 

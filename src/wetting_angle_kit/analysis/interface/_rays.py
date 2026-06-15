@@ -104,8 +104,11 @@ def _ray_slice_in_plane(
     density_flat = field.evaluate(positions_rm.reshape(-1, 3))
     densities = density_flat.reshape(len(polar), len(distances))
     interface_re = fit_tanh_profiles_batched(distances, densities)
-    x_proj = cos_polar * interface_re + center[0]
-    z_proj = sin_polar * interface_re + center[2]
+    # Rays with no resolvable interface return NaN; drop them rather
+    # than seeding a spurious point.
+    resolved = np.isfinite(interface_re)
+    x_proj = cos_polar[resolved] * interface_re[resolved] + center[0]
+    z_proj = sin_polar[resolved] * interface_re[resolved] + center[2]
     return np.column_stack([x_proj, z_proj])
 
 
@@ -185,7 +188,11 @@ def _extract_rays(
         density_flat = field.evaluate(positions_rm.reshape(-1, 3))
         densities = density_flat.reshape(len(directions), len(distances))
         interface_re = fit_tanh_profiles_batched(distances, densities)
-        return center_geom[None, :] + interface_re[:, None] * directions
+        # Drop rays with no resolvable interface (NaN).
+        resolved = np.isfinite(interface_re)
+        return (
+            center_geom[None, :] + interface_re[resolved, None] * directions[resolved]
+        )
 
     # whole + cylinder_*: pool a per-y ray fan into a 3D shell.
     assert delta_cylinder is not None
@@ -205,11 +212,13 @@ def _extract_rays(
         density_flat = field.evaluate(positions_rm.reshape(-1, 3))
         densities = density_flat.reshape(len(polar), len(distances))
         interface_re = fit_tanh_profiles_batched(distances, densities)
+        # Drop rays with no resolvable interface (NaN).
+        resolved = np.isfinite(interface_re)
         points = np.column_stack(
             [
-                cos_polar * interface_re + slice_center[0],
-                np.full(len(polar), float(y)),
-                sin_polar * interface_re + slice_center[2],
+                cos_polar[resolved] * interface_re[resolved] + slice_center[0],
+                np.full(int(resolved.sum()), float(y)),
+                sin_polar[resolved] * interface_re[resolved] + slice_center[2],
             ]
         )
         shells.append(points)

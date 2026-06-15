@@ -22,6 +22,7 @@ import pytest
 
 from wetting_angle_kit.analysis._density import (
     HistogramDensityField,
+    fit_tanh_profiles_batched,
 )
 from wetting_angle_kit.analysis.density_estimator import DensityEstimator
 from wetting_angle_kit.analysis.geometry import DropletGeometry
@@ -35,6 +36,33 @@ def _uniform_sphere_atoms(radius: float, n_atoms: int, seed: int = 0) -> np.ndar
         sample = rng.uniform(-radius, radius, size=(4 * n_atoms, 3))
         pts.append(sample[np.linalg.norm(sample, axis=1) < radius])
     return np.concatenate(pts, axis=0)[:n_atoms]
+
+
+def test_fit_tanh_profiles_batched_resolves_clean_rays_and_nans_flat() -> None:
+    """The batched LM fit recovers the interface of resolvable rays and
+    reports ``nan`` for a flat ray that carries no interface."""
+    z = np.linspace(0.0, 30.0, 60)
+    # ``rho = d * tanh(zd - s) + h``: liquid (high) near s=0, vapour
+    # (low) past the interface. Two clean rays at zd=15 and zd=10.
+    clean_15 = 0.03 * np.tanh(-(z - 15.0)) + 0.03
+    clean_10 = 0.04 * np.tanh(-(z - 10.0)) + 0.04
+    flat = np.full_like(z, 0.05)
+    out = fit_tanh_profiles_batched(z, np.stack([clean_15, flat, clean_10]))
+    assert out[0] == pytest.approx(15.0, abs=0.2)
+    assert np.isnan(out[1])  # flat profile -> no resolvable interface
+    assert out[2] == pytest.approx(10.0, abs=0.2)
+
+
+def test_fit_tanh_profiles_batched_recovers_noisy_ray() -> None:
+    """A resolvable interface is still recovered under moderate noise,
+    and the result stays clipped within the sampling envelope."""
+    rng = np.random.default_rng(0)
+    z = np.linspace(0.0, 40.0, 120)
+    rho = 0.033 * np.tanh(-(z - 22.0)) + 0.033
+    noisy = rho + rng.normal(scale=2e-3, size=z.shape)
+    out = fit_tanh_profiles_batched(z, noisy[None, :])
+    assert out[0] == pytest.approx(22.0, abs=1.0)
+    assert 0.0 <= out[0] <= float(z[-1])
 
 
 def test_histogram_density_field_uniform_box() -> None:

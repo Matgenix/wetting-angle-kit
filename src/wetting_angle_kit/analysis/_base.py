@@ -275,13 +275,22 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         -------
         Results
             Subclass-specific results dataclass produced by
-            :meth:`_build_results`.
+            :meth:`_build_results`. Its ``method_metadata`` always
+            carries ``n_requested_batches`` and ``n_failed_batches`` so
+            a partially-failing run is visible: aggregate statistics
+            (e.g. ``mean_angle``) are computed only over the batches
+            that produced a result, and any dropped batches also raise a
+            :class:`UserWarning`. If *every* batch fails, a
+            :class:`RuntimeError` is raised instead.
         """
         if frame_range is None:
             frame_range = list(range(self.parser.frame_count()))
         batches = list(self.temporal_aggregator.iter_batches(frame_range))
         if not batches:
-            return self._build_results(batches=[])
+            results = self._build_results(batches=[])
+            results.method_metadata["n_requested_batches"] = 0
+            results.method_metadata["n_failed_batches"] = 0
+            return results
 
         total_frames = sum(len(b) for b in batches)
         logger.info(
@@ -319,10 +328,27 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
                 "parser, geometry, or fit errors."
             )
 
+        # Surface partial failures rather than silently averaging over a
+        # smaller set of batches: warn, and record the counts on the
+        # results so a caller can see that some batches were dropped.
+        n_failed = len(batches) - len(batch_results)
+        if n_failed:
+            warnings.warn(
+                f"{n_failed} of {len(batches)} batches produced no result and "
+                "were omitted (see the worker logs above for the per-batch "
+                "errors); aggregate statistics are computed over the "
+                f"remaining {len(batch_results)} batch(es).",
+                UserWarning,
+                stacklevel=2,
+            )
+
         # ``imap_unordered`` returns completion-ordered; restore batch
         # order using the first frame index in each batch.
         batch_results.sort(key=lambda b: min(b.frames) if b.frames else 0)
-        return self._build_results(batches=batch_results)
+        results = self._build_results(batches=batch_results)
+        results.method_metadata["n_requested_batches"] = len(batches)
+        results.method_metadata["n_failed_batches"] = n_failed
+        return results
 
     def _run_inline(
         self,
