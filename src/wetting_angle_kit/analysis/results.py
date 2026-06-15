@@ -51,10 +51,10 @@ class BatchResult:
     angle_std : float, optional
         Within-batch standard deviation of the contact angle
         (degrees), describing the spread of the per-batch ``angle``.
-        For slicing fits, the std of ``per_slice_angles`` (always
-        populated). For whole fits, the bootstrap std when the fitter
-        was constructed with ``bootstrap_samples > 0``, otherwise
-        ``None``.
+        For slicing fits, the ``nanstd`` of ``per_slice_angles``
+        (always populated). For whole fits, the bootstrap std when the
+        fitter was constructed with ``bootstrap_samples > 0``,
+        otherwise ``None``.
     """
 
     frames: list[int]
@@ -68,23 +68,40 @@ class BatchResult:
 class SlicingBatchResult(BatchResult):
     """Per-batch result from a slicing-kind surface fitter.
 
+    All per-slice arrays are full length (one entry per attempted
+    slice) and index-aligned: a slice that produced no valid contact
+    angle (empty, too few points, degenerate circle fit, or a circle
+    that does not reach the wall) is marked ``nan`` rather than dropped,
+    so attrition is visible and the slice index is preserved.
+
     Attributes
     ----------
     per_slice_angles : ndarray
-        ``(n_slices,)`` array of per-slice contact angles (degrees).
-        :attr:`BatchResult.angle` is the mean of this array;
-        :attr:`BatchResult.angle_std` is its standard deviation.
+        ``(n_slices_total,)`` array of per-slice contact angles
+        (degrees), with ``nan`` for slices that produced no angle.
+        :attr:`BatchResult.angle` is ``nanmean`` of this array and
+        :attr:`BatchResult.angle_std` its ``nanstd``.
     slice_surfaces : list[ndarray]
         One ``(M_i, 2)`` array per slice of interface points in the
-        slice ``(x, z)`` plane.
+        slice ``(x, z)`` plane (kept for every slice, including those
+        that produced no angle).
     slice_popts : ndarray
-        ``(n_slices, 4)`` array of fitted circle parameters per slice;
-        columns ``[xc, zc, R, z_wall]``.
+        ``(n_slices_total, 4)`` array of fitted circle parameters per
+        slice; columns ``[xc, zc, R, z_wall]``. Rows for slices with no
+        valid fit are ``nan``.
+    n_slices_total : int
+        Number of slices the extractor produced for this batch.
+    n_slices_used : int
+        Number of those slices that produced a valid contact angle
+        (the count of non-``nan`` entries in ``per_slice_angles``).
+        ``n_slices_used < n_slices_total`` signals per-slice attrition.
     """
 
     per_slice_angles: np.ndarray
     slice_surfaces: list[np.ndarray]
     slice_popts: np.ndarray
+    n_slices_total: int
+    n_slices_used: int
 
 
 @dataclass(frozen=True, eq=False, kw_only=True)

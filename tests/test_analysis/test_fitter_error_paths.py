@@ -45,9 +45,13 @@ def test_slicing_skips_empty_and_thin_slices(spherical: DropletGeometry) -> None
         valid_slice,
     ]
     out = fitter.fit(surfaces, z_wall=0.0, droplet_geometry=spherical)
-    # Only the valid slice contributed.
-    assert len(out.per_slice_angles) == 1
-    assert len(out.slice_surfaces) == 1
+    # All three slices are recorded index-aligned (full length); only
+    # the valid slice contributes an angle, the empty and thin ones NaN.
+    assert out.n_slices_total == 3
+    assert out.n_slices_used == 1
+    assert out.per_slice_angles.shape == (3,)
+    assert int(np.isfinite(out.per_slice_angles).sum()) == 1
+    assert len(out.slice_surfaces) == 3
 
 
 def test_slicing_skips_circle_outside_wall(spherical: DropletGeometry) -> None:
@@ -62,8 +66,10 @@ def test_slicing_skips_circle_outside_wall(spherical: DropletGeometry) -> None:
     R = 20.0
     valid_slice = np.column_stack([R * np.cos(theta), R * np.sin(theta)])
     out = fitter.fit([high_slice, valid_slice], z_wall=0.0, droplet_geometry=spherical)
-    # Only the valid slice produces an angle.
-    assert len(out.per_slice_angles) == 1
+    # Both slices are recorded; only the valid one produces an angle.
+    assert out.n_slices_total == 2
+    assert out.n_slices_used == 1
+    assert int(np.isfinite(out.per_slice_angles).sum()) == 1
 
 
 def test_slicing_raises_when_no_valid_slice(spherical: DropletGeometry) -> None:

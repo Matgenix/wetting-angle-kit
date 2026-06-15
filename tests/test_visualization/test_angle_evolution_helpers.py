@@ -95,12 +95,14 @@ def test_batch_surface_area_slicing_uses_shoelace() -> None:
         z_wall=0.0,
         rms_residual=0.0,
         angle_std=0.0,
-        per_slice_angles=np.array([90.0]),
+        per_slice_angles=np.array([90.0, 90.0]),
         slice_surfaces=[
             np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]]),  # area 1
             np.array([[0.0, 0.0], [2.0, 0.0], [2.0, 1.0], [0.0, 1.0]]),  # area 2
         ],
         slice_popts=np.zeros((2, 4)),
+        n_slices_total=2,
+        n_slices_used=2,
     )
     assert _batch_surface_area(batch) == pytest.approx(1.5)
 
@@ -115,6 +117,8 @@ def test_batch_surface_area_slicing_empty_surfaces_returns_zero() -> None:
         per_slice_angles=np.array([]),
         slice_surfaces=[],
         slice_popts=np.zeros((0, 4)),
+        n_slices_total=0,
+        n_slices_used=0,
     )
     assert _batch_surface_area(batch) == 0.0
 

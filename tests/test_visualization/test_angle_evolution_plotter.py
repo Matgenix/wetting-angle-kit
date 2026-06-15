@@ -26,6 +26,8 @@ def _slicing_results() -> TrajectoryResults:
             per_slice_angles=np.array([94.0, 95.0, 96.0]) + i,
             slice_surfaces=[np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])],
             slice_popts=np.zeros((1, 4)),
+            n_slices_total=3,
+            n_slices_used=3,
         )
         for i in range(3)
     ]

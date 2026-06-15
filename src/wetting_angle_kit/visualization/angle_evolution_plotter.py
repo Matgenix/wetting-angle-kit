@@ -60,9 +60,12 @@ def _circular_segment_area(R: float, z_center: float, z_cut: float) -> float:
 def _batch_surface_area(batch: Any) -> float:
     """Per-batch surface-area dispatch over the four result types."""
     if isinstance(batch, SlicingBatchResult):
-        if not batch.slice_surfaces:
+        # Average the polygon area over slices that carry interface
+        # points; empty slices (no resolvable interface) are excluded.
+        areas = [_shoelace_area(s) for s in batch.slice_surfaces if s.size]
+        if not areas:
             return 0.0
-        return float(np.mean([_shoelace_area(s) for s in batch.slice_surfaces]))
+        return float(np.mean(areas))
     if isinstance(batch, WholeBatchResult):
         popt = np.asarray(batch.popt)
         if popt.size == 5:  # spherical: [xc, yc, zc, R, z_wall]
@@ -90,10 +93,15 @@ def _batch_central_angle(batch: Any, stat: Literal["mean", "median"]) -> float:
     available scalar is :attr:`BatchResult.angle`, which is returned
     directly.
     """
-    if isinstance(batch, SlicingBatchResult) and batch.per_slice_angles.size:
+    if (
+        isinstance(batch, SlicingBatchResult)
+        and np.isfinite(batch.per_slice_angles).any()
+    ):
+        # per_slice_angles carries NaN for slices with no valid angle;
+        # reduce over the finite entries only.
         if stat == "median":
-            return float(np.median(batch.per_slice_angles))
-        return float(np.mean(batch.per_slice_angles))
+            return float(np.nanmedian(batch.per_slice_angles))
+        return float(np.nanmean(batch.per_slice_angles))
     return float(batch.angle)
 
 

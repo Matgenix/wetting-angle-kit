@@ -44,53 +44,60 @@ class _SlicingFitter(SurfaceFitter):
             )
 
         z_filter = z_wall + self.surface_filter_offset
+        # Per-slice arrays stay full length and index-aligned: a slice
+        # that yields no valid angle is recorded as NaN rather than
+        # dropped, so attrition is visible and the slice index is kept.
         per_slice_angles: list[float] = []
         slice_surfaces: list[np.ndarray] = []
         slice_popts: list[np.ndarray] = []
         slice_rms_residuals: list[float] = []
+        nan_popt: np.ndarray = np.full(4, np.nan)
 
         for surf in interface_data:
-            if surf.size == 0:
-                continue
-            kept = surf[surf[:, 1] > z_filter]
-            # Need at least 3 non-collinear points to fit a circle.
-            if len(kept) < 3:
-                continue
-            try:
-                xc, zc, radius = _kasa_circle_fit_2d(kept[:, 0], kept[:, 1])
-            except (np.linalg.LinAlgError, ValueError):
-                continue
-            # Contact angle from circle / wall-line intersection:
-            # ``cos θ = (z_wall - z_center) / R``. Drop slices where
-            # the fitted circle doesn't intersect the wall.
-            delta_z = z_wall - zc
-            if abs(delta_z) >= radius:
-                continue
-            angle = float(np.degrees(np.arccos(delta_z / radius)))
-            # Per-slice RMS of the circle-fit residuals (Å). The
-            # batch-level rms_residual reported in
-            # :class:`SlicingBatchResult` is the mean across slices.
-            radii = np.hypot(kept[:, 0] - xc, kept[:, 1] - zc)
-            rms = float(np.sqrt(np.mean((radii - radius) ** 2)))
-
-            per_slice_angles.append(angle)
             slice_surfaces.append(surf)
-            slice_popts.append(np.array([xc, zc, radius, z_wall]))
+            angle, rms, popt = float("nan"), float("nan"), nan_popt
+            # Need at least 3 non-collinear points to fit a circle.
+            kept = surf[surf[:, 1] > z_filter] if surf.size else surf
+            if len(kept) >= 3:
+                try:
+                    xc, zc, radius = _kasa_circle_fit_2d(kept[:, 0], kept[:, 1])
+                    # Contact angle from circle / wall-line intersection:
+                    # ``cos θ = (z_wall - z_center) / R``. A circle that
+                    # doesn't reach the wall (``|Δz| ≥ R``) yields no angle.
+                    delta_z = z_wall - zc
+                    if abs(delta_z) < radius:
+                        angle = float(np.degrees(np.arccos(delta_z / radius)))
+                        # Per-slice RMS of the circle-fit residuals (Å).
+                        radii = np.hypot(kept[:, 0] - xc, kept[:, 1] - zc)
+                        rms = float(np.sqrt(np.mean((radii - radius) ** 2)))
+                        popt = np.array([xc, zc, radius, z_wall])
+                except (np.linalg.LinAlgError, ValueError):
+                    pass
+            per_slice_angles.append(angle)
             slice_rms_residuals.append(rms)
-
-        if not per_slice_angles:
-            raise RuntimeError(
-                "slicing fit: no slice produced a valid contact angle "
-                "after filtering and circle fitting."
-            )
+            slice_popts.append(popt)
 
         angles_arr = np.asarray(per_slice_angles, dtype=float)
+        n_slices_total = len(angles_arr)
+        n_slices_used = int(np.isfinite(angles_arr).sum())
+        if n_slices_used == 0:
+            raise RuntimeError(
+                "slicing fit: no slice produced a valid contact angle "
+                f"after filtering and circle fitting ({n_slices_total} "
+                "slice(s) attempted)."
+            )
+
+        # nanmean / nanstd: the batch angle and its spread are over the
+        # slices that produced a value; the NaN entries above keep the
+        # dropped slices visible.
         return SlicingFitOutput(
-            angle=float(np.mean(angles_arr)),
+            angle=float(np.nanmean(angles_arr)),
             z_wall=z_wall,
-            rms_residual=float(np.mean(slice_rms_residuals)),
-            angle_std=float(np.std(angles_arr)),
+            rms_residual=float(np.nanmean(slice_rms_residuals)),
+            angle_std=float(np.nanstd(angles_arr)),
             per_slice_angles=angles_arr,
             slice_surfaces=slice_surfaces,
             slice_popts=np.asarray(slice_popts, dtype=float),
+            n_slices_total=n_slices_total,
+            n_slices_used=n_slices_used,
         )

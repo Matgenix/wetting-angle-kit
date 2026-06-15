@@ -57,6 +57,8 @@ class SlicingFitOutput(FitOutput):
     per_slice_angles: np.ndarray
     slice_surfaces: list[np.ndarray]
     slice_popts: np.ndarray
+    n_slices_total: int
+    n_slices_used: int
 
     def to_batch_result(self, frames: list[int]) -> SlicingBatchResult:
         return SlicingBatchResult(
@@ -68,6 +70,8 @@ class SlicingFitOutput(FitOutput):
             per_slice_angles=self.per_slice_angles,
             slice_surfaces=self.slice_surfaces,
             slice_popts=self.slice_popts,
+            n_slices_total=self.n_slices_total,
+            n_slices_used=self.n_slices_used,
         )
 
 
