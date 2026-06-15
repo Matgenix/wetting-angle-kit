@@ -1,8 +1,8 @@
-"""Grid-based extractor implementations.
+"""Grid-based extractor implementation.
 
-Both extractors evaluate a density field at fixed-cell grid points and
-trace the half-bulk iso-contour (slicing mode) or iso-surface (whole
-mode). For slicing mode, both iterate per-slice — azimuthal angles for
+This sampling evaluates a density field at fixed-cell grid points and
+traces the half-bulk iso-contour (slicing mode) or iso-surface (whole
+mode). For slicing mode, it iterates per-slice — azimuthal angles for
 spherical droplets, axial steps for cylindrical droplets — so the
 downstream :class:`SurfaceFitter.slicing` sees one ``(s, z)`` contour
 per slice and can report per-slice scatter.

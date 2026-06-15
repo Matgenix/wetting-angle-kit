@@ -48,44 +48,21 @@ that the recovered :math:`\theta` is meaningful.
 There is no sharp surface in an MD frame: the density drops from
 :math:`\rho_{\rm liq}` to :math:`\rho_{\rm vap}` smoothly over a few
 Å, broadened by thermal motion. The package treats the
-liquid–vapor interface as the locus of half-bulk density. For the
-ray extractors this is recovered by fitting a one-dimensional
-hyperbolic-tangent profile to the density sampled along each ray:
+liquid–vapor interface as the locus of half-bulk density.
+This interface is then used to fit a circle/sphere and recover the contact angle.
+The extraction of the interface is based on two choices:
 
-.. math::
+* The density field may be computed via a Gaussian KDE or a 3D top-hat binning.
+* The density may be sampled along rays from the droplet COM
+  or on a fixed grid in space.
 
-   \rho(\zeta) \;=\; h \;+\; d\,\tanh(\zeta_d - \zeta),
+2.1. Estimating local density
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-where :math:`\zeta` is the running coordinate along the ray and the
-three fitted parameters are the interface location :math:`\zeta_d`,
-the midpoint density :math:`h = (\rho_{\rm liq} + \rho_{\rm vap})/2`,
-and the half-amplitude :math:`d = (\rho_{\rm liq} - \rho_{\rm vap})/2`.
-The interface is :math:`\zeta = \zeta_d`, where :math:`\rho = h`.
+We first need a local density estimate at each sample point.
+Two estimators are available, swappable via :class:`DensityEstimator`:
 
-The transition **width** is *fixed* — the tanh argument has unit
-slope, giving a transition scale of order 1 Å — rather than being a
-fitted parameter. Because the profile is antisymmetric about its
-midpoint, the recovered half-density crossing :math:`\zeta_d` is
-largely insensitive to the exact width, so fixing the slope instead
-of fitting a thickness does not bias the interface location; only the
-amplitude/width interpretation would change, and the downstream
-geometry never uses it. (The joint coupled fit of §7 *does* treat the
-interface thicknesses :math:`t_1, t_2` as free parameters, because
-there the full density field — not just the crossing — is modelled.)
-
-This tanh profile is theoretically motivated by mean-field theory of
-liquid–vapor interfaces (van der Waals / Cahn–Hilliard square-gradient
-free energy) and is an excellent empirical fit to MD density
-profiles in the same regime.
-
-3. Estimating local density
----------------------------
-
-To fit the tanh profile to a sampled density, we first need a local
-density estimate at each sample point. Two estimators are available,
-swappable via :class:`InterfaceExtractor`:
-
-**Gaussian KDE** (``rays`` (Gaussian) / ``grid`` (Gaussian))
+**Gaussian KDE**
    Each atom contributes a normalised 3D Gaussian of width
    :math:`\sigma`:
 
@@ -99,7 +76,7 @@ swappable via :class:`InterfaceExtractor`:
    which makes it the default choice. For efficiency, a per-atom
    cut-off at :math:`5\sigma` is applied via a cKDTree.
 
-**3D top-hat** (``rays`` (binning) / ``grid`` (binning))
+**3D top-hat**
    Atoms within :math:`{\rm bin\_width}/2` of the sample contribute
    uniformly:
 
@@ -116,88 +93,98 @@ Both estimators implement the same
 :class:`DensityFieldProtocol`, so the analysis pipeline can plug
 either one into the same ray-fan or grid extraction.
 
-4. Sampling the interface: rays vs grid
----------------------------------------
+2.2. Sampling the density field
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Two strategies turn the density estimator into a clean point set on
 the interface:
 
-4.1 Ray fans
-^^^^^^^^^^^^
+**Ray fans**
+  The :meth:`SpaceSampling.rays` factory emits a fan of rays from the droplet
+  COM, samples the density along each ray, and recovers the interface
+  position as the half-density point of a 1D tanh fit on that ray.
 
-The :meth:`InterfaceExtractor.rays` (Gaussian) /
-:meth:`InterfaceExtractor.rays` (binning) factories emit a fan of rays from the droplet
-COM, sample the density along each ray, and recover the interface
-position as the half-density point of a 1D tanh fit on that ray.
+  In such samplings, the interface is recovered by fitting a one-dimensional
+  hyperbolic-tangent profile to the density sampled along each ray:
 
-Three ray-fan geometries are used depending on the
-``(surface_kind, droplet_geometry)`` pair:
+  .. math::
 
-* **slicing + spherical**: a 2D ray fan in each azimuthal plane
-  through the droplet (planes spaced by ``delta_azimuthal``);
-  within each plane, rays at polar angles spaced by ``delta_polar``.
-* **slicing + cylinder**: a 2D ray fan in each ``y``-step plane
-  (planes spaced by ``delta_cylinder``); same polar fan within each
-  plane.
-* **whole + spherical**: a full-sphere Fibonacci ray fan from the
-  COM. Equal-area in :math:`(\cos\theta, \phi)` with the golden
-  angle in :math:`\phi`; total ray count is ``n_rays_sphere``.
-  Full-sphere coverage is important: downward rays from the COM
-  hit the wall plane and produce shell points at :math:`z \approx
-  z_w`, which is what makes
-  :meth:`WallDetector.min_plus_offset` work for the whole-fit.
-* **whole + cylinder**: a per-:math:`y` ray fan in the ``(x, z)``
-  plane (planes spaced by ``delta_cylinder``); the resulting shell
-  is the union of these per-:math:`y` rings.
+    \rho(\zeta) \;=\; h \;+\; d\,\tanh(\zeta_d - \zeta),
 
-Why Fibonacci on the sphere? Naive uniform :math:`(\theta, \phi)`
-gridding clusters rays near the poles, oversampling there and
-undersampling the equator. The Fibonacci spiral (uniform
-:math:`\cos\theta`, golden angle :math:`\phi`) gives near-perfect
-equal-area coverage with no clustering anywhere.
+  where :math:`\zeta` is the running coordinate along the ray and the
+  three fitted parameters are the interface location :math:`\zeta_d`,
+  the midpoint density :math:`h = (\rho_{\rm liq} + \rho_{\rm vap})/2`,
+  and the half-amplitude :math:`d = (\rho_{\rm liq} - \rho_{\rm vap})/2`.
+  The interface is :math:`\zeta = \zeta_d`, where :math:`\rho = h`.
 
-4.2 Grid + iso-contour
-^^^^^^^^^^^^^^^^^^^^^^
+  The transition **width** is *fixed* — the tanh argument has unit
+  slope, giving a transition scale of order 1 Å — rather than being a
+  fitted parameter. Because the profile is antisymmetric about its
+  midpoint, the recovered half-density crossing :math:`\zeta_d` is
+  largely insensitive to the exact width, so fixing the slope instead
+  of fitting a thickness does not bias the interface location; only the
+  amplitude/width interpretation would change, and the downstream
+  geometry never uses it. (The joint coupled fit of §7 *does* treat the
+  interface thicknesses :math:`t_1, t_2` as free parameters, because
+  there the full density field — not just the crossing — is modelled.)
 
-The :meth:`InterfaceExtractor.grid` (Gaussian) /
-:meth:`InterfaceExtractor.grid` (binning) factories build a fixed-cell grid in space and
-compute a density value at each cell, then recover the interface as
-the iso-density contour at the half-bulk level via
-:func:`skimage.measure.find_contours` in 2D (marching squares) or
-:func:`skimage.measure.marching_cubes` in 3D.
+  This tanh profile is theoretically motivated by mean-field theory of
+  liquid–vapor interfaces (van der Waals / Cahn–Hilliard square-gradient
+  free energy) and is an excellent empirical fit to MD density
+  profiles in the same regime.
 
-The two estimators differ only in how the per-cell density is
-computed:
+  Four ray-fan geometries are used depending on the
+  ``(surface_kind, droplet_geometry)`` pair:
 
-* ``grid`` (Gaussian) evaluates the same Gaussian KDE described in
-  §3 at each cell centre — exactly the estimator
-  :meth:`InterfaceExtractor.rays` (Gaussian) uses, just sampled on a grid rather than
-  along rays. No additional smoothing step.
-* ``grid`` (binning) is a histogram: for slicing mode, atoms within
-  ``±bin_width_x/2`` of the slice plane contribute to the 2D
-  histogram in ``(s, z)`` (the slab cut); for whole mode, atoms are
-  binned directly into 3D ``(x, y, z)`` cells. Density is
-  ``counts / cell_volume``.
+  * **slicing + spherical**: a 2D ray fan in each azimuthal plane
+    through the droplet (planes spaced by ``delta_azimuthal``);
+    within each plane, rays at polar angles spaced by ``delta_polar``.
+  * **slicing + cylinder**: a 2D ray fan in each ``y``-step plane
+    (planes spaced by ``delta_cylinder``); same polar fan within each
+    plane.
+  * **whole + spherical**: a full-sphere Fibonacci ray fan from the
+    COM. Equal-area in :math:`(\cos\theta, \phi)` with the golden
+    angle in :math:`\phi`; total ray count is ``n_rays_sphere``.
+    Full-sphere coverage is important: downward rays from the COM
+    hit the wall plane and produce shell points at :math:`z \approx
+    z_w`, which is what makes
+    :meth:`WallDetector.min_plus_offset` work for the whole-fit.
+  * **whole + cylinder**: a per-:math:`y` ray fan in the ``(x, z)``
+    plane (planes spaced by ``delta_cylinder``); the resulting shell
+    is the union of these per-:math:`y` rings.
 
-In slicing mode both grid extractors iterate **per slice** —
-azimuthal angles ``γ ∈ [0°, 180°)`` for spherical droplets, axial
-steps along ``y`` for cylinder droplets — exactly like the rays
-variants. Each slice yields an ``(s, z)`` density field and one
-iso-contour; the downstream :class:`SurfaceFitter.slicing` averages
-the per-slice angles and reports the inter-slice scatter, which is
-how the slicing method exposes droplet asymmetry.
+  Why Fibonacci on the sphere? Naive uniform :math:`(\theta, \phi)`
+  gridding clusters rays near the poles, oversampling there and
+  undersampling the equator. The Fibonacci spiral (uniform
+  :math:`\cos\theta`, golden angle :math:`\phi`) gives near-perfect
+  equal-area coverage with no clustering anywhere.
 
-Two volume-normalisation notes:
+**Grid + iso-contour**
+  The :meth:`SpaceSampling.grid` factory builds a fixed-cell grid in space and
+  computes a density value at each cell, then recovers the interface as
+  the iso-density contour at the half-bulk level via
+  :func:`skimage.measure.find_contours` in 2D (marching squares) or
+  :func:`skimage.measure.marching_cubes` in 3D.
 
-* ``grid`` (Gaussian) returns 3D density per Å³ directly from the KDE
-  evaluation; no extra volume normalisation needed.
-* ``grid`` (binning)'s slab-cut histogram divides by
-  ``ds × dz × bin_width_x`` so the recovered field is also in
-  atoms/Å³. The slab thickness equals ``bin_width_x`` (the in-plane
-  horizontal cell width), which keeps the bin's cross-section in the
-  ``(s, perpendicular)`` directions square.
+  In slicing mode, the grid sampling iterates **per slice** —
+  azimuthal angles ``γ ∈ [0°, 180°)`` for spherical droplets, axial
+  steps along ``y`` for cylinder droplets — exactly like the rays
+  variant. Each slice yields an ``(s, z)`` density field and one
+  iso-contour; the downstream :class:`SurfaceFitter.slicing` averages
+  the per-slice angles and reports the inter-slice scatter, which is
+  how the slicing method exposes droplet asymmetry.
 
-5. Fitting the cap: algebraic Taubin fits
+  Two volume-normalisation notes:
+
+  * ``grid`` + ``gaussian`` returns 3D density per Å³ directly from the KDE
+    evaluation; no extra volume normalisation needed.
+  * ``grid`` + ``binning``'s slab-cut histogram divides by
+    ``ds × dz × bin_width_x`` so the recovered field is also in
+    atoms/Å³. The slab thickness equals ``bin_width_x`` (the in-plane
+    horizontal cell width), which keeps the bin's cross-section in the
+    ``(s, perpendicular)`` directions square.
+
+3. Fitting the cap: algebraic Taubin fits
 -----------------------------------------
 
 Given a clean point set on the interface, the surface fitter
@@ -242,7 +229,7 @@ averages the per-slice angles. The whole fitter
 droplet, exploiting translational symmetry along :math:`y`) on the
 entire shell.
 
-6. Locating the wall plane
+4. Locating the wall plane
 --------------------------
 
 The contact angle is read from the cap–wall intersection, so the
@@ -275,7 +262,7 @@ to roughly a 3° shift in the recovered angle. So either pick the
 wall detector that matches your trust budget, or report the angle
 for two choices to make the dependence visible.
 
-7. Joint coupled fit
+5. Joint coupled fit
 --------------------
 
 The :class:`CoupledFit2DAnalyzer` and
@@ -283,7 +270,7 @@ The :class:`CoupledFit2DAnalyzer` and
 extractor/wall/fitter decomposition and fit a multi-parameter
 density model directly.
 
-7.1 The 2D model (7 parameters)
+5.1 The 2D model (7 parameters)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 After projecting atoms to ``(xi, zi)`` via the droplet symmetry, the
@@ -318,7 +305,7 @@ The contact angle follows directly:
 
    \cos \theta \;=\; \frac{z_0 - z_c}{R_{eq}}.
 
-7.2 The 3D model (9 parameters)
+5.2 The 3D model (9 parameters)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The 3D extension bins the full ``(xi, yi, zi)`` density and fits
@@ -334,7 +321,7 @@ horizontal centre. Nine free parameters; same cap geometry for
 rejected at construction because translational symmetry along the
 cylinder axis already collapses the 3D problem onto the 2D one.
 
-7.3 Why a joint fit?
+5.3 Why a joint fit?
 ^^^^^^^^^^^^^^^^^^^^
 
 The coupled fit shares information across the cap and the wall:
@@ -346,7 +333,7 @@ many frames per batch; less informative per batch (single angle)
 and slower per batch (a 7-parameter NLLS rather than four linear
 solves).
 
-8. Periodic boundaries and droplet recentering
+6. Periodic boundaries and droplet recentering
 ----------------------------------------------
 
 MD simulations are run with periodic boundary conditions; a droplet
@@ -388,7 +375,7 @@ below the box length. If that condition is violated, the radial
 density profile is physically meaningless regardless of the
 centering strategy.
 
-9. Frame batching
+7. Frame batching
 -----------------
 
 The :class:`TemporalAggregator` groups trajectory frames into
@@ -419,8 +406,8 @@ dominates. For a 4k-atom droplet on a typical room-temperature
 trajectory, ``batch_size`` between 1 and 10 covers the useful
 range.
 
-10. Geometric symmetry classes
-------------------------------
+8. Geometric symmetry classes
+-----------------------------
 
 Three geometries are supported via :class:`DropletGeometry`:
 

@@ -1,17 +1,16 @@
-Tutorial: Grid-Based Interface Extraction
-=========================================
+Tutorial: Grid-Based Space Sampling for Interface Extraction
+============================================================
 
-This tutorial covers the **grid-based interface extractors** —
-:meth:`InterfaceExtractor.grid` (Gaussian) and
-:meth:`InterfaceExtractor.grid` (binning). They are an alternative to
+This tutorial covers the **grid-based space sampling for interface extraction** —
+:meth:`SpaceSampling.grid`. It is an alternative to
 the ray-fan extractors used in the
 :doc:`slicing_method_tuto` and
 :doc:`whole_fit_tuto`: instead of locating the interface as the
-half-density point of a 1D tanh fit along each ray, they evaluate a
+half-density point of a 1D tanh fit along each ray, it evaluates a
 density at each cell of a fixed grid and recover the interface as
 the iso-density contour at the half-bulk level.
 
-In slicing mode both grid extractors iterate per slice — per
+In slicing mode the grid sampling iterates per slice — per
 azimuthal angle for spherical droplets, per axial step for cylinder
 droplets — so the downstream :class:`SurfaceFitter.slicing` sees one
 contour per slice and can expose per-slice asymmetry, exactly like
@@ -34,7 +33,7 @@ about how the noise/cost trade-off lands on your system:
   intuition; the per-cell density gets smoother as more frames are
   pooled.
 
-The grid extractors require ``scikit-image`` for the iso-contour
+The grid sampling requires ``scikit-image`` for the iso-contour
 tracing (marching squares in 2D, marching cubes in 3D). Install via
 the ``grid3d`` extra::
 
@@ -42,8 +41,8 @@ the ``grid3d`` extra::
 
 ----
 
-2. Worked example: ``grid`` (Gaussian) + slicing fit
-----------------------------------------------------
+2. Worked example: ``grid`` sampling with ``gaussian`` density + slicing fit
+----------------------------------------------------------------------------
 
 A spherical droplet, with per-azimuthal-slice 2D density grids in the
 ``(s, z)`` plane — same density estimator as ``rays`` (Gaussian), just
@@ -100,8 +99,8 @@ sampled on a fixed grid rather than along rays:
 
 ----
 
-3. Histogram alternative: ``grid`` (binning)
---------------------------------------------
+3. Histogram alternative: ``grid`` sampling with ``binning`` density
+--------------------------------------------------------------------
 
 Same per-slice iteration, but the density estimator is a top-hat
 histogram of atoms within the slab ``|perp| ≤ bin_width_x / 2`` of
@@ -144,7 +143,7 @@ either coarser cells or fewer slices, not a finer grid.
 4. 3D iso-surface for the whole-fit
 -----------------------------------
 
-The grid extractors also work in whole-fit mode for spherical
+The grid sampling also works in whole-fit mode for spherical
 droplets — the 2D density grid is replaced by a 3D one, and the
 half-bulk iso-surface is traced via marching cubes. Whole mode
 takes no ``delta_azimuthal`` / ``delta_cylinder``:

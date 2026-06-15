@@ -35,7 +35,7 @@ deviation of the angles is reported as
 ------------------------
 
 The full-sphere Fibonacci ray fan
-(:meth:`InterfaceExtractor.rays` (Gaussian) with ``n_rays_sphere=...``)
+(:meth:`SpaceSampling.rays` with ``n_rays_sphere=...``)
 emits rays from the droplet COM in all directions, including
 downward. Those downward rays hit the wall plane and contribute
 interface points right at the wall, so the lowest shell point lands
@@ -169,7 +169,7 @@ want to report:
   reliable to two significant figures; 1000 will tighten that but
   costs ~10× more.
 - **Cylinder droplets** still work — pair the whole fitter with
-  :meth:`InterfaceExtractor.rays` (Gaussian) configured with
+  :meth:`SpaceSampling.rays` configured with
   ``delta_cylinder`` and ``delta_polar`` instead of ``n_rays_sphere``.
   The fitter automatically does a 2D circle fit per the cylinder
   axis convention.

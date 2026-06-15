@@ -280,7 +280,7 @@ For physical context on the trade-off see
 6.4 Grid alternative
 ^^^^^^^^^^^^^^^^^^^^
 
-The grid extractors (:meth:`InterfaceExtractor.grid` (Gaussian) and
-:meth:`InterfaceExtractor.grid` (binning)) pair with the slicing fitter exactly the same
-way and are covered in :doc:`grid_method_tuto`. Use them when
+The grid extractor (:meth:`SpaceSampling.grid`)
+pairs with the slicing fitter exactly the same
+way and is covered in :doc:`grid_method_tuto`. Use it when
 ray-fan sampling is too sparse to resolve the interface.
