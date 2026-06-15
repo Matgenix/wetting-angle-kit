@@ -54,14 +54,14 @@ _CYLINDER_FIXTURE = (
 def spherical_oxygen_ids() -> np.ndarray:
     return LammpsDumpWaterFinder(
         _SPHERICAL_FIXTURE, oxygen_type=1, hydrogen_type=2
-    ).get_water_oxygen_ids(0)
+    ).get_water_oxygen_indices(0)
 
 
 @pytest.fixture
 def cylinder_oxygen_ids() -> np.ndarray:
     return LammpsDumpWaterFinder(
         _CYLINDER_FIXTURE, oxygen_type=1, hydrogen_type=2
-    ).get_water_oxygen_ids(0)
+    ).get_water_oxygen_indices(0)
 
 
 @pytest.fixture

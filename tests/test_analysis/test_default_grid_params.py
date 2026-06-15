@@ -49,7 +49,7 @@ _FIXTURE = (
 def oxygen_indices() -> np.ndarray:
     return LammpsDumpWaterFinder(
         _FIXTURE, oxygen_type=1, hydrogen_type=2
-    ).get_water_oxygen_ids(0)
+    ).get_water_oxygen_indices(0)
 
 
 @pytest.mark.integration

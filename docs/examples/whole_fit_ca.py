@@ -24,7 +24,7 @@ filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
 
 # --- Step 2: Identify water-oxygen and wall-atom indices ---
 wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
-oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 
 # Wall parser: ``liquid_particle_types`` lists the liquid types to EXCLUDE.
 wall_parser = LammpsDumpWallParser(filename, liquid_particle_types=[1, 2])

@@ -222,7 +222,7 @@ def test_grid_with_gaussian_whole_end_to_end_on_lammps_fixture() -> None:
         / "traj_spherical_drop_4k.lammpstrj"
     )
     finder = LammpsDumpWaterFinder(fixture, oxygen_type=1, hydrogen_type=2)
-    oxygen_indices = finder.get_water_oxygen_ids(0)
+    oxygen_indices = finder.get_water_oxygen_indices(0)
 
     grid_params = _whole_grid_params(half_xy=40.0, z_lo=0.0, z_hi=45.0, nbins=21)
 

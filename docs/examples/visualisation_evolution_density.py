@@ -30,7 +30,7 @@ filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
 
 # Water-oxygen atoms.
 wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
-oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 
 # --- 1. Slicing pipeline → angle evolution figure ---
 slicing = TrajectoryAnalyzer(

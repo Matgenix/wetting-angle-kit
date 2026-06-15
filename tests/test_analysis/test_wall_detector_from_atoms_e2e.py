@@ -59,7 +59,7 @@ def oxygen_indices(fixture_path: pathlib.Path) -> np.ndarray:
     """LAMMPS particle IDs of the water-oxygen atoms in frame 0."""
     return LammpsDumpWaterFinder(
         fixture_path, oxygen_type=1, hydrogen_type=2
-    ).get_water_oxygen_ids(0)
+    ).get_water_oxygen_indices(0)
 
 
 @pytest.fixture

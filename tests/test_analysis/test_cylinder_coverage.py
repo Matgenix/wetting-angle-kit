@@ -57,7 +57,7 @@ _CYL_FIXTURE = (
 def oxygen_indices() -> np.ndarray:
     return LammpsDumpWaterFinder(
         _CYL_FIXTURE, oxygen_type=1, hydrogen_type=2
-    ).get_water_oxygen_ids(0)
+    ).get_water_oxygen_indices(0)
 
 
 #: Known wall position on the LAMMPS cylinder fixture (z of the

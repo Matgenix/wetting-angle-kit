@@ -25,7 +25,7 @@ wat_find = LammpsDumpWaterFinder(
 )
 
 # --- Identify water oxygen indices for the first frame ---
-oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 print(f"Number of water molecules: {len(oxygen_indices)}")
 
 # --- Initialize parser ---

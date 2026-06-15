@@ -27,7 +27,7 @@ frame_index = 10
 
 # --- 2. Identify water-oxygen atoms ---
 wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
-oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 print("Number of water molecules detected:", len(oxygen_indices))
 
 # --- 3. Read atom and wall positions for the frame ---

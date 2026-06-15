@@ -253,7 +253,7 @@ def test_grid_extractors_end_to_end_close_to_rays_with_gaussian() -> None:
         / "traj_spherical_drop_4k.lammpstrj"
     )
     finder = LammpsDumpWaterFinder(fixture, oxygen_type=1, hydrogen_type=2)
-    oxygen_indices = finder.get_water_oxygen_ids(0)
+    oxygen_indices = finder.get_water_oxygen_indices(0)
 
     grid_params_gauss = {
         "xi_0": -40.0,

@@ -25,7 +25,7 @@ wat_find = LammpsDumpWaterFinder(
     oxygen_type=1,
     hydrogen_type=2,
 )
-oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 print("Number of water molecules:", len(oxygen_indices))
 
 # --- Step 3: Build the trajectory analyzer ---

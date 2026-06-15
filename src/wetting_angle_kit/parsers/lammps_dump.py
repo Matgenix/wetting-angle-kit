@@ -322,7 +322,7 @@ class LammpsDumpWaterFinder:
         )
         return pipeline
 
-    def get_water_oxygen_ids(self, frame_index: int) -> np.ndarray:
+    def get_water_oxygen_indices(self, frame_index: int) -> np.ndarray:
         """Return LAMMPS particle IDs of oxygen atoms bonded to exactly two hydrogens.
 
         Parameters

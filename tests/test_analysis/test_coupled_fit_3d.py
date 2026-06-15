@@ -128,7 +128,7 @@ def test_coupled_fit_3d_close_to_2d_on_lammps_fixture() -> None:
     )
 
     finder = LammpsDumpWaterFinder(_FIXTURE, oxygen_type=1, hydrogen_type=2)
-    oxygen_indices = finder.get_water_oxygen_ids(0)
+    oxygen_indices = finder.get_water_oxygen_indices(0)
 
     # 2D analyzer — radial (xi, zi).
     binning_params_2d = {

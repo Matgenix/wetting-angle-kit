@@ -35,7 +35,7 @@ def test_run_parallel_path_executes_with_n_jobs_2() -> None:
     """
     oxygen_indices = LammpsDumpWaterFinder(
         _FIXTURE, oxygen_type=1, hydrogen_type=2
-    ).get_water_oxygen_ids(0)
+    ).get_water_oxygen_indices(0)
     analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
@@ -68,7 +68,7 @@ def test_n_jobs_gt_1_with_batch_size_minus_1_warns_and_runs_inline() -> None:
     """
     oxygen_indices = LammpsDumpWaterFinder(
         _FIXTURE, oxygen_type=1, hydrogen_type=2
-    ).get_water_oxygen_ids(0)
+    ).get_water_oxygen_indices(0)
     analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
