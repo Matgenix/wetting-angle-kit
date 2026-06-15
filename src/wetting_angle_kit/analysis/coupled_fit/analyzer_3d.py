@@ -26,14 +26,17 @@ from typing import Any, ClassVar
 import numpy as np
 
 from wetting_angle_kit.analysis._base import (
-    _BatchedTrajectoryAnalyzer,
     build_parser,
+    gather_batch_coords,
+)
+from wetting_angle_kit.analysis._grid_utils import edges_from_bin_width
+from wetting_angle_kit.analysis.coupled_fit._base import (
+    _CoupledFitAnalyzer,
+    fit_model_params,
 )
 from wetting_angle_kit.analysis.coupled_fit._models import (
-    _PARAM_NAMES_3D,
     _default_binning_params_3d,
     _HyperbolicTangentModel3D,
-    edges_from_bin_width,
 )
 from wetting_angle_kit.analysis.density_estimator import (
     DensityEstimator,
@@ -43,13 +46,11 @@ from wetting_angle_kit.analysis.results import (
     CoupledFit3DBatchResult,
     CoupledFit3DResults,
 )
-from wetting_angle_kit.analysis.temporal import TemporalAggregator
-from wetting_angle_kit.io_utils import recenter_droplet_pbc
 
 logger = logging.getLogger(__name__)
 
 
-class CoupledFit3DAnalyzer(_BatchedTrajectoryAnalyzer):
+class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
     """Joint contact-angle fit on a 3D binned density grid.
 
     Parameters
@@ -91,26 +92,10 @@ class CoupledFit3DAnalyzer(_BatchedTrajectoryAnalyzer):
     #: subclass writes to its own slot.
     _WORKER_STATE: ClassVar[dict[str, Any]] = {}
 
-    def __init__(
-        self,
-        parser: Any,
-        atom_indices: np.ndarray | None = None,
-        droplet_geometry: DropletGeometry | str = "spherical",
-        *,
-        binning_params: dict[str, Any] | None = None,
-        density_estimator: DensityEstimator | None = None,
-        initial_params: list[float] | None = None,
-        temporal_aggregator: TemporalAggregator | None = None,
-        precentered: bool = False,
-    ) -> None:
-        super().__init__(
-            parser=parser,
-            atom_indices=atom_indices,
-            droplet_geometry=droplet_geometry,
-            temporal_aggregator=temporal_aggregator
-            or TemporalAggregator(batch_size=-1),
-            precentered=precentered,
-        )
+    #: Results dataclass produced by the shared ``_build_results``.
+    _RESULTS_CLS: ClassVar[type] = CoupledFit3DResults
+
+    def _check_geometry(self) -> None:
         if not self.droplet_geometry.is_spherical:
             raise ValueError(
                 "CoupledFit3DAnalyzer only supports spherical droplets; "
@@ -119,18 +104,13 @@ class CoupledFit3DAnalyzer(_BatchedTrajectoryAnalyzer):
                 "the 3D fit collapses onto the 2D one by translational "
                 "symmetry along the cylinder axis."
             )
-        if binning_params is None:
-            binning_params = _default_binning_params_3d(parser)
-        self.binning_params = binning_params
-        self.density_estimator = density_estimator or DensityEstimator.binning()
-        self.initial_params = initial_params
+
+    def _default_binning_params(self, parser: Any) -> dict[str, Any]:
+        return _default_binning_params_3d(parser)
 
     # ------------------------------------------------------------------
     # _BatchedTrajectoryAnalyzer extension points.
     # ------------------------------------------------------------------
-
-    def _tqdm_desc(self) -> str:
-        return f"CoupledFit3DAnalyzer (spherical / {self.density_estimator.kind})"
 
     def _init_args(self) -> tuple:
         return (
@@ -184,27 +164,14 @@ class CoupledFit3DAnalyzer(_BatchedTrajectoryAnalyzer):
             # Per-frame PBC recentering, then drop each frame's atoms
             # in the droplet-centred ``(x, y)`` frame (z stays in the
             # lab frame so the wall position retains physical meaning).
-            coord_chunks: list[np.ndarray] = []
-            for frame_idx in frame_indices:
-                positions = parser.parse(frame_index=frame_idx, indices=atom_indices)
-                if precentered:
-                    com = np.mean(positions, axis=0)
-                else:
-                    box_xy = (
-                        parser.box_size_x(frame_index=frame_idx),
-                        parser.box_size_y(frame_index=frame_idx),
-                    )
-                    positions, com = recenter_droplet_pbc(
-                        positions, droplet_geometry.name, box_size=box_xy
-                    )
-                positions_centered = positions - np.array([com[0], com[1], 0.0])
-                coord_chunks.append(positions_centered)
-                if progress_callback is not None:
-                    progress_callback(1)
-            coords = (
-                np.concatenate(coord_chunks, axis=0)
-                if coord_chunks
-                else np.empty((0, 3))
+            coords, _ = gather_batch_coords(
+                parser=parser,
+                frame_indices=frame_indices,
+                atom_indices=atom_indices,
+                droplet_geometry=droplet_geometry,
+                precentered=precentered,
+                center_on_com=True,
+                progress_callback=progress_callback,
             )
             n_frames = len(frame_indices)
 
@@ -247,21 +214,12 @@ class CoupledFit3DAnalyzer(_BatchedTrajectoryAnalyzer):
             rho_flat = rho.ravel()
 
             model = _HyperbolicTangentModel3D(initial_params=initial_params)
-            model.fit((xi_flat, yi_flat, zi_flat), rho_flat)
-            angle = model.compute_contact_angle()
-            params = model.params
-            if params is None:
-                raise RuntimeError(
-                    "_HyperbolicTangentModel3D did not set parameters; "
-                    "cannot build CoupledFit3DBatchResult."
-                )
-            model_params = {
-                name: float(value)
-                for name, value in zip(_PARAM_NAMES_3D, params, strict=False)
-            }
+            angle, model_params = fit_model_params(
+                model, (xi_flat, yi_flat, zi_flat), rho_flat
+            )
             return CoupledFit3DBatchResult(
                 frames=list(frame_indices),
-                angle=float(angle),
+                angle=angle,
                 model_params=model_params,
                 xi_grid=xi_cc.copy(),
                 yi_grid=yi_cc.copy(),
@@ -271,16 +229,3 @@ class CoupledFit3DAnalyzer(_BatchedTrajectoryAnalyzer):
         except Exception as e:
             logger.error(f"Error processing batch {frame_indices}: {e}", exc_info=True)
             return None
-
-    def _build_results(
-        self, batches: list[CoupledFit3DBatchResult]
-    ) -> CoupledFit3DResults:
-        return CoupledFit3DResults(
-            batches=batches,
-            method_metadata={
-                "droplet_geometry": self.droplet_geometry.name,
-                "binning_params": self.binning_params,
-                "initial_params": self.initial_params,
-                "batch_size": self.temporal_aggregator.batch_size,
-            },
-        )

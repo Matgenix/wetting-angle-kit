@@ -177,8 +177,43 @@ class CoupledFit3DBatchResult:
     density: np.ndarray
 
 
+class _AngleResultsMixin:
+    """Shared per-batch angle aggregation for the results containers.
+
+    Mixed into the three results dataclasses, each of which exposes a
+    ``batches`` list whose elements carry an ``angle`` attribute
+    (degrees). Holds only behaviour — the ``batches`` /
+    ``method_metadata`` fields stay on the concrete dataclasses so each
+    keeps its precise per-batch element type.
+    """
+
+    batches: list[Any]
+
+    def __len__(self) -> int:
+        return len(self.batches)
+
+    @property
+    def per_batch_angles(self) -> np.ndarray:
+        """Per-batch contact angle (degrees), in batch order."""
+        return np.array([b.angle for b in self.batches])
+
+    @property
+    def mean_angle(self) -> float:
+        """Mean contact angle across batches (degrees)."""
+        if not self.batches:
+            return float("nan")
+        return float(np.mean(self.per_batch_angles))
+
+    @property
+    def std_angle(self) -> float:
+        """Standard deviation of the per-batch contact angle (degrees)."""
+        if not self.batches:
+            return float("nan")
+        return float(np.std(self.per_batch_angles))
+
+
 @dataclass
-class TrajectoryResults:
+class TrajectoryResults(_AngleResultsMixin):
     """In-memory results of a :class:`TrajectoryAnalyzer.analyze` run.
 
     Holds one :class:`BatchResult` per batch produced by the
@@ -200,31 +235,9 @@ class TrajectoryResults:
     batches: list[BatchResult]
     method_metadata: dict[str, Any] = field(default_factory=dict)
 
-    def __len__(self) -> int:
-        return len(self.batches)
-
-    @property
-    def per_batch_angles(self) -> np.ndarray:
-        """Per-batch contact angle (degrees), in batch order."""
-        return np.array([b.angle for b in self.batches])
-
-    @property
-    def mean_angle(self) -> float:
-        """Mean contact angle across batches (degrees)."""
-        if not self.batches:
-            return float("nan")
-        return float(np.mean(self.per_batch_angles))
-
-    @property
-    def std_angle(self) -> float:
-        """Standard deviation of the per-batch contact angle (degrees)."""
-        if not self.batches:
-            return float("nan")
-        return float(np.std(self.per_batch_angles))
-
 
 @dataclass
-class CoupledFit2DResults:
+class CoupledFit2DResults(_AngleResultsMixin):
     """In-memory results of a :class:`CoupledFit2DAnalyzer.analyze` run.
 
     Attributes
@@ -239,31 +252,9 @@ class CoupledFit2DResults:
     batches: list[CoupledFit2DBatchResult]
     method_metadata: dict[str, Any] = field(default_factory=dict)
 
-    def __len__(self) -> int:
-        return len(self.batches)
-
-    @property
-    def per_batch_angles(self) -> np.ndarray:
-        """Per-batch contact angle (degrees), in batch order."""
-        return np.array([b.angle for b in self.batches])
-
-    @property
-    def mean_angle(self) -> float:
-        """Mean contact angle across batches (degrees)."""
-        if not self.batches:
-            return float("nan")
-        return float(np.mean(self.per_batch_angles))
-
-    @property
-    def std_angle(self) -> float:
-        """Standard deviation of the per-batch contact angle (degrees)."""
-        if not self.batches:
-            return float("nan")
-        return float(np.std(self.per_batch_angles))
-
 
 @dataclass
-class CoupledFit3DResults:
+class CoupledFit3DResults(_AngleResultsMixin):
     """In-memory results of a :class:`CoupledFit3DAnalyzer.analyze` run.
 
     Attributes
@@ -277,25 +268,3 @@ class CoupledFit3DResults:
 
     batches: list[CoupledFit3DBatchResult]
     method_metadata: dict[str, Any] = field(default_factory=dict)
-
-    def __len__(self) -> int:
-        return len(self.batches)
-
-    @property
-    def per_batch_angles(self) -> np.ndarray:
-        """Per-batch contact angle (degrees), in batch order."""
-        return np.array([b.angle for b in self.batches])
-
-    @property
-    def mean_angle(self) -> float:
-        """Mean contact angle across batches (degrees)."""
-        if not self.batches:
-            return float("nan")
-        return float(np.mean(self.per_batch_angles))
-
-    @property
-    def std_angle(self) -> float:
-        """Standard deviation of the per-batch contact angle (degrees)."""
-        if not self.batches:
-            return float("nan")
-        return float(np.std(self.per_batch_angles))

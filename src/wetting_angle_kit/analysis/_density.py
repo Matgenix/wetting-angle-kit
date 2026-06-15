@@ -1,8 +1,6 @@
 """Shared density-on-rays kernel and batched tanh interface fit.
 
-Used by both the slicing method (re-imported by
-:class:`wetting_angle_kit.analysis.slicing.surface_definition.SurfaceDefinition`)
-and the rays/grid extractors that fit a hyperbolic-tangent profile
+Used by the rays/grid extractors that fit a hyperbolic-tangent profile
 to the density along a ray or sample it on a grid of cell centres.
 
 :class:`GaussianDensityField` wraps a ``cKDTree`` over the atom cloud
@@ -222,10 +220,15 @@ def fit_tanh_profiles_batched(
     The closed-form initial guess (``h ~ midpoint``, ``d ~
     half-amplitude``, ``zd ~ midpoint crossing``) seeds each ray in
     the basin of the global minimum, so plain Gauss–Newton without
-    damping converges in 3–6 iterations. Rays whose normal equations
-    become singular (e.g. constant density) fall back to the initial
-    guess. The recovered ``zd`` is clipped to ``[0, distances[-1]]``
-    to keep ill-fit rays from escaping the sampling envelope.
+    damping converges in 3–6 iterations. The batched solve aborts the
+    iteration if any ray's normal equations become singular (e.g. a
+    near-constant density profile that never crosses the interface),
+    leaving every ray at its current parameters; a non-finite update
+    instead resets every ray to the closed-form initial guess. This
+    early stop also regularises the noisier histogram density, whose
+    fully converged per-ray optima can chase shot noise. The recovered
+    ``zd`` is clipped to ``[0, distances[-1]]`` to keep ill-fit rays
+    from escaping the sampling envelope.
 
     Parameters
     ----------
@@ -291,6 +294,12 @@ def fit_tanh_profiles_batched(
             # axis to keep each ray's RHS a 3-vector.
             step = np.linalg.solve(normal, rhs[..., None])[..., 0]
         except np.linalg.LinAlgError:
+            # A degenerate ray (e.g. near-constant density) makes its
+            # 3x3 system singular and aborts the whole batched solve.
+            # Stop iterating and keep the current per-ray parameters;
+            # for the dominant well-conditioned rays these have already
+            # converged, and the early stop keeps noise-driven rays near
+            # their robust closed-form seed.
             break
         params += step
         if not np.isfinite(params).all():

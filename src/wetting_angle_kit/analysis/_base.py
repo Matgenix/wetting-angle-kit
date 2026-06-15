@@ -55,7 +55,9 @@ class BaseTrajectoryAnalyzer(ABC):
     """
 
     @abstractmethod
-    def analyze(self, frame_range: list[int] | None = None) -> Any:
+    def analyze(
+        self, frame_range: list[int] | None = None, n_jobs: int | None = 1
+    ) -> Any:
         """Run the analysis and return a method-specific results object."""
         pass
 
@@ -92,6 +94,7 @@ def gather_batch_coords(
     atom_indices: np.ndarray,
     droplet_geometry: DropletGeometry,
     precentered: bool,
+    center_on_com: bool = False,
     progress_callback: Callable[[int], None] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Pool liquid-atom coordinates across one batch.
@@ -116,6 +119,12 @@ def gather_batch_coords(
     precentered : bool
         If True, skip the circular-mean PBC recentering and use the
         plain arithmetic-mean centre.
+    center_on_com : bool, default False
+        If True, shift each frame's atoms onto its own droplet centre
+        in the lateral ``(x, y)`` plane (``z`` is left in the lab
+        frame). Used by the coupled-fit analyzers, which bin a
+        droplet-centred density; the ray/grid extractors leave it
+        False and read the per-frame centre from ``avg_center``.
     progress_callback : callable, optional
         Called once with ``1`` after each frame is parsed. Used by
         the inline ``analyze`` path to drive a per-frame tqdm meter
@@ -126,10 +135,12 @@ def gather_batch_coords(
     Returns
     -------
     pooled_coords : ndarray, shape (sum_N, 3)
-        Concatenated liquid coordinates in the internal frame.
+        Concatenated liquid coordinates in the internal frame
+        (droplet-centred in ``(x, y)`` when ``center_on_com=True``).
     avg_center : ndarray, shape (3,)
         Mean of the per-frame liquid centres; used as the ray-fan
-        origin by extractors.
+        origin by extractors. Near-zero in ``(x, y)`` when
+        ``center_on_com=True``.
     """
     liquid_chunks: list[np.ndarray] = []
     centres: list[np.ndarray] = []
@@ -150,6 +161,8 @@ def gather_batch_coords(
         # fancy index.
         positions = droplet_geometry.to_internal_coords(positions)
         mean_pos = droplet_geometry.to_internal_coords(mean_pos)
+        if center_on_com:
+            positions = positions - np.array([mean_pos[0], mean_pos[1], 0.0])
         liquid_chunks.append(positions)
         centres.append(mean_pos)
         if progress_callback is not None:

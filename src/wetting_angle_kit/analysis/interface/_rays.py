@@ -155,7 +155,7 @@ def _extract_rays(
         if droplet_geometry.is_spherical:
             assert delta_azimuthal is not None
             n_slices = int(180 / delta_azimuthal)
-            azimuthals = np.linspace(0.0, 180.0, n_slices)
+            azimuthals = np.linspace(0.0, 180.0, n_slices, endpoint=False)
             return [
                 _ray_slice_in_plane(
                     field, center_geom, float(g), distances, delta_polar

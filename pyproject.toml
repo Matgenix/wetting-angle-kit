@@ -52,8 +52,8 @@ viz = [
 ase = ["ase>=3.23.0"]
 ovito = ["ovito~=3.11.3"]
 # scikit-image is only needed for whole-kind extraction with a grid
-# extractor (InterfaceExtractor.grid_gaussian / grid_binning paired
-# with SurfaceFitter.whole), which uses marching cubes to recover a
+# extractor (InterfaceExtractor with SpaceSampling.grid paired with
+# SurfaceFitter.whole), which uses marching cubes to recover a
 # 3D shell from the binned density. Slicing-only workflows do not
 # need this extra.
 grid3d = ["scikit-image>=0.22"]

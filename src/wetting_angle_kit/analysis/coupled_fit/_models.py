@@ -1,13 +1,15 @@
 """Hyperbolic-tangent models + grid helpers for the coupled-fit analyzers.
 
 Both the 2D (seven-parameter) and 3D (nine-parameter) joint density
-models are kept in this module so the shared bounds / warning / cap-angle
-formula sit side by side. Public access goes through
-:class:`CoupledFit2DAnalyzer` and :class:`CoupledFit3DAnalyzer`.
+models live here and share a common :class:`_HyperbolicTangentModel`
+base for the bounded NLLS fit, the at-bound warning, and the cap-angle
+formula. Public access goes through :class:`CoupledFit2DAnalyzer` and
+:class:`CoupledFit3DAnalyzer`.
 """
 
 import warnings
-from typing import Any
+from collections.abc import Callable
+from typing import Any, ClassVar
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -29,11 +31,107 @@ _PARAM_NAMES_3D = (
 
 
 # ----------------------------------------------------------------------
+# Shared base.
+# ----------------------------------------------------------------------
+
+
+class _HyperbolicTangentModel:
+    """Shared machinery for the 2D / 3D coupled-fit tanh density models.
+
+    Subclasses supply the parameter metadata (``param_names``,
+    ``fit_label``, ``DEFAULT_INITIAL_PARAMS``, ``_PARAM_LOWER``,
+    ``_PARAM_UPPER``) and the static ``_fitting_function``; the bounded
+    NLLS fit, the at-bound warning, and the cap-angle formula are shared.
+    The cap angle reads ``R_eq`` / ``zi_c`` / ``zi_0`` by name, so the
+    same formula serves both the 7- and 9-parameter layouts.
+    """
+
+    param_names: ClassVar[tuple[str, ...]]
+    fit_label: ClassVar[str]
+    DEFAULT_INITIAL_PARAMS: ClassVar[tuple[float, ...]]
+    _PARAM_LOWER: ClassVar[np.ndarray]
+    _PARAM_UPPER: ClassVar[np.ndarray]
+    _fitting_function: ClassVar[Callable[..., np.ndarray]]
+
+    def __init__(self, initial_params: list[float] | None = None) -> None:
+        if initial_params is None:
+            initial_params = list(self.DEFAULT_INITIAL_PARAMS)
+        self.params: list[float] | np.ndarray | None = initial_params
+        self.covariance: np.ndarray | None = None
+
+    def fit(
+        self,
+        x_data: tuple[np.ndarray, ...],
+        density_data: np.ndarray,
+    ) -> "_HyperbolicTangentModel":
+        self.params, self.covariance = curve_fit(
+            self._fitting_function,
+            x_data,
+            density_data,
+            p0=self.params,
+            bounds=(self._PARAM_LOWER, self._PARAM_UPPER),
+            maxfev=1_000_000,
+        )
+        self._warn_if_at_bounds()
+        return self
+
+    def _warn_if_at_bounds(self) -> None:
+        if self.params is None:
+            return
+        tol = 1e-6
+        at_bound = []
+        for name, value, lo, hi in zip(
+            self.param_names,
+            self.params,
+            self._PARAM_LOWER,
+            self._PARAM_UPPER,
+            strict=False,
+        ):
+            if np.isfinite(lo) and abs(value - lo) < tol * max(1.0, abs(lo)):
+                at_bound.append(f"{name}={value:.3g} at lower bound {lo}")
+            elif np.isfinite(hi) and abs(value - hi) < tol * max(1.0, abs(hi)):
+                at_bound.append(f"{name}={value:.3g} at upper bound {hi}")
+        if at_bound:
+            warnings.warn(
+                f"{self.fit_label} converged with parameter(s) at the "
+                "physical bound, suggesting a poor fit: " + "; ".join(at_bound),
+                RuntimeWarning,
+                stacklevel=3,
+            )
+
+    def compute_contact_angle(self) -> float:
+        """Return the contact angle (degrees) implied by the fitted parameters.
+
+        The sphere of radius ``R_eq`` centred at vertical position
+        ``zi_c`` intersects the wall plane ``z = zi_0`` in a circle
+        whose tangent makes the contact angle with the wall.
+        """
+        if self.params is None:
+            raise ValueError("Model must be fitted before computing contact angle.")
+        names = self.param_names
+        R_eq = float(self.params[names.index("R_eq")])
+        zi_c = float(self.params[names.index("zi_c")])
+        zi_0 = float(self.params[names.index("zi_0")])
+        discriminant = R_eq**2 - (zi_0 - zi_c) ** 2
+        if discriminant < 0:
+            warnings.warn(
+                f"{self.fit_label}: fitted wall is outside the fitted droplet "
+                f"sphere (R_eq={R_eq:.3f}, |zi_0 - zi_c|={abs(zi_0 - zi_c):.3f}); "
+                "contact angle is undefined.",
+                RuntimeWarning,
+                stacklevel=2,
+            )
+            return float("nan")
+        xi_cross = np.sqrt(discriminant)
+        return float((np.pi / 2 - np.arctan((zi_0 - zi_c) / xi_cross)) * 180 / np.pi)
+
+
+# ----------------------------------------------------------------------
 # 2D model.
 # ----------------------------------------------------------------------
 
 
-class _HyperbolicTangentModel2D:
+class _HyperbolicTangentModel2D(_HyperbolicTangentModel):
     """Coupled 2D-binning joint contact-angle model.
 
     Density field modelled as a product of two sigmoidal (tanh) terms,
@@ -52,16 +150,13 @@ class _HyperbolicTangentModel2D:
     module.
     """
 
+    param_names: ClassVar[tuple[str, ...]] = _PARAM_NAMES
+    fit_label: ClassVar[str] = "Hyperbolic tangent fit"
+
     DEFAULT_INITIAL_PARAMS = (1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0)
 
     _PARAM_LOWER = np.array([0.0, 0.0, 1e-6, -np.inf, -np.inf, 1e-6, 1e-6])
     _PARAM_UPPER = np.array([np.inf] * 7)
-
-    def __init__(self, initial_params: list[float] | None = None) -> None:
-        if initial_params is None:
-            initial_params = list(self.DEFAULT_INITIAL_PARAMS)
-        self.params: list[float] | np.ndarray | None = initial_params
-        self.covariance: np.ndarray | None = None
 
     @staticmethod
     def _fitting_function(
@@ -80,72 +175,13 @@ class _HyperbolicTangentModel2D:
         h_z = 0.5 * (1.0 + np.tanh(2 * (zi - zi_0) / t2))
         return g_r * h_z
 
-    def fit(
-        self,
-        x_data: tuple[np.ndarray, np.ndarray],
-        density_data: np.ndarray,
-    ) -> "_HyperbolicTangentModel2D":
-        self.params, self.covariance = curve_fit(
-            self._fitting_function,
-            x_data,
-            density_data,
-            p0=self.params,
-            bounds=(self._PARAM_LOWER, self._PARAM_UPPER),
-            maxfev=1_000_000,
-        )
-        self._warn_if_at_bounds()
-        return self
-
-    def _warn_if_at_bounds(self) -> None:
-        if self.params is None:
-            return
-        tol = 1e-6
-        at_bound = []
-        for name, value, lo, hi in zip(
-            _PARAM_NAMES,
-            self.params,
-            self._PARAM_LOWER,
-            self._PARAM_UPPER,
-            strict=False,
-        ):
-            if np.isfinite(lo) and abs(value - lo) < tol * max(1.0, abs(lo)):
-                at_bound.append(f"{name}={value:.3g} at lower bound {lo}")
-            elif np.isfinite(hi) and abs(value - hi) < tol * max(1.0, abs(hi)):
-                at_bound.append(f"{name}={value:.3g} at upper bound {hi}")
-        if at_bound:
-            warnings.warn(
-                "Hyperbolic tangent fit converged with parameter(s) at the "
-                "physical bound, suggesting a poor fit: " + "; ".join(at_bound),
-                RuntimeWarning,
-                stacklevel=3,
-            )
-
-    def compute_contact_angle(self) -> float:
-        if self.params is None:
-            raise ValueError("Model must be fitted before computing contact angle.")
-        R_eq = float(self.params[2])
-        zi_c = float(self.params[3])
-        zi_0 = float(self.params[4])
-        discriminant = R_eq**2 - (zi_0 - zi_c) ** 2
-        if discriminant < 0:
-            warnings.warn(
-                "Fitted wall is outside the fitted droplet sphere "
-                f"(R_eq={R_eq:.3f}, |zi_0 - zi_c|={abs(zi_0 - zi_c):.3f}); "
-                "contact angle is undefined.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-            return float("nan")
-        xi_cross = np.sqrt(discriminant)
-        return float((np.pi / 2 - np.arctan((zi_0 - zi_c) / xi_cross)) * 180 / np.pi)
-
 
 # ----------------------------------------------------------------------
 # 3D model.
 # ----------------------------------------------------------------------
 
 
-class _HyperbolicTangentModel3D:
+class _HyperbolicTangentModel3D(_HyperbolicTangentModel):
     """3D extension of the binning method's hyperbolic-tangent model.
 
     Density factorises into a radial sigmoid centred at ``(xi_c, yi_c,
@@ -163,6 +199,9 @@ class _HyperbolicTangentModel3D:
     freedom over the 2D fit.
     """
 
+    param_names: ClassVar[tuple[str, ...]] = _PARAM_NAMES_3D
+    fit_label: ClassVar[str] = "3D hyperbolic tangent fit"
+
     #: Initial guess tuned for room-temperature water; the two
     #: horizontal centres default to ``0`` because the analyzer
     #: pre-centers the atoms on the droplet COM before binning.
@@ -173,12 +212,6 @@ class _HyperbolicTangentModel3D:
         [0.0, 0.0, 1e-6, -np.inf, -np.inf, -np.inf, -np.inf, 1e-6, 1e-6]
     )
     _PARAM_UPPER = np.array([np.inf] * 9)
-
-    def __init__(self, initial_params: list[float] | None = None) -> None:
-        if initial_params is None:
-            initial_params = list(self.DEFAULT_INITIAL_PARAMS)
-        self.params: list[float] | np.ndarray | None = initial_params
-        self.covariance: np.ndarray | None = None
 
     @staticmethod
     def _fitting_function(
@@ -199,72 +232,6 @@ class _HyperbolicTangentModel3D:
         h_z = 0.5 * (1.0 + np.tanh(2 * (zi - zi_0) / t2))
         return g_r * h_z
 
-    def fit(
-        self,
-        x_data: tuple[np.ndarray, np.ndarray, np.ndarray],
-        density_data: np.ndarray,
-    ) -> "_HyperbolicTangentModel3D":
-        self.params, self.covariance = curve_fit(
-            self._fitting_function,
-            x_data,
-            density_data,
-            p0=self.params,
-            bounds=(self._PARAM_LOWER, self._PARAM_UPPER),
-            maxfev=1_000_000,
-        )
-        self._warn_if_at_bounds()
-        return self
-
-    def _warn_if_at_bounds(self) -> None:
-        if self.params is None:
-            return
-        tol = 1e-6
-        at_bound = []
-        for name, value, lo, hi in zip(
-            _PARAM_NAMES_3D,
-            self.params,
-            self._PARAM_LOWER,
-            self._PARAM_UPPER,
-            strict=False,
-        ):
-            if np.isfinite(lo) and abs(value - lo) < tol * max(1.0, abs(lo)):
-                at_bound.append(f"{name}={value:.3g} at lower bound {lo}")
-            elif np.isfinite(hi) and abs(value - hi) < tol * max(1.0, abs(hi)):
-                at_bound.append(f"{name}={value:.3g} at upper bound {hi}")
-        if at_bound:
-            warnings.warn(
-                "3D hyperbolic tangent fit converged with parameter(s) at "
-                "the physical bound, suggesting a poor fit: " + "; ".join(at_bound),
-                RuntimeWarning,
-                stacklevel=3,
-            )
-
-    def compute_contact_angle(self) -> float:
-        """Return the contact angle (degrees) implied by the fitted parameters.
-
-        Same geometric formula as the 2D model: the sphere of radius
-        ``R_eq`` centred at ``(xi_c, yi_c, zi_c)`` intersects the wall
-        plane ``z = zi_0`` in a circle whose tangent makes the contact
-        angle with the wall.
-        """
-        if self.params is None:
-            raise ValueError("Model must be fitted before computing contact angle.")
-        R_eq = float(self.params[2])
-        zi_c = float(self.params[5])
-        zi_0 = float(self.params[6])
-        discriminant = R_eq**2 - (zi_0 - zi_c) ** 2
-        if discriminant < 0:
-            warnings.warn(
-                "3D fit wall is outside the fitted droplet sphere "
-                f"(R_eq={R_eq:.3f}, |zi_0 - zi_c|="
-                f"{abs(zi_0 - zi_c):.3f}); contact angle is undefined.",
-                RuntimeWarning,
-                stacklevel=2,
-            )
-            return float("nan")
-        xi_cross = np.sqrt(discriminant)
-        return float((np.pi / 2 - np.arctan((zi_0 - zi_c) / xi_cross)) * 180 / np.pi)
-
 
 # ----------------------------------------------------------------------
 # Heuristic binning grids.
@@ -281,18 +248,6 @@ _DEFAULT_BIN_WIDTH_2D = 0.5
 #: NLLS fit (3D grids at 0.5 Å cells would give ~1.7M cells for a
 #: typical box).
 _DEFAULT_BIN_WIDTH_3D = 1.0
-
-
-def edges_from_bin_width(lo: float, hi: float, bin_width: float) -> np.ndarray:
-    """Bin edges spanning ``[lo, hi]`` with cells of approximately ``bin_width``.
-
-    The number of cells is rounded to the nearest integer; the range
-    bounds are honoured exactly, so the effective cell width is
-    ``(hi - lo) / n_cells`` which may differ slightly from
-    ``bin_width``. Always returns at least one cell.
-    """
-    n = max(int(round((float(hi) - float(lo)) / float(bin_width))), 1)
-    return np.linspace(float(lo), float(hi), n + 1)
 
 
 def _default_binning_params(parser: Any) -> dict[str, Any]:

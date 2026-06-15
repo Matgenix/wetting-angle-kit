@@ -66,7 +66,8 @@ analyzer = CoupledFit2DAnalyzer(
 )
 
 # --- Step 6: Run analysis on a frame range ---
-results = analyzer.analyze([1])
+# 20 frames at batch_size=10 gives two pooled batches.
+results = analyzer.analyze(range(0, 20))
 print("Mean contact angle (°):", results.mean_angle)
 print("Std across batches (°):", results.std_angle)
 

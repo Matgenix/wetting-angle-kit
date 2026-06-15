@@ -20,6 +20,7 @@ from typing import Any, ClassVar
 
 import numpy as np
 
+from wetting_angle_kit.analysis._grid_utils import edges_from_bin_width
 from wetting_angle_kit.analysis.density_estimator import (
     DensityEstimator,
     _GaussianDensityEstimator,
@@ -196,25 +197,13 @@ def _validate_per_slice_params(
 # ---------------------------------------------------------------------------
 
 
-def _edges_from_bin_width(lo: float, hi: float, bin_width: float) -> np.ndarray:
-    """Bin edges spanning ``[lo, hi]`` with cells of approximately ``bin_width``.
-
-    The number of cells is rounded to the nearest integer; the range
-    bounds are honoured exactly, so the effective cell width is
-    ``(hi - lo) / n_cells`` which may differ slightly from
-    ``bin_width``. Always returns at least one cell.
-    """
-    n = max(int(round((float(hi) - float(lo)) / float(bin_width))), 1)
-    return np.linspace(float(lo), float(hi), n + 1)
-
-
 def _slice_grid_edges(
     grid_params: dict[str, Any],
 ) -> tuple[np.ndarray, np.ndarray]:
-    s_edges = _edges_from_bin_width(
+    s_edges = edges_from_bin_width(
         grid_params["xi_0"], grid_params["xi_f"], grid_params["bin_width_x"]
     )
-    z_edges = _edges_from_bin_width(
+    z_edges = edges_from_bin_width(
         grid_params["zi_0"], grid_params["zi_f"], grid_params["bin_width_z"]
     )
     return s_edges, z_edges
@@ -233,13 +222,13 @@ def _slice_grid_centres(
 def _whole_grid_edges(
     grid_params: dict[str, Any],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    x_edges = _edges_from_bin_width(
+    x_edges = edges_from_bin_width(
         grid_params["xi_0"], grid_params["xi_f"], grid_params["bin_width_x"]
     )
-    y_edges = _edges_from_bin_width(
+    y_edges = edges_from_bin_width(
         grid_params["yi_0"], grid_params["yi_f"], grid_params["bin_width_y"]
     )
-    z_edges = _edges_from_bin_width(
+    z_edges = edges_from_bin_width(
         grid_params["zi_0"], grid_params["zi_f"], grid_params["bin_width_z"]
     )
     return x_edges, y_edges, z_edges
