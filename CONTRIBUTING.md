@@ -87,7 +87,7 @@ parsers' handling of orthogonal cells and periodic boundary conditions.
 ## Adding a new contact-angle method
 
 Subclass `BaseTrajectoryAnalyzer`
-([src/wetting_angle_kit/analysis/analyzer.py](src/wetting_angle_kit/analysis/analyzer.py))
+([src/wetting_angle_kit/analysis/_base.py](src/wetting_angle_kit/analysis/_base.py))
 and add an integration test in `tests/test_analysis/` that
 exercises the method on one of the fixture trajectories.
 

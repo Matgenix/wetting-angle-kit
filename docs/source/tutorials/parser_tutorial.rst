@@ -1,5 +1,5 @@
 Tutorial: Using the Parser Module
-===================================
+=================================
 
 This tutorial shows how to load different trajectory formats using the ``wetting_angle_kit.parsers`` submodule.
 
@@ -27,7 +27,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 ----
 
 2. Example: LAMMPS Dump File
------------------------------
+----------------------------
 
 .. code-block:: python
 
@@ -62,7 +62,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 ----
 
 3. Example: ASE Trajectory File
---------------------------------
+-------------------------------
 
 .. code-block:: python
 

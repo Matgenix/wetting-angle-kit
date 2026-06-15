@@ -28,7 +28,7 @@ ray-fan extractor and the slicing fitter.
 ----
 
 Whole-Fit Contact Angle with Bootstrap
----------------------------------------
+--------------------------------------
 
 Whole-shape sphere fit with the wall position taken from the actual
 substrate atoms and a bootstrap uncertainty.
@@ -40,7 +40,7 @@ substrate atoms and a bootstrap uncertainty.
 ----
 
 Coupled-Fit Contact Angle
---------------------------
+-------------------------
 
 Joint hyperbolic-tangent density-model fit via
 :class:`CoupledFit2DAnalyzer` — one angle per pooled batch. The
@@ -54,7 +54,7 @@ KDE).
 ----
 
 Visualising a Per-Frame Droplet Snapshot
------------------------------------------
+----------------------------------------
 
 Pull a single slice's interface contour off a slicing-pipeline result
 and render it with :class:`DropletSlicePlotter`.
@@ -66,7 +66,7 @@ and render it with :class:`DropletSlicePlotter`.
 ----
 
 Angle Evolution + Density Contour Plots
-----------------------------------------
+---------------------------------------
 
 The two trajectory-level plotters
 (:class:`AngleEvolutionPlotter` and :class:`DensityContourPlotter`)

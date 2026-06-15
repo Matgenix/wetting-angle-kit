@@ -1,5 +1,5 @@
 Visualisation Tutorial — Per-Frame Droplet Snapshot
-====================================================
+===================================================
 
 This tutorial uses :class:`DropletSlicePlotter` to draw a single-frame
 snapshot of a droplet, overlaying the recovered interface contour,
@@ -28,7 +28,7 @@ The workflow:
 ----
 
 2. Import Required Modules
----------------------------
+--------------------------
 
 .. code-block:: python
 
@@ -51,7 +51,7 @@ The workflow:
 ----
 
 3. Define the Input Trajectory
--------------------------------
+------------------------------
 
 .. code-block:: python
 
@@ -61,7 +61,7 @@ The workflow:
 ----
 
 4. Identify Water Molecules
-----------------------------
+---------------------------
 
 .. code-block:: python
 
@@ -72,7 +72,7 @@ The workflow:
 ----
 
 5. Read Atom and Wall Positions
---------------------------------
+-------------------------------
 
 .. code-block:: python
 
@@ -87,7 +87,7 @@ The workflow:
 ----
 
 6. Run the Slicing Pipeline
-----------------------------
+---------------------------
 
 .. code-block:: python
 
@@ -109,7 +109,7 @@ The workflow:
 ----
 
 7. Visualise the Droplet
--------------------------
+------------------------
 
 The plotter takes a single slice's data; pick a slice index and
 pull the corresponding entries off the batch:

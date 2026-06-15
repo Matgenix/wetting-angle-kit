@@ -1,5 +1,5 @@
 Tutorial: 3D Coupled-Fit Analyzer
-==================================
+=================================
 
 :class:`CoupledFit3DAnalyzer` is the 3D extension of
 :class:`CoupledFit2DAnalyzer`. Instead of projecting atoms to a
@@ -54,7 +54,7 @@ wasting work.
 ----
 
 2. Worked example
-------------------
+-----------------
 
 .. code-block:: python
 
@@ -156,7 +156,7 @@ unambiguous.
 ----
 
 5. Cross-check: 2D vs 3D
--------------------------
+------------------------
 
 On an axisymmetric droplet, the 2D and 3D analyzers should recover
 the same angle within a few degrees. It's a useful sanity check:

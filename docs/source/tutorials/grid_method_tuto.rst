@@ -1,5 +1,5 @@
 Tutorial: Grid-Based Interface Extraction
-==========================================
+=========================================
 
 This tutorial covers the **grid-based interface extractors** —
 :meth:`InterfaceExtractor.grid` (Gaussian) and
@@ -43,7 +43,7 @@ the ``grid3d`` extra::
 ----
 
 2. Worked example: ``grid`` (Gaussian) + slicing fit
----------------------------------------------------
+----------------------------------------------------
 
 A spherical droplet, with per-azimuthal-slice 2D density grids in the
 ``(s, z)`` plane — same density estimator as ``rays`` (Gaussian), just
@@ -101,7 +101,7 @@ sampled on a fixed grid rather than along rays:
 ----
 
 3. Histogram alternative: ``grid`` (binning)
-------------------------------------------
+--------------------------------------------
 
 Same per-slice iteration, but the density estimator is a top-hat
 histogram of atoms within the slab ``|perp| ≤ bin_width_x / 2`` of
@@ -142,7 +142,7 @@ either coarser cells or fewer slices, not a finer grid.
 ----
 
 4. 3D iso-surface for the whole-fit
-------------------------------------
+-----------------------------------
 
 The grid extractors also work in whole-fit mode for spherical
 droplets — the 2D density grid is replaced by a 3D one, and the

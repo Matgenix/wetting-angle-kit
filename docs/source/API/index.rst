@@ -17,10 +17,6 @@ Analysis
 Top-level analyzers
 ^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.analysis.analyzer
-   :members:
-   :show-inheritance:
-
 .. automodule:: wetting_angle_kit.analysis.trajectory
    :members:
    :show-inheritance:

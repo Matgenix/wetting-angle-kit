@@ -104,9 +104,8 @@ from wetting_angle_kit.parsers import XYZParser, XYZWaterFinder
 
 trajectory_file = "trajectory.xyz"
 
-# Identify water oxygen atoms by neighbour count. ``particle_type_wall``
-# lists the symbols of the substrate atoms so they are excluded.
-finder = XYZWaterFinder(trajectory_file, particle_type_wall=["C"])
+# Identify water oxygen atoms by neighbour count.
+finder = XYZWaterFinder(trajectory_file)
 oxygen_ids = finder.get_water_oxygen_indices(frame_index=0)
 
 parser = XYZParser(trajectory_file)

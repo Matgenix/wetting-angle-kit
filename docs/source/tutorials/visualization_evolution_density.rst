@@ -1,5 +1,5 @@
 Visualisation Tutorial — Angle Evolution and Density Contour
-=============================================================
+============================================================
 
 Two trajectory-level plotters cover the most common visual outputs:
 
@@ -15,7 +15,7 @@ Two trajectory-level plotters cover the most common visual outputs:
 ----
 
 1. Angle evolution plot
-------------------------
+-----------------------
 
 The plotter takes a results object directly and exposes a
 ``.plot()`` method that returns a Plotly figure. The two key toggles

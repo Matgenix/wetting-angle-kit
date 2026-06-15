@@ -52,6 +52,7 @@ class _HyperbolicTangentModel:
     _PARAM_LOWER: ClassVar[np.ndarray]
     _PARAM_UPPER: ClassVar[np.ndarray]
     _fitting_function: ClassVar[Callable[..., np.ndarray]]
+    _PHYSICAL_FLOOR_PARAMS: ClassVar[frozenset[str]] = frozenset({"rho1", "rho2"})
 
     def __init__(self, initial_params: list[float] | None = None) -> None:
         if initial_params is None:
@@ -87,7 +88,12 @@ class _HyperbolicTangentModel:
             self._PARAM_UPPER,
             strict=False,
         ):
-            if np.isfinite(lo) and abs(value - lo) < tol * max(1.0, abs(lo)):
+            at_lower = (
+                np.isfinite(lo)
+                and abs(value - lo) < tol * max(1.0, abs(lo))
+                and name not in self._PHYSICAL_FLOOR_PARAMS
+            )
+            if at_lower:
                 at_bound.append(f"{name}={value:.3g} at lower bound {lo}")
             elif np.isfinite(hi) and abs(value - hi) < tol * max(1.0, abs(hi)):
                 at_bound.append(f"{name}={value:.3g} at upper bound {hi}")
@@ -153,7 +159,7 @@ class _HyperbolicTangentModel2D(_HyperbolicTangentModel):
     param_names: ClassVar[tuple[str, ...]] = _PARAM_NAMES
     fit_label: ClassVar[str] = "Hyperbolic tangent fit"
 
-    DEFAULT_INITIAL_PARAMS = (1e-3, 3e-2, 40.0, 20.0, 4.0, 1.0, 1.0)
+    DEFAULT_INITIAL_PARAMS = (3e-2, 1e-3, 40.0, 20.0, 4.0, 1.0, 1.0)
 
     _PARAM_LOWER = np.array([0.0, 0.0, 1e-6, -np.inf, -np.inf, 1e-6, 1e-6])
     _PARAM_UPPER = np.array([np.inf] * 7)
@@ -205,7 +211,7 @@ class _HyperbolicTangentModel3D(_HyperbolicTangentModel):
     #: Initial guess tuned for room-temperature water; the two
     #: horizontal centres default to ``0`` because the analyzer
     #: pre-centers the atoms on the droplet COM before binning.
-    DEFAULT_INITIAL_PARAMS = (1e-3, 3e-2, 40.0, 0.0, 0.0, 20.0, 4.0, 1.0, 1.0)
+    DEFAULT_INITIAL_PARAMS = (3e-2, 1e-3, 40.0, 0.0, 0.0, 20.0, 4.0, 1.0, 1.0)
 
     # Bounds vector order matches DEFAULT_INITIAL_PARAMS.
     _PARAM_LOWER = np.array(

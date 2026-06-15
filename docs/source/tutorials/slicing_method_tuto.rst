@@ -1,5 +1,5 @@
 Tutorial: Contact Angle Analysis (Slicing Pipeline)
-====================================================
+===================================================
 
 This tutorial walks through the **slicing pipeline** built from the
 strategy components of :class:`TrajectoryAnalyzer`: a ray-fan
@@ -211,7 +211,7 @@ in the repository is a cylindrical-droplet trajectory you can use
 as a worked example.
 
 6.2 ``rays`` (binning) alternative
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The same ray-fan geometry is available with a 1D histogram density
 estimator instead of the Gaussian KDE. Use it when you want a

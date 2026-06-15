@@ -1,5 +1,5 @@
 Tutorial: Whole-Shape Fit with Bootstrap Uncertainty
-=====================================================
+====================================================
 
 This tutorial covers the **whole-fit pipeline**: an algebraic
 sphere or cylinder fit to the entire interface shell at once, with
@@ -32,7 +32,7 @@ deviation of the angles is reported as
 ----
 
 2. Wall detector pairing
--------------------------
+------------------------
 
 The full-sphere Fibonacci ray fan
 (:meth:`InterfaceExtractor.rays` (Gaussian) with ``n_rays_sphere=...``)
@@ -226,7 +226,7 @@ case — the explicit detector ignores any wall-atom data. Useful
 both for whole-fit and slicing pipelines.
 
 7.3 ``rays`` (binning) alternative
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Same Fibonacci-sphere geometry, but the density along each ray is
 estimated with a 1D top-hat histogram instead of a Gaussian KDE:

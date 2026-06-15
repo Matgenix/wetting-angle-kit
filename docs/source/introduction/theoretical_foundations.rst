@@ -48,20 +48,30 @@ that the recovered :math:`\theta` is meaningful.
 There is no sharp surface in an MD frame: the density drops from
 :math:`\rho_{\rm liq}` to :math:`\rho_{\rm vap}` smoothly over a few
 Å, broadened by thermal motion. The package treats the
-liquid–vapor interface as the locus of half-bulk density, recovered
-via a one-dimensional density profile fit:
+liquid–vapor interface as the locus of half-bulk density. For the
+ray extractors this is recovered by fitting a one-dimensional
+hyperbolic-tangent profile to the density sampled along each ray:
 
 .. math::
 
-   \rho(\zeta) \;=\;
-     \tfrac{1}{2} \bigl[(\rho_1 + \rho_2)
-       \;-\; (\rho_1 - \rho_2)\,\tanh\!\bigl(2 (\zeta - \zeta_d) / t\bigr)\bigr],
+   \rho(\zeta) \;=\; h \;+\; d\,\tanh(\zeta_d - \zeta),
 
-where :math:`\zeta` is the running coordinate along a ray (or a row of
-a density grid), :math:`\rho_1` and :math:`\rho_2` are the bulk
-liquid and vapor densities, :math:`\zeta_d` is the interface
-location, and :math:`t` is the interface thickness (~1 Å for water at
-room temperature). The interface is :math:`\zeta = \zeta_d`.
+where :math:`\zeta` is the running coordinate along the ray and the
+three fitted parameters are the interface location :math:`\zeta_d`,
+the midpoint density :math:`h = (\rho_{\rm liq} + \rho_{\rm vap})/2`,
+and the half-amplitude :math:`d = (\rho_{\rm liq} - \rho_{\rm vap})/2`.
+The interface is :math:`\zeta = \zeta_d`, where :math:`\rho = h`.
+
+The transition **width** is *fixed* — the tanh argument has unit
+slope, giving a transition scale of order 1 Å — rather than being a
+fitted parameter. Because the profile is antisymmetric about its
+midpoint, the recovered half-density crossing :math:`\zeta_d` is
+largely insensitive to the exact width, so fixing the slope instead
+of fitting a thickness does not bias the interface location; only the
+amplitude/width interpretation would change, and the downstream
+geometry never uses it. (The joint coupled fit of §7 *does* treat the
+interface thicknesses :math:`t_1, t_2` as free parameters, because
+there the full density field — not just the crossing — is modelled.)
 
 This tanh profile is theoretically motivated by mean-field theory of
 liquid–vapor interfaces (van der Waals / Cahn–Hilliard square-gradient

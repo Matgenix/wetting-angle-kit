@@ -1,5 +1,5 @@
 Tutorial: Contact Angle Analysis (Coupled Fit, 2D)
-===================================================
+==================================================
 
 This tutorial covers :class:`CoupledFit2DAnalyzer`, the
 joint-fit alternative to the composable
