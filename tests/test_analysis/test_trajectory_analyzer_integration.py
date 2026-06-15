@@ -17,9 +17,8 @@ import pytest
 
 pytest.importorskip("ovito")
 
-from wetting_angle_kit.analysis import (
+from wetting_angle_kit.analysis import (  # noqa: E402
     DensityEstimator,
-    # noqa: E402
     InterfaceExtractor,
     SpaceSampling,
     SurfaceFitter,

@@ -54,6 +54,7 @@ coverage.xml
 .pytest_cache/
 cover/
 prof/
+.ruff_cache/
 
 # Translations
 *.mo

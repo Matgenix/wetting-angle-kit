@@ -22,16 +22,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, ClassVar, Literal, TypeAlias
+from typing import Any, ClassVar, Literal, TypeAlias
 
 import numpy as np
 
 from wetting_angle_kit.analysis.density_estimator import DensityEstimator
 from wetting_angle_kit.analysis.geometry import DropletGeometry
-
-if TYPE_CHECKING:
-    pass
-
 
 # ---------------------------------------------------------------------------
 # Type aliases.

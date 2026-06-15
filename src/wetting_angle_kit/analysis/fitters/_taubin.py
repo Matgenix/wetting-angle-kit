@@ -10,8 +10,7 @@ radius feeds straight through ``cos θ = (z_wall - z_c) / R`` into the
 contact angle. The Taubin fit normalises the algebraic residual by its
 gradient, which keeps the recovered radius near-unbiased on partial arcs
 (matching a full geometric orthogonal-distance fit) while staying
-closed-form: no initial guess, no iteration. ``benchmarks/bench_circle_fit.py``
-quantifies the radius/angle accuracy and per-fit timing.
+closed-form: no initial guess, no iteration.
 """
 
 import numpy as np
