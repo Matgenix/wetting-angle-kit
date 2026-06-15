@@ -3,7 +3,7 @@ Visualisation Tutorial — Per-Frame Droplet Snapshot
 
 This tutorial uses :class:`DropletSlicePlotter` to draw a single-frame
 snapshot of a droplet, overlaying the recovered interface contour,
-the fitted Kasa circle, the tangent at the contact point, and the
+the fitted Taubin circle, the tangent at the contact point, and the
 wall atom positions. The plotter takes raw arrays
 (atom positions, surface points, fit parameters), so it works on the
 output of the slicing pipeline once you pull the corresponding fields
@@ -133,6 +133,6 @@ pull the corresponding entries off the batch:
    fig.write_html("droplet_plot.html")
 
 The figure overlays four layers: the raw water-oxygen positions, the
-recovered interface contour for the chosen slice, the fitted Kasa
+recovered interface contour for the chosen slice, the fitted Taubin
 circle, and the wall atoms. ``DropletSlicePlotter`` accepts
 ``center=True`` (default) to centre the plot on the droplet COM.

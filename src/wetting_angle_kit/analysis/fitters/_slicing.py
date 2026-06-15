@@ -5,7 +5,7 @@ from typing import ClassVar
 
 import numpy as np
 
-from wetting_angle_kit.analysis.fitters._kasa import _kasa_circle_fit_2d
+from wetting_angle_kit.analysis.fitters._taubin import _taubin_circle_fit_2d
 from wetting_angle_kit.analysis.fitters.base import (
     SlicingFitOutput,
     SurfaceFitter,
@@ -60,7 +60,7 @@ class _SlicingFitter(SurfaceFitter):
             kept = surf[surf[:, 1] > z_filter] if surf.size else surf
             if len(kept) >= 3:
                 try:
-                    xc, zc, radius = _kasa_circle_fit_2d(kept[:, 0], kept[:, 1])
+                    xc, zc, radius = _taubin_circle_fit_2d(kept[:, 0], kept[:, 1])
                     # Contact angle from circle / wall-line intersection:
                     # ``cos θ = (z_wall - z_center) / R``. A circle that
                     # doesn't reach the wall (``|Δz| ≥ R``) yields no angle.

@@ -24,7 +24,7 @@ The pipeline does three things per batch:
 2. **Wall detection.** The wall plane z-coordinate is taken as the
    minimum z over all interface points, plus a user-supplied offset
    (``min_plus_offset(offset=0)`` for the bare baseline).
-3. **Surface fit.** An algebraic Kasa circle is fit to each slice's
+3. **Surface fit.** An algebraic Taubin circle is fit to each slice's
    interface points after filtering out points within
    ``surface_filter_offset`` of the wall. The contact angle on each
    slice is the angle of intersection of that circle with the wall
@@ -203,7 +203,7 @@ fitter that either NaNs out or returns a non-physical angle:
        temporal_aggregator=TemporalAggregator(batch_size=1),
    )
 
-The mechanics are identical to the spherical case — same Kasa
+The mechanics are identical to the spherical case — same Taubin
 circle fit per slice, same cap-angle formula — but slices step
 along the cylinder axis rather than rotating azimuthally. The
 fixture ``tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj``

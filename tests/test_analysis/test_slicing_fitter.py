@@ -54,7 +54,7 @@ def test_slicing_fitter_recovers_known_circle_angle() -> None:
         f"recovered = {out.angle:.4f}°, rms_residual = {out.rms_residual:.3e} Å"
     )
     assert abs(out.angle - truth_angle) < 1e-6
-    # Algebraic Kasa on exact-circle points fits to ~floating-point
+    # Algebraic Taubin on exact-circle points fits to ~floating-point
     # precision; the per-slice RMS residual should sit near 0.
     assert out.rms_residual < 1e-9
     # One slice → angle_std = 0.

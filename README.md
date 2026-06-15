@@ -28,7 +28,7 @@ Any sampling × any density is a valid extractor.
 ### Surface fitting: what geometric shape do we fit to those points?
 
 - **Slicing fit** — independently fits an algebraic circle in each slice's `(x, z)` plane, then averages the per-slice contact angles. Good when the droplet might be slightly non-spherical: the per-slice scatter naturally reports a `±σ` band.
-- **Whole fit** — fits a single sphere (spherical droplet) or cylinder (cylindrical droplet) to the entire 3D interface shell. Uses the algebraic Kasa method, plus optional bootstrap resampling to put an uncertainty on the recovered angle.
+- **Whole fit** — fits a single sphere (spherical droplet) or cylinder (cylindrical droplet) to the entire 3D interface shell. Uses the algebraic Taubin method, plus optional bootstrap resampling to put an uncertainty on the recovered angle.
 - **Coupled fit** (joint approach) — a 7-parameter (2D) or 9-parameter (3D) hyperbolic-tangent density model that solves "where is the interface", "where is the wall plane", and "what's the cap geometry" in one nonlinear least-squares fit on a density field. The per-cell density is computed by a pluggable `DensityEstimator` strategy: a top-hat histogram (`DensityEstimator.binning()`, default) or a 3D Gaussian KDE evaluated at the cell centres (`DensityEstimator.gaussian(density_sigma=…)`); the KDE variant trades a small constant cost for a smooth, Poisson-noise-free density. Statistically efficient when you pool many frames per batch.
 
 ### Wall detection: where is the wall plane?

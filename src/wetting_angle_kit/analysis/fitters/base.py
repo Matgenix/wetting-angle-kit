@@ -167,7 +167,7 @@ class SurfaceFitter(ABC):
 
         Each slice's 2D interface points are filtered to
         ``z > z_wall + surface_filter_offset`` (to exclude
-        wall-adjacent density distortions), an algebraic Kasa circle
+        wall-adjacent density distortions), an algebraic Taubin circle
         is fit to the kept points, and the contact angle is the
         angle of intersection between that circle and the line
         ``z = z_wall``. The batch angle is the mean over slices;

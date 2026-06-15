@@ -18,7 +18,7 @@ places:
 1. The :class:`InterfaceExtractor` returns a single ``(N, 3)`` shell
    array — every ray's interface point pooled into one cloud rather
    than divided into per-slice 2D sub-clouds.
-2. The :class:`SurfaceFitter.whole()` runs **one** algebraic Kasa fit
+2. The :class:`SurfaceFitter.whole()` runs **one** algebraic Taubin fit
    on that shell — sphere fit for spherical droplets, cylinder fit
    (algebraic circle in ``(x, z)`` with translational invariance
    along ``y``) for cylindrical droplets. The contact angle follows

@@ -197,41 +197,48 @@ Two volume-normalisation notes:
   horizontal cell width), which keeps the bin's cross-section in the
   ``(s, perpendicular)`` directions square.
 
-5. Fitting the cap: algebraic Kasa fits
----------------------------------------
+5. Fitting the cap: algebraic Taubin fits
+-----------------------------------------
 
 Given a clean point set on the interface, the surface fitter
 recovers the spherical-cap parameters :math:`(z_c, R)` (and
-:math:`(x_c, y_c)` in 3D) via an **algebraic Kasa fit**.
+:math:`(x_c, y_c)` in 3D) via an **algebraic Taubin fit**.
 
-For a 3D sphere fit to points :math:`(x_i, y_i, z_i)`, the implicit
-equation :math:`(x - x_c)^2 + (y - y_c)^2 + (z - z_c)^2 = R^2`
-expands and linearises to
+A circle/sphere is the zero set of
+:math:`g(\mathbf{r}) = A\,\|\mathbf{r}\|^2 + \mathbf{b}\cdot\mathbf{r} + c`
+(a circle/sphere whenever :math:`A \neq 0`, with centre
+:math:`\mathbf{r}_c = -\mathbf{b}/(2A)` and radius
+:math:`R = \sqrt{\|\mathbf{b}\|^2/(4A^2) - c/A}`). The Taubin fit
+recovers the coefficients by minimising the algebraic residual
+normalised by its gradient,
 
 .. math::
 
-   2 x_c\,x \;+\; 2 y_c\,y \;+\; 2 z_c\,z \;+\; c
-   \;=\; x^2 + y^2 + z^2,
-   \qquad c \,=\, R^2 - x_c^2 - y_c^2 - z_c^2.
+   \min_{A,\,\mathbf{b},\,c} \;
+     \frac{\sum_i g(\mathbf{r}_i)^2}
+          {\sum_i \|\nabla g(\mathbf{r}_i)\|^2}.
 
-The four-parameter linear system
-:math:`A \cdot (x_c, y_c, z_c, c)^\top = b` is solved by
-:func:`numpy.linalg.lstsq`; :math:`R` is recovered from :math:`c`.
-The 2D version is identical with the :math:`y` column dropped.
+The solution is closed-form: after centring the data it is the
+smallest right singular vector of a small design matrix (one SVD, no
+iteration and no initial guess). The 2D circle fit is the same
+construction with the :math:`y` column dropped.
 
-This is the **algebraic** fit (minimises the residual on the
-implicit equation), not the **geometric** fit (minimises the
-distance to the fitted shape). Algebraic Kasa has a closed-form
-linear solution, no iteration, no initial guess — which makes it
-the right default. Its known bias against small radii is harmless
-when the recovered shell already sits very close to the true
-interface.
+The gradient normalisation is what makes this estimator
+**near-unbiased on partial arcs**, which is the regime that matters
+here: a droplet cap is only ever a partial arc — the liquid-vapor
+surface, never the full circle — and on a short, noisy arc the
+recovered radius feeds directly into
+:math:`\cos\theta = (z_w - z_c)/R`. On synthetic arcs of known
+radius the Taubin radius and angle match a full geometric
+(orthogonal-distance) fit to well under :math:`0.1^\circ`, at no
+extra variance; the geometric fit itself is avoided only because it
+needs an iterative solve and an initial guess.
 
-The slicing fitter (:meth:`SurfaceFitter.slicing`) runs one Kasa
+The slicing fitter (:meth:`SurfaceFitter.slicing`) runs one Taubin
 **circle** fit per slice in the slice's ``(x, z)`` plane, then
 averages the per-slice angles. The whole fitter
-(:meth:`SurfaceFitter.whole`) runs one Kasa **sphere** fit
-(spherical droplet) or one Kasa **circle** fit (cylindrical
+(:meth:`SurfaceFitter.whole`) runs one Taubin **sphere** fit
+(spherical droplet) or one Taubin **circle** fit (cylindrical
 droplet, exploiting translational symmetry along :math:`y`) on the
 entire shell.
 
@@ -437,7 +444,7 @@ The geometry choice cascades through every component:
   invariance along :math:`y`).
 
 The cylindrical case is mechanically identical to the spherical
-one — same Kasa fit, same cap geometry, same :math:`\cos \theta
+one — same Taubin fit, same cap geometry, same :math:`\cos \theta
 = (z_w - z_c)/R` — but applied per-axis-step rather than
 azimuthally. The slicing tutorial includes a worked example;
 the whole-fit tutorial covers the cylinder case under

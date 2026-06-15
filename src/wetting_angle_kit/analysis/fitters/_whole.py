@@ -5,7 +5,7 @@ from typing import ClassVar
 
 import numpy as np
 
-from wetting_angle_kit.analysis.fitters._kasa import (
+from wetting_angle_kit.analysis.fitters._taubin import (
     _angle_from_cap,
     _whole_fit_one,
 )
