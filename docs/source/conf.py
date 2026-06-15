@@ -31,7 +31,6 @@ extensions = [
     "sphinx.ext.napoleon",
     "sphinxemoji.sphinxemoji",
     "sphinx_copybutton",
-    "sphinxarg.ext",
     "sphinx_code_tabs",
     "sphinx_issues",
     "sphinx.ext.mathjax",  # Kept from original
