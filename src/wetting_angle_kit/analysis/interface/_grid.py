@@ -1,4 +1,4 @@
-"""Grid-based extractor implementation.
+"""Grid-based space sampling implementation (:meth:`SpaceSampling.grid`).
 
 This sampling evaluates a density field at fixed-cell grid points and
 traces the half-bulk iso-contour (slicing mode) or iso-surface (whole
@@ -20,7 +20,7 @@ from typing import Any, ClassVar
 
 import numpy as np
 
-from wetting_angle_kit.analysis._grid_utils import edges_from_bin_width
+from wetting_angle_kit.analysis._grid_utils import edges_from_cell_width
 from wetting_angle_kit.analysis.density_estimator import (
     DensityEstimator,
     _GaussianDensityEstimator,
@@ -33,10 +33,8 @@ from wetting_angle_kit.analysis.interface.base import (
     SurfaceKind,
 )
 
-_GRID_KEYS_2D = frozenset(
-    {"xi_0", "xi_f", "bin_width_x", "zi_0", "zi_f", "bin_width_z"}
-)
-_GRID_KEYS_3D = _GRID_KEYS_2D | {"yi_0", "yi_f", "bin_width_y"}
+_GRID_KEYS_2D = frozenset({"xi_0", "xi_f", "dx", "zi_0", "zi_f", "dz"})
+_GRID_KEYS_3D = _GRID_KEYS_2D | {"yi_0", "yi_f", "dy"}
 
 #: Default cell width for the grid + binning combination (Å). The
 #: histogram estimator has no smoothing scale to anchor to, so a
@@ -44,14 +42,14 @@ _GRID_KEYS_3D = _GRID_KEYS_2D | {"yi_0", "yi_f", "bin_width_y"}
 #:
 #: 2 Å is the compromise for *pooled-batch* analyses; for
 #: per-frame slicing-mode use the slab cut leaves too few atoms
-#: per cell regardless of ``bin_width``, and the user should either
+#: per cell regardless of ``cell_width``, and the user should either
 #: pool multiple frames per batch or supply a hand-tuned
 #: ``grid_params`` explicitly.
-_DEFAULT_BIN_WIDTH_BINNING = 2.0
+_DEFAULT_CELL_WIDTH_BINNING = 2.0
 
 #: Buffer (Å) added to the atom bounding box when auto-deriving grid
 #: range bounds. Matches the buffer used by ``_compute_max_dist`` for
-#: the ray extractors, keeping the spatial-envelope rule consistent.
+#: SpaceSampling.rays, keeping the spatial-envelope rule consistent.
 _DEFAULT_GRID_BUFFER = 5.0
 
 
@@ -61,7 +59,7 @@ def _default_grid_params(
     droplet_geometry: DropletGeometry,
     *,
     surface_kind: SurfaceKind,
-    bin_width: float,
+    cell_width: float,
     buffer: float = _DEFAULT_GRID_BUFFER,
 ) -> dict[str, Any]:
     """Atom-derived default ``grid_params``.
@@ -70,7 +68,7 @@ def _default_grid_params(
     frame for spherical, lab-frame for the cylinder axis) plus a
     fixed buffer. Cell widths are uniform across the three axes and
     set by the caller — typically ``density_sigma / 2`` for the
-    Gaussian KDE estimator or :data:`_DEFAULT_BIN_WIDTH_BINNING` for
+    Gaussian KDE estimator or :data:`_DEFAULT_CELL_WIDTH_BINNING` for
     the histogram.
     """
     if liquid_coordinates.size == 0:
@@ -79,63 +77,63 @@ def _default_grid_params(
             {
                 "xi_0": -buffer,
                 "xi_f": buffer,
-                "bin_width_x": bin_width,
+                "dx": cell_width,
                 "zi_0": 0.0,
                 "zi_f": buffer,
-                "bin_width_z": bin_width,
+                "dz": cell_width,
             }
             if surface_kind == "slicing"
             else {
                 "xi_0": -buffer,
                 "xi_f": buffer,
-                "bin_width_x": bin_width,
+                "dx": cell_width,
                 "yi_0": -buffer,
                 "yi_f": buffer,
-                "bin_width_y": bin_width,
+                "dy": cell_width,
                 "zi_0": 0.0,
                 "zi_f": buffer,
-                "bin_width_z": bin_width,
+                "dz": cell_width,
             }
         )
     # Atom extent. For slicing-spherical, the slice plane's ``s`` axis
     # is the radial direction in ``(x, y)``, so the natural envelope is
-    # ``max(hypot(dx, dy))``. For slicing-cylinder, the slice plane's
+    # ``max(hypot(rel_x, rel_y))``. For slicing-cylinder, the slice plane's
     # ``s`` axis is purely ``x`` (the in-plane direction perpendicular
     # to the cylinder axis ``y``), so only the radial x-extent matters
     # — using ``hypot`` would oversize the grid with the cylinder
     # length contribution.
-    dx = liquid_coordinates[:, 0] - float(center_geom[0])
-    dy = liquid_coordinates[:, 1] - float(center_geom[1])
+    rel_x = liquid_coordinates[:, 0] - float(center_geom[0])
+    rel_y = liquid_coordinates[:, 1] - float(center_geom[1])
     z_max = float(liquid_coordinates[:, 2].max()) + buffer
     if surface_kind == "slicing":
         if droplet_geometry.is_spherical:
-            in_plane_max = float(np.max(np.hypot(dx, dy))) + buffer
+            in_plane_max = float(np.max(np.hypot(rel_x, rel_y))) + buffer
         else:
-            in_plane_max = float(np.max(np.abs(dx))) + buffer
+            in_plane_max = float(np.max(np.abs(rel_x))) + buffer
         return {
             "xi_0": -in_plane_max,
             "xi_f": in_plane_max,
-            "bin_width_x": bin_width,
+            "dx": cell_width,
             "zi_0": 0.0,
             "zi_f": z_max,
-            "bin_width_z": bin_width,
+            "dz": cell_width,
         }
     # Whole-mode 3D grid. For cylindrical droplets the ``y`` axis is
     # the cylinder axis and atoms span the full box; the bounding box
     # (with buffer) captures that.
-    y_min = float(dy.min()) - buffer
-    y_max = float(dy.max()) + buffer
-    x_max = float(np.max(np.abs(dx))) + buffer
+    y_min = float(rel_y.min()) - buffer
+    y_max = float(rel_y.max()) + buffer
+    x_max = float(np.max(np.abs(rel_x))) + buffer
     return {
         "xi_0": -x_max,
         "xi_f": x_max,
-        "bin_width_x": bin_width,
+        "dx": cell_width,
         "yi_0": y_min,
         "yi_f": y_max,
-        "bin_width_y": bin_width,
+        "dy": cell_width,
         "zi_0": 0.0,
         "zi_f": z_max,
-        "bin_width_z": bin_width,
+        "dz": cell_width,
     }
 
 
@@ -183,7 +181,7 @@ def _validate_per_slice_params(
     delta_cylinder: float | None,
     droplet_geometry: DropletGeometry,
 ) -> None:
-    """For slicing-mode grid extractors: require the right slice-step param."""
+    """For slicing-mode grid sampling: require the right slice-step param."""
     if droplet_geometry.is_spherical and delta_azimuthal is None:
         raise ValueError(f"{name} for slicing+spherical requires delta_azimuthal.")
     if droplet_geometry.is_cylinder and delta_cylinder is None:
@@ -200,11 +198,11 @@ def _validate_per_slice_params(
 def _slice_grid_edges(
     grid_params: dict[str, Any],
 ) -> tuple[np.ndarray, np.ndarray]:
-    s_edges = edges_from_bin_width(
-        grid_params["xi_0"], grid_params["xi_f"], grid_params["bin_width_x"]
+    s_edges = edges_from_cell_width(
+        grid_params["xi_0"], grid_params["xi_f"], grid_params["dx"]
     )
-    z_edges = edges_from_bin_width(
-        grid_params["zi_0"], grid_params["zi_f"], grid_params["bin_width_z"]
+    z_edges = edges_from_cell_width(
+        grid_params["zi_0"], grid_params["zi_f"], grid_params["dz"]
     )
     return s_edges, z_edges
 
@@ -222,14 +220,14 @@ def _slice_grid_centres(
 def _whole_grid_edges(
     grid_params: dict[str, Any],
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    x_edges = edges_from_bin_width(
-        grid_params["xi_0"], grid_params["xi_f"], grid_params["bin_width_x"]
+    x_edges = edges_from_cell_width(
+        grid_params["xi_0"], grid_params["xi_f"], grid_params["dx"]
     )
-    y_edges = edges_from_bin_width(
-        grid_params["yi_0"], grid_params["yi_f"], grid_params["bin_width_y"]
+    y_edges = edges_from_cell_width(
+        grid_params["yi_0"], grid_params["yi_f"], grid_params["dy"]
     )
-    z_edges = edges_from_bin_width(
-        grid_params["zi_0"], grid_params["zi_f"], grid_params["bin_width_z"]
+    z_edges = edges_from_cell_width(
+        grid_params["zi_0"], grid_params["zi_f"], grid_params["dz"]
     )
     return x_edges, y_edges, z_edges
 
@@ -407,13 +405,13 @@ class _GridSampling(SpaceSampling):
                 droplet_geometry=droplet_geometry,
             )
 
-    def _auto_grid_bin_width(self, density: DensityEstimator) -> float:
-        # Pick the auto-derived bin_width that matches the estimator:
+    def _auto_grid_cell_width(self, density: DensityEstimator) -> float:
+        # Pick the auto-derived cell_width that matches the estimator:
         # Gaussian uses density_sigma / 2 (Nyquist-ish for the KDE);
         # histograms use a flat 2 Å (no smoothing scale to anchor to).
         if isinstance(density, _GaussianDensityEstimator):
             return density.density_sigma / 2.0
-        return _DEFAULT_BIN_WIDTH_BINNING
+        return _DEFAULT_CELL_WIDTH_BINNING
 
     def extract(
         self,
@@ -428,7 +426,7 @@ class _GridSampling(SpaceSampling):
             center_geom,
             droplet_geometry,
             surface_kind=surface_kind,
-            bin_width=self._auto_grid_bin_width(density),
+            cell_width=self._auto_grid_cell_width(density),
         )
         if surface_kind == "slicing":
             s_centers, z_centers = _slice_grid_centres(grid_params)

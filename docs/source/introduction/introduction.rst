@@ -94,18 +94,18 @@ an extractor, a wall detector, a surface fitter, and a temporal
 aggregator, and the analyzer runs them per batch. Examples of useful
 combinations:
 
-* ray-fan extractor + slicing fit + ``min_plus_offset`` wall +
+* ray-fan sampling + slicing fit + ``min_plus_offset`` wall +
   per-frame batches — a per-frame angle trace with a per-slice ``±σ``
   band;
-* ray-fan extractor + whole-fit + ``explicit`` wall + 10-frame pooled
+* ray-fan sampling + whole-fit + ``explicit`` wall + 10-frame pooled
   batches — a whole-shape sphere fit with the wall position imported
   from the simulation setup;
-* grid extractor + slicing fit + ``from_atoms`` wall + per-frame
+* grid sampling + slicing fit + ``from_atoms`` wall + per-frame
   batches — interface from a 2D density iso-contour, wall from the
   actual substrate atoms.
 
 :class:`CoupledFit2DAnalyzer` and :class:`CoupledFit3DAnalyzer`
-are the **joint-fit alternative**. They skip the
+are the **coupled-fit alternative**. They skip the
 extractor/wall/fitter decomposition and fit a seven-parameter (2D) or
 nine-parameter (3D) hyperbolic-tangent density model directly to the
 binned density. One robust angle per batch; ideal when you have many

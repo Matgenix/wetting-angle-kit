@@ -51,7 +51,9 @@ sampled on a fixed grid rather than along rays:
 .. code-block:: python
 
    from wetting_angle_kit.analysis import (
+       DensityEstimator,
        InterfaceExtractor,
+       SpaceSampling,
        SurfaceFitter,
        TrajectoryAnalyzer,
        WallDetector,
@@ -62,7 +64,7 @@ sampled on a fixed grid rather than along rays:
    filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
    oxygen_indices = LammpsDumpWaterFinder(
        filename, oxygen_type=1, hydrogen_type=2
-   ).get_water_oxygen_ids(frame_index=0)
+   ).get_water_oxygen_indices(frame_index=0)
 
    # 2D grid for each slice plane: ``s`` (in-plane radial) spans
    # ``[xi_0, xi_f]`` symmetrically around the slice centre to cover
@@ -70,10 +72,10 @@ sampled on a fixed grid rather than along rays:
    grid_params = {
        "xi_0": -40.0,
        "xi_f": 40.0,
-       "bin_width_x": 3.0,  # 3 Å cells in s
+       "dx": 3.0,  # 3 Å cells in s
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "bin_width_z": 1.6,  # 1.6 Å cells in z
+       "dz": 1.6,  # 1.6 Å cells in z
    }
 
    analyzer = TrajectoryAnalyzer(
@@ -103,7 +105,7 @@ sampled on a fixed grid rather than along rays:
 --------------------------------------------------------------------
 
 Same per-slice iteration, but the density estimator is a top-hat
-histogram of atoms within the slab ``|perp| ≤ bin_width_x / 2`` of
+histogram of atoms within the slab ``|perp| ≤ dx / 2`` of
 the slice plane. Numerically cheaper than the KDE; intrinsically
 noisier because only atoms in the slab contribute (not all atoms
 along the slice direction the way they do for ``rays`` (binning)).
@@ -120,10 +122,10 @@ Use coarser cells (thicker slab) than for ``grid`` (Gaussian):
    grid_params = {
        "xi_0": -40.0,
        "xi_f": 40.0,
-       "bin_width_x": 8.0,  # thick slab
+       "dx": 8.0,  # thick slab
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "bin_width_z": 3.0,
+       "dz": 3.0,
    }
    extractor = InterfaceExtractor(
        sampling=SpaceSampling.grid(
@@ -134,7 +136,7 @@ Use coarser cells (thicker slab) than for ``grid`` (Gaussian):
    )
 
 The slab thickness perpendicular to each slice plane is
-``bin_width_x``, so refining the in-plane grid also thins the slab.
+``dx``, so refining the in-plane grid also thins the slab.
 For systems with limited atom statistics per slab, the answer is
 either coarser cells or fewer slices, not a finer grid.
 
@@ -153,13 +155,13 @@ takes no ``delta_azimuthal`` / ``delta_cylinder``:
    grid_params_3d = {
        "xi_0": -30.0,
        "xi_f": 30.0,
-       "bin_width_x": 2.5,
+       "dx": 2.5,
        "yi_0": -30.0,
        "yi_f": 30.0,
-       "bin_width_y": 2.5,
+       "dy": 2.5,
        "zi_0": 0.0,
        "zi_f": 35.0,
-       "bin_width_z": 2.0,
+       "dz": 2.0,
    }
 
    analyzer = TrajectoryAnalyzer(
@@ -208,8 +210,8 @@ Three notes on the 3D case:
   droplet fits comfortably inside the grid (signed ``xi_0`` for the
   slicing case so the slice spans the full diameter). The
   iso-contour tracer can't extrapolate.
-- **Cell sizes**: ``bin_width_x`` controls in-plane horizontal
-  resolution; ``bin_width_z`` controls vertical. The range bounds
+- **Cell sizes**: ``dx`` controls in-plane horizontal
+  resolution; ``dz`` controls vertical. The range bounds
   are honoured exactly and the cell width is rounded to fit, so the
   effective cell size may differ slightly from the value you pass.
 - **Comparison plot**: run the same trajectory through both
@@ -219,5 +221,5 @@ Three notes on the 3D case:
   is misconfigured (most often the grid bounds are too tight or
   ``surface_filter_offset`` is too small).
 - **grid + binning slab thickness**: the slab perpendicular to each
-  slice equals ``bin_width_x``. If you see a noisy iso-contour,
-  thicken it (larger ``bin_width_x``) before reaching for ``grid`` (Gaussian).
+  slice equals ``dx``. If you see a noisy iso-contour,
+  thicken it (larger ``dx``) before reaching for ``grid`` (Gaussian).

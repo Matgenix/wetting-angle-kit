@@ -1,6 +1,6 @@
 """Hyperbolic-tangent models + grid helpers for the coupled-fit analyzers.
 
-Both the 2D (seven-parameter) and 3D (nine-parameter) joint density
+Both the 2D (seven-parameter) and 3D (nine-parameter) hyperbolic-tangent density
 models live here and share a common :class:`_HyperbolicTangentModel`
 base for the bounded NLLS fit, the at-bound warning, and the cap-angle
 formula. Public access goes through :class:`CoupledFit2DAnalyzer` and
@@ -138,7 +138,7 @@ class _HyperbolicTangentModel:
 
 
 class _HyperbolicTangentModel2D(_HyperbolicTangentModel):
-    """Coupled 2D-binning joint contact-angle model.
+    """Coupled 2D-binning contact-angle model.
 
     Density field modelled as a product of two sigmoidal (tanh) terms,
     one radial and one vertical:
@@ -240,24 +240,24 @@ class _HyperbolicTangentModel3D(_HyperbolicTangentModel):
 
 
 # ----------------------------------------------------------------------
-# Heuristic binning grids.
+# Heuristic default grids.
 # ----------------------------------------------------------------------
 
 
 #: Default cell width for the 2D coupled fit (Å). Matches ``t1 / 2`` from
 #: :class:`_HyperbolicTangentModel2D.DEFAULT_INITIAL_PARAMS` so the
 #: per-bin density resolves the tanh interface profile.
-_DEFAULT_BIN_WIDTH_2D = 0.5
+_DEFAULT_CELL_WIDTH_2D = 0.5
 
 #: Default cell width for the 3D coupled fit (Å). Coarser than the 2D
 #: default to keep the total cell count tractable for the 9-parameter
 #: NLLS fit (3D grids at 0.5 Å cells would give ~1.7M cells for a
 #: typical box).
-_DEFAULT_BIN_WIDTH_3D = 1.0
+_DEFAULT_CELL_WIDTH_3D = 1.0
 
 
-def _default_binning_params(parser: Any) -> dict[str, Any]:
-    """Atom-derived default 2D binning grid.
+def _default_grid_params(parser: Any) -> dict[str, Any]:
+    """Atom-derived default 2D sampling grid.
 
     Range: in-plane radial (``xi``) and vertical (``zi``) both span
     ``[0, max(box_x, box_y) / 2]``. The radial half-box is the largest
@@ -266,7 +266,7 @@ def _default_binning_params(parser: Any) -> dict[str, Any]:
     with its periodic image). Vertical half-box is the same value as
     a safe upper bound on a typical sessile droplet's apex height.
 
-    Cell width: ``_DEFAULT_BIN_WIDTH_2D = 0.5 Å`` — half the model's
+    Cell width: ``_DEFAULT_CELL_WIDTH_2D = 0.5 Å`` — half the model's
     default interface thickness ``t1 = 1 Å``, so the tanh profile is
     resolved by two cells.
     """
@@ -278,11 +278,11 @@ def _default_binning_params(parser: Any) -> dict[str, Any]:
         / 2.0
     )
     warnings.warn(
-        "binning_params was not supplied; using a default "
-        f"(xi/zi in [0, {half_lateral:.1f}], bin_width = {_DEFAULT_BIN_WIDTH_2D} Å) "
+        "grid_params was not supplied; using a default "
+        f"(xi/zi in [0, {half_lateral:.1f}], cell width = {_DEFAULT_CELL_WIDTH_2D} Å) "
         "derived from half the largest in-plane box dimension. "
         "For accurate density fields on a specific system, supply "
-        "binning_params matching the droplet size and the desired "
+        "grid_params matching the droplet size and the desired "
         "interface resolution.",
         UserWarning,
         stacklevel=3,
@@ -290,20 +290,20 @@ def _default_binning_params(parser: Any) -> dict[str, Any]:
     return {
         "xi_0": 0.0,
         "xi_f": half_lateral,
-        "bin_width_x": _DEFAULT_BIN_WIDTH_2D,
+        "dx": _DEFAULT_CELL_WIDTH_2D,
         "zi_0": 0.0,
         "zi_f": half_lateral,
-        "bin_width_z": _DEFAULT_BIN_WIDTH_2D,
+        "dz": _DEFAULT_CELL_WIDTH_2D,
     }
 
 
-def _default_binning_params_3d(parser: Any) -> dict[str, Any]:
-    """Atom-derived default 3D binning grid.
+def _default_grid_params_3d(parser: Any) -> dict[str, Any]:
+    """Atom-derived default 3D sampling grid.
 
-    Same lateral half-box rule as :func:`_default_binning_params` but
+    Same lateral half-box rule as :func:`_default_grid_params` but
     ``xi`` and ``yi`` are signed (the droplet-centred frame spans
     both halves of the diameter), and the default cell width is
-    coarser (``_DEFAULT_BIN_WIDTH_3D = 1 Å``) so the 9-parameter NLLS
+    coarser (``_DEFAULT_CELL_WIDTH_3D = 1 Å``) so the 9-parameter NLLS
     fit stays tractable.
     """
     half_lateral = (
@@ -314,11 +314,11 @@ def _default_binning_params_3d(parser: Any) -> dict[str, Any]:
         / 2.0
     )
     warnings.warn(
-        "binning_params was not supplied; using a default "
+        "grid_params was not supplied; using a default "
         f"(xi/yi in [-{half_lateral:.1f}, {half_lateral:.1f}], zi in "
-        f"[0, {half_lateral:.1f}], bin_width = {_DEFAULT_BIN_WIDTH_3D} Å). "
+        f"[0, {half_lateral:.1f}], cell width = {_DEFAULT_CELL_WIDTH_3D} Å). "
         "For accurate density fields on a specific system, supply "
-        "binning_params matching the droplet size and the desired "
+        "grid_params matching the droplet size and the desired "
         "interface resolution.",
         UserWarning,
         stacklevel=3,
@@ -326,11 +326,11 @@ def _default_binning_params_3d(parser: Any) -> dict[str, Any]:
     return {
         "xi_0": -half_lateral,
         "xi_f": half_lateral,
-        "bin_width_x": _DEFAULT_BIN_WIDTH_3D,
+        "dx": _DEFAULT_CELL_WIDTH_3D,
         "yi_0": -half_lateral,
         "yi_f": half_lateral,
-        "bin_width_y": _DEFAULT_BIN_WIDTH_3D,
+        "dy": _DEFAULT_CELL_WIDTH_3D,
         "zi_0": 0.0,
         "zi_f": half_lateral,
-        "bin_width_z": _DEFAULT_BIN_WIDTH_3D,
+        "dz": _DEFAULT_CELL_WIDTH_3D,
     }

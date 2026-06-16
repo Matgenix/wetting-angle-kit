@@ -6,8 +6,8 @@ Public API summary
 Top-level analyzers (call ``analyze()`` to run a study)::
 
     TrajectoryAnalyzer         # decomposed pipeline: extractor → wall → fitter
-    CoupledFit2DAnalyzer   # joint fit on a 2D density grid
-    CoupledFit3DAnalyzer   # joint fit on a 3D density grid (spherical only)
+    CoupledFit2DAnalyzer   # coupled fit on a 2D density grid
+    CoupledFit3DAnalyzer   # coupled fit on a 3D density grid (spherical only)
 
 Strategy components (compose into :class:`TrajectoryAnalyzer`)::
 

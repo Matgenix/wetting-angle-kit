@@ -66,19 +66,19 @@ def test_coupled_fit_2d_gaussian_estimator_recovers_known_angle(
     per-frame batches where the binning variant has occasionally
     landed in degenerate fits.
     """
-    binning_params = {
+    grid_params = {
         "xi_0": 0.0,
         "xi_f": 40.0,
-        "bin_width_x": 1.0,
+        "dx": 1.0,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "bin_width_z": 1.0,
+        "dz": 1.0,
     }
     analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_SPHERE),
         atom_indices=oxygen_indices_sphere,
         droplet_geometry="spherical",
-        binning_params=binning_params,
+        grid_params=grid_params,
         density_estimator=DensityEstimator.gaussian(density_sigma=2.5),
         temporal_aggregator=TemporalAggregator(batch_size=1),
     )
@@ -97,13 +97,13 @@ def test_coupled_fit_2d_gaussian_estimator_smoother_than_binning(
     occupied bulk region: the Gaussian density's CoV is strictly
     lower than the binning density's CoV on the same fixture and grid.
     """
-    binning_params = {
+    grid_params = {
         "xi_0": 0.0,
         "xi_f": 40.0,
-        "bin_width_x": 1.0,
+        "dx": 1.0,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "bin_width_z": 1.0,
+        "dz": 1.0,
     }
 
     def _density(estimator: DensityEstimator) -> np.ndarray:
@@ -111,7 +111,7 @@ def test_coupled_fit_2d_gaussian_estimator_smoother_than_binning(
             parser=LammpsDumpParser(_SPHERE),
             atom_indices=oxygen_indices_sphere,
             droplet_geometry="spherical",
-            binning_params=binning_params,
+            grid_params=grid_params,
             density_estimator=estimator,
             temporal_aggregator=TemporalAggregator(batch_size=1),
         )
@@ -148,19 +148,19 @@ def test_coupled_fit_2d_gaussian_estimator_works_on_cylinder(
     shifts the angle ~2-3° higher (the KDE iso-level sits slightly
     inside the geometric edge) and gives similar per-frame std.
     """
-    binning_params = {
+    grid_params = {
         "xi_0": 0.0,
         "xi_f": 70.0,
-        "bin_width_x": 1.0,
+        "dx": 1.0,
         "zi_0": 0.0,
         "zi_f": 80.0,
-        "bin_width_z": 1.0,
+        "dz": 1.0,
     }
     analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_CYL),
         atom_indices=oxygen_indices_cyl,
         droplet_geometry="cylinder_y",
-        binning_params=binning_params,
+        grid_params=grid_params,
         density_estimator=DensityEstimator.gaussian(density_sigma=2.5),
         temporal_aggregator=TemporalAggregator(batch_size=1),
     )
@@ -183,22 +183,22 @@ def test_coupled_fit_3d_gaussian_estimator_recovers_known_angle(
     plumbing or volume normalisation would push the angle well
     outside it.
     """
-    binning_params = {
+    grid_params = {
         "xi_0": -40.0,
         "xi_f": 40.0,
-        "bin_width_x": 3.3,
+        "dx": 3.3,
         "yi_0": -40.0,
         "yi_f": 40.0,
-        "bin_width_y": 3.3,
+        "dy": 3.3,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "bin_width_z": 1.6,
+        "dz": 1.6,
     }
     analyzer = CoupledFit3DAnalyzer(
         parser=LammpsDumpParser(_SPHERE),
         atom_indices=oxygen_indices_sphere,
         droplet_geometry="spherical",
-        binning_params=binning_params,
+        grid_params=grid_params,
         density_estimator=DensityEstimator.gaussian(density_sigma=3.0),
         temporal_aggregator=TemporalAggregator(batch_size=1),
     )

@@ -65,7 +65,9 @@ the wall position.
 .. code-block:: python
 
    from wetting_angle_kit.analysis import (
+       DensityEstimator,
        InterfaceExtractor,
+       SpaceSampling,
        SurfaceFitter,
        TrajectoryAnalyzer,
        WallDetector,
@@ -80,7 +82,7 @@ the wall position.
 
    # --- Step 1: Identify water-oxygen and wall-atom indices ---
    wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
-   oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+   oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 
    # Wall parser: ``liquid_particle_types`` lists what to EXCLUDE
    # (i.e. the liquid), leaving the wall atoms.

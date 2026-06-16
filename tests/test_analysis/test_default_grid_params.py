@@ -1,4 +1,4 @@
-"""Auto-derived ``grid_params`` / ``binning_params`` defaults.
+"""Auto-derived ``grid_params`` / ``grid_params`` defaults.
 
 When the user constructs a grid extractor or a coupled-fit
 analyzer without specifying the spatial grid spec, the package picks
@@ -54,8 +54,8 @@ def oxygen_indices() -> np.ndarray:
 
 @pytest.mark.integration
 def test_coupled_fit_2d_auto_default(oxygen_indices: np.ndarray) -> None:
-    """``CoupledFit2DAnalyzer`` with no ``binning_params`` lands at ~95°."""
-    with pytest.warns(UserWarning, match="binning_params was not supplied"):
+    """``CoupledFit2DAnalyzer`` with no ``grid_params`` lands at ~95°."""
+    with pytest.warns(UserWarning, match="grid_params was not supplied"):
         analyzer = CoupledFit2DAnalyzer(
             parser=LammpsDumpParser(_FIXTURE),
             atom_indices=oxygen_indices,
@@ -70,8 +70,8 @@ def test_coupled_fit_2d_auto_default(oxygen_indices: np.ndarray) -> None:
 @pytest.mark.integration
 @pytest.mark.slow
 def test_coupled_fit_3d_auto_default(oxygen_indices: np.ndarray) -> None:
-    """``CoupledFit3DAnalyzer`` with no ``binning_params`` lands at ~95°."""
-    with pytest.warns(UserWarning, match="binning_params was not supplied"):
+    """``CoupledFit3DAnalyzer`` with no ``grid_params`` lands at ~95°."""
+    with pytest.warns(UserWarning, match="grid_params was not supplied"):
         analyzer = CoupledFit3DAnalyzer(
             parser=LammpsDumpParser(_FIXTURE),
             atom_indices=oxygen_indices,

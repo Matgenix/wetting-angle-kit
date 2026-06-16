@@ -14,7 +14,7 @@ worker-pool scaffolding by implementing the four extension points
 documented there. The per-batch wiring lives in
 :meth:`_process_batch_worker`.
 
-The joint-fit analyzers (:class:`CoupledFit2DAnalyzer`,
+The coupled-fit analyzers (:class:`CoupledFit2DAnalyzer`,
 :class:`CoupledFit3DAnalyzer`) live in their own modules and
 share only the worker-pool scaffolding, not this strategy pipeline.
 """

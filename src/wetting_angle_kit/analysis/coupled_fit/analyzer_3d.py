@@ -1,7 +1,7 @@
-"""Coupled 3D-binning joint contact-angle analyzer.
+"""Coupled 3D contact-angle analyzer.
 
-:class:`CoupledFit3DAnalyzer` is the 3D extension of the joint
-binning fit (:class:`CoupledFit2DAnalyzer`). Instead of projecting
+:class:`CoupledFit3DAnalyzer` is the 3D extension of the coupled
+fit (:class:`CoupledFit2DAnalyzer`). Instead of projecting
 atoms onto a 2D ``(xi, zi)`` plane and exploiting radial symmetry, it
 bins the full 3D density ``rho(xi, yi, zi)`` and fits a nine-parameter
 hyperbolic-tangent model (``rho1, rho2, R_eq, xi_c, yi_c, zi_c, zi_0,
@@ -29,13 +29,13 @@ from wetting_angle_kit.analysis._base import (
     build_parser,
     gather_batch_coords,
 )
-from wetting_angle_kit.analysis._grid_utils import edges_from_bin_width
+from wetting_angle_kit.analysis._grid_utils import edges_from_cell_width
 from wetting_angle_kit.analysis.coupled_fit._base import (
     _CoupledFitAnalyzer,
     fit_model_params,
 )
 from wetting_angle_kit.analysis.coupled_fit._models import (
-    _default_binning_params_3d,
+    _default_grid_params_3d,
     _HyperbolicTangentModel3D,
 )
 from wetting_angle_kit.analysis.density_estimator import (
@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 
 
 class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
-    """Joint contact-angle fit on a 3D binned density grid.
+    """Coupled contact-angle fit on a 3D binned density grid.
 
     Parameters
     ----------
@@ -66,14 +66,14 @@ class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
         construction because their translational symmetry already
         collapses the 3D problem onto the 2D one solved by
         :class:`CoupledFit2DAnalyzer`.
-    binning_params : dict, optional
-        3D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"bin_width_x"``,
-        ``"yi_0"``, ``"yi_f"``, ``"bin_width_y"``, ``"zi_0"``, ``"zi_f"``,
-        ``"bin_width_z"``. The range bounds are honoured exactly; the
+    grid_params : dict, optional
+        3D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"dx"``,
+        ``"yi_0"``, ``"yi_f"``, ``"dy"``, ``"zi_0"``, ``"zi_f"``,
+        ``"dz"``. The range bounds are honoured exactly; the
         effective cell width is rounded to fit. If ``None``, an
         atom-derived default is used (lateral half-box for all axes,
-        ``bin_width = 1 Å`` to keep the 9-parameter NLLS tractable).
-        ``xi``/``yi`` are in the droplet-centred frame
+        ``dx`` / ``dy`` / ``dz`` = 1 Å to keep the 9-parameter NLLS
+        tractable). ``xi``/``yi`` are in the droplet-centred frame
         (atoms are recentred on the per-frame COM before binning); ``zi``
         is in the lab frame so the wall position retains physical
         meaning. If ``None``, a heuristic default is used.
@@ -105,8 +105,8 @@ class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
                 "symmetry along the cylinder axis."
             )
 
-    def _default_binning_params(self, parser: Any) -> dict[str, Any]:
-        return _default_binning_params_3d(parser)
+    def _default_grid_params(self, parser: Any) -> dict[str, Any]:
+        return _default_grid_params_3d(parser)
 
     # ------------------------------------------------------------------
     # _BatchedTrajectoryAnalyzer extension points.
@@ -117,7 +117,7 @@ class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
             self.parser.filepath,
             self.atom_indices,
             self.droplet_geometry,
-            self.binning_params,
+            self.grid_params,
             self.density_estimator,
             self.initial_params,
             self.precentered,
@@ -128,7 +128,7 @@ class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
         filename: str,
         atom_indices: np.ndarray,
         droplet_geometry: DropletGeometry,
-        binning_params: dict[str, Any],
+        grid_params: dict[str, Any],
         density_estimator: DensityEstimator,
         initial_params: list[float] | None,
         precentered: bool,
@@ -139,7 +139,7 @@ class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
             parser=build_parser(filename),
             atom_indices=atom_indices,
             droplet_geometry=droplet_geometry,
-            binning_params=binning_params,
+            grid_params=grid_params,
             density_estimator=density_estimator,
             initial_params=initial_params,
             precentered=precentered,
@@ -153,7 +153,7 @@ class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
         parser = state["parser"]
         atom_indices: np.ndarray = state["atom_indices"]
         droplet_geometry: DropletGeometry = state["droplet_geometry"]
-        binning_params: dict[str, Any] = state["binning_params"]
+        grid_params: dict[str, Any] = state["grid_params"]
         density_estimator: DensityEstimator = state["density_estimator"]
         initial_params: list[float] | None = state["initial_params"]
         precentered: bool = state["precentered"]
@@ -175,20 +175,20 @@ class CoupledFit3DAnalyzer(_CoupledFitAnalyzer):
             )
             n_frames = len(frame_indices)
 
-            xi_edges = edges_from_bin_width(
-                binning_params["xi_0"],
-                binning_params["xi_f"],
-                binning_params["bin_width_x"],
+            xi_edges = edges_from_cell_width(
+                grid_params["xi_0"],
+                grid_params["xi_f"],
+                grid_params["dx"],
             )
-            yi_edges = edges_from_bin_width(
-                binning_params["yi_0"],
-                binning_params["yi_f"],
-                binning_params["bin_width_y"],
+            yi_edges = edges_from_cell_width(
+                grid_params["yi_0"],
+                grid_params["yi_f"],
+                grid_params["dy"],
             )
-            zi_edges = edges_from_bin_width(
-                binning_params["zi_0"],
-                binning_params["zi_f"],
-                binning_params["bin_width_z"],
+            zi_edges = edges_from_cell_width(
+                grid_params["zi_0"],
+                grid_params["zi_f"],
+                grid_params["dz"],
             )
             rho = density_estimator.evaluate_3d(
                 atoms_pooled=coords,

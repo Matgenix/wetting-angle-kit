@@ -56,7 +56,9 @@ Example trajectory::
 .. code-block:: python
 
    from wetting_angle_kit.analysis import (
+       DensityEstimator,
        InterfaceExtractor,
+       SpaceSampling,
        SurfaceFitter,
        TrajectoryAnalyzer,
        WallDetector,
@@ -73,7 +75,7 @@ Example trajectory::
        oxygen_type=1,
        hydrogen_type=2,
    )
-   oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+   oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
    print("Number of water molecules:", len(oxygen_indices))
 
    # --- Step 3: Build the trajectory analyzer ---
@@ -275,7 +277,7 @@ per fit, less per-angle noise but no within-batch time resolution.
    ``batch_size=1`` is the correct choice.
 
 For physical context on the trade-off see
-:doc:`../introduction/theoretical_foundations` section 9.
+:doc:`../introduction/theoretical_foundations` section 7.
 
 6.4 Grid alternative
 ^^^^^^^^^^^^^^^^^^^^

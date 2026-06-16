@@ -1,7 +1,7 @@
-"""Coupled-fit joint contact-angle analyzers.
+"""Coupled-fit contact-angle analyzers.
 
 Two top-level analyzers that solve interface extraction, wall
-detection, and surface fit jointly via a hyperbolic-tangent density
+detection, and surface fitting together via a hyperbolic-tangent density
 model:
 
 - :class:`CoupledFit2DAnalyzer` — seven-parameter fit on a 2D

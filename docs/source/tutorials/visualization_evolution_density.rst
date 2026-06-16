@@ -26,7 +26,9 @@ mean with its own cumulative ``±σ`` band).
 .. code-block:: python
 
    from wetting_angle_kit.analysis import (
+       DensityEstimator,
        InterfaceExtractor,
+       SpaceSampling,
        SurfaceFitter,
        TrajectoryAnalyzer,
        WallDetector,
@@ -38,7 +40,7 @@ mean with its own cumulative ``±σ`` band).
    filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
    oxygen_indices = LammpsDumpWaterFinder(
        filename, oxygen_type=1, hydrogen_type=2
-   ).get_water_oxygen_ids(frame_index=0)
+   ).get_water_oxygen_indices(frame_index=0)
 
    analyzer = TrajectoryAnalyzer(
        parser=LammpsDumpParser(filename),
@@ -103,19 +105,19 @@ density field without touching anything else here:
    filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
    oxygen_indices = LammpsDumpWaterFinder(
        filename, oxygen_type=1, hydrogen_type=2
-   ).get_water_oxygen_ids(frame_index=0)
+   ).get_water_oxygen_indices(frame_index=0)
 
    coupled_fit = CoupledFit2DAnalyzer(
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       binning_params={
+       grid_params={
            "xi_0": 0.0,
            "xi_f": 70.0,
-           "bin_width_x": 2.0,
+           "dx": 2.0,
            "zi_0": 0.0,
            "zi_f": 70.0,
-           "bin_width_z": 2.0,
+           "dz": 2.0,
        },
        temporal_aggregator=TemporalAggregator(batch_size=10),
    )

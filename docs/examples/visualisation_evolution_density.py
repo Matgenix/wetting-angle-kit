@@ -62,13 +62,13 @@ coupled_fit = CoupledFit2DAnalyzer(
     parser=LammpsDumpParser(filename),
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",
-    binning_params={
+    grid_params={
         "xi_0": 0.0,
         "xi_f": 70.0,
-        "bin_width_x": 2.0,
+        "dx": 2.0,
         "zi_0": 0.0,
         "zi_f": 70.0,
-        "bin_width_z": 2.0,
+        "dz": 2.0,
     },
     # density_estimator=DensityEstimator.gaussian(density_sigma=2.5),
     temporal_aggregator=TemporalAggregator(batch_size=10),

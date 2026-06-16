@@ -22,7 +22,7 @@ math.
 
 .. toctree::
    :maxdepth: 1
-   :caption: Joint-fit analyzers:
+   :caption: Coupled-fit analyzers:
 
    coupled_fit_2d_tuto
    coupled_fit_3d_tuto

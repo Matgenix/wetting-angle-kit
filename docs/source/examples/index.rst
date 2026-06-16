@@ -42,7 +42,7 @@ substrate atoms and a bootstrap uncertainty.
 Coupled-Fit Contact Angle
 -------------------------
 
-Joint hyperbolic-tangent density-model fit via
+Coupled hyperbolic-tangent density-model fit via
 :class:`CoupledFit2DAnalyzer` — one angle per pooled batch. The
 example shows both density estimators (histogram default vs Gaussian
 KDE).

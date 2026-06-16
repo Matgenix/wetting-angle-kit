@@ -40,13 +40,13 @@ def test_run_parallel_path_executes_with_n_jobs_2() -> None:
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        binning_params={
+        grid_params={
             "xi_0": 0.0,
             "xi_f": 40.0,
-            "bin_width_x": 1.4,
+            "dx": 1.4,
             "zi_0": 0.0,
             "zi_f": 40.0,
-            "bin_width_z": 1.4,
+            "dz": 1.4,
         },
         temporal_aggregator=TemporalAggregator(batch_size=1),
     )
@@ -73,13 +73,13 @@ def test_n_jobs_gt_1_with_batch_size_minus_1_warns_and_runs_inline() -> None:
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        binning_params={
+        grid_params={
             "xi_0": 0.0,
             "xi_f": 40.0,
-            "bin_width_x": 1.4,
+            "dx": 1.4,
             "zi_0": 0.0,
             "zi_f": 40.0,
-            "bin_width_z": 1.4,
+            "dz": 1.4,
         },
         temporal_aggregator=TemporalAggregator(batch_size=-1),
     )

@@ -8,10 +8,10 @@ depends on the :class:`SurfaceFitter` kind:
 - slicing fitters → :class:`SlicingBatchResult`
 - whole fitters   → :class:`WholeBatchResult`
 
-The two joint-fit analyzers — :class:`CoupledFit2DAnalyzer` and
+The two coupled-fit analyzers — :class:`CoupledFit2DAnalyzer` and
 :class:`CoupledFit3DAnalyzer` — each return their own results type
 (:class:`CoupledFit2DResults`, :class:`CoupledFit3DResults`).
-They carry density grids plus joint-fit parameters and are therefore
+They carry density grids plus coupled-fit parameters and are therefore
 not part of the :class:`TrajectoryResults` hierarchy.
 """
 
@@ -132,17 +132,17 @@ class CoupledFit2DBatchResult:
     frames : list[int]
         Frame indices pooled into this batch.
     angle : float
-        Contact angle (degrees) implied by the joint 2D tanh-model fit.
+        Contact angle (degrees) from the 2D coupled tanh-model fit.
     model_params : dict[str, float]
         Fitted parameters of the 2D hyperbolic tangent model; keys are
         ``"rho1"``, ``"rho2"``, ``"R_eq"``, ``"zi_c"``, ``"zi_0"``,
         ``"t1"``, ``"t2"``.
     xi_grid : ndarray
-        In-plane binning grid centers (Å).
+        In-plane grid-cell centers (Å).
     zi_grid : ndarray
-        Vertical binning grid centers (Å).
+        Vertical grid-cell centers (Å).
     density : ndarray
-        ``(len(xi_grid), len(zi_grid))`` binned density on the grid.
+        ``(len(xi_grid), len(zi_grid))`` density sampled on the grid.
     """
 
     frames: list[int]
@@ -167,7 +167,7 @@ class CoupledFit3DBatchResult:
     frames : list[int]
         Frame indices pooled into this batch.
     angle : float
-        Contact angle (degrees) implied by the joint 3D tanh-model fit.
+        Contact angle (degrees) from the 3D coupled tanh-model fit.
     model_params : dict[str, float]
         Fitted parameters of the 3D hyperbolic tangent model; keys are
         ``"rho1"``, ``"rho2"``, ``"R_eq"``, ``"xi_c"``, ``"yi_c"``,
@@ -175,13 +175,13 @@ class CoupledFit3DBatchResult:
         horizontal centers ``xi_c`` / ``yi_c`` are reported even if
         the underlying fit fixes them to zero by symmetry.
     xi_grid : ndarray
-        x-binning grid centers (Å).
+        x grid-cell centers (Å).
     yi_grid : ndarray
-        y-binning grid centers (Å).
+        y grid-cell centers (Å).
     zi_grid : ndarray
-        Vertical binning grid centers (Å).
+        Vertical grid-cell centers (Å).
     density : ndarray
-        ``(len(xi_grid), len(yi_grid), len(zi_grid))`` binned density
+        ``(len(xi_grid), len(yi_grid), len(zi_grid))`` density sampled
         on the 3D grid.
     """
 
@@ -262,7 +262,7 @@ class CoupledFit2DResults(_AngleResultsMixin):
     batches : list[CoupledFit2DBatchResult]
         Per-batch results, in the order produced by the aggregator.
     method_metadata : dict
-        Free-form descriptor (droplet geometry, binning params,
+        Free-form descriptor (droplet geometry, grid params,
         initial parameters, batch size).
     """
 
@@ -280,7 +280,7 @@ class CoupledFit3DResults(_AngleResultsMixin):
         Per-batch results, in the order produced by the aggregator.
     method_metadata : dict
         Free-form descriptor (droplet geometry — always spherical for
-        this analyzer, binning params, initial parameters, batch size).
+        this analyzer, grid params, initial parameters, batch size).
     """
 
     batches: list[CoupledFit3DBatchResult]

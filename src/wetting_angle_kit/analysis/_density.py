@@ -1,7 +1,8 @@
 """Shared density-on-rays kernel and batched tanh interface fit.
 
-Used by the rays/grid extractors that fit a hyperbolic-tangent profile
-to the density along a ray or sample it on a grid of cell centres.
+Used by :meth:`SpaceSampling.rays` and :meth:`SpaceSampling.grid` to
+fit a hyperbolic-tangent profile to the density along a ray or sample
+it on a grid of cell centres.
 
 :class:`GaussianDensityField` wraps a ``cKDTree`` over the atom cloud
 plus the kernel-width parameters. :class:`HistogramDensityField` is
@@ -10,7 +11,7 @@ same ``evaluate(positions)`` method so the ray-fan geometry helpers
 in :mod:`wetting_angle_kit.analysis.interface` and the
 :class:`DensityEstimator` strategy can take either one.
 :func:`fit_tanh_profiles_batched` solves the per-ray tanh fit for an
-entire slice in one batched Gauss–Newton call.
+entire slice in one batched Levenberg–Marquardt call.
 """
 
 from typing import Protocol
@@ -20,7 +21,7 @@ from scipy.spatial import cKDTree
 
 
 class DensityFieldProtocol(Protocol):
-    """Density field used by the ray-fan extractors.
+    """Density field used by :meth:`SpaceSampling.rays`.
 
     Any object exposing :meth:`evaluate` mapping ``(M, 3)`` sample
     positions to an ``(M,)`` density array satisfies the protocol;
@@ -116,9 +117,9 @@ class GaussianDensityField:
 class HistogramDensityField:
     """Top-hat (histogram-style) density evaluator over a fixed atom cloud.
 
-    The natural counterpart of :class:`GaussianDensityField` for the
-    ``rays`` extractor with a binning density. Conceptually a 1D histogram of atoms
-    projected onto each ray, implemented as a 3D top-hat kernel:
+    The natural counterpart of :class:`GaussianDensityField` for
+    :meth:`SpaceSampling.rays` with a binning density. Conceptually a
+    1D histogram of atoms projected onto each ray, implemented as a 3D top-hat kernel:
     each sample position counts atoms within a sphere of radius
     ``bin_width / 2`` and divides by the sphere's volume. This shares
     the ``cKDTree.sparse_distance_matrix`` machinery used by the

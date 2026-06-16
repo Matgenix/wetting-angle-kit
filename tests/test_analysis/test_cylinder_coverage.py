@@ -157,10 +157,10 @@ def test_grid_with_gaussian_slicing_on_cylinder(oxygen_indices: np.ndarray) -> N
     grid_params = {
         "xi_0": -70.0,
         "xi_f": 70.0,
-        "bin_width_x": 3.0,
+        "dx": 3.0,
         "zi_0": 0.0,
         "zi_f": 80.0,
-        "bin_width_z": 1.5,
+        "dz": 1.5,
     }
     analyzer = _make_analyzer(
         InterfaceExtractor(
@@ -194,13 +194,13 @@ def test_grid_with_gaussian_whole_on_cylinder(oxygen_indices: np.ndarray) -> Non
     grid_params = {
         "xi_0": -70.0,
         "xi_f": 70.0,
-        "bin_width_x": 2.5,
+        "dx": 2.5,
         "yi_0": -12.0,
         "yi_f": 12.0,
-        "bin_width_y": 2.0,
+        "dy": 2.0,
         "zi_0": 0.0,
         "zi_f": 80.0,
-        "bin_width_z": 2.0,
+        "dz": 2.0,
     }
     analyzer = _make_analyzer(
         InterfaceExtractor(
@@ -231,10 +231,10 @@ def test_grid_with_binning_slicing_on_cylinder(oxygen_indices: np.ndarray) -> No
     grid_params = {
         "xi_0": -70.0,
         "xi_f": 70.0,
-        "bin_width_x": 8.0,
+        "dx": 8.0,
         "zi_0": 0.0,
         "zi_f": 80.0,
-        "bin_width_z": 3.0,
+        "dz": 3.0,
     }
     analyzer = _make_analyzer(
         InterfaceExtractor(
@@ -256,13 +256,13 @@ def test_grid_with_binning_whole_on_cylinder(oxygen_indices: np.ndarray) -> None
     grid_params = {
         "xi_0": -70.0,
         "xi_f": 70.0,
-        "bin_width_x": 3.0,
+        "dx": 3.0,
         "yi_0": -12.0,
         "yi_f": 12.0,
-        "bin_width_y": 3.0,
+        "dy": 3.0,
         "zi_0": 0.0,
         "zi_f": 80.0,
-        "bin_width_z": 2.5,
+        "dz": 2.5,
     }
     analyzer = _make_analyzer(
         InterfaceExtractor(

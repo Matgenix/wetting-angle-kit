@@ -14,7 +14,7 @@ hyperbolic-tangent density model directly:
 
 with two extra horizontal-centre parameters
 :math:`\xi_c, \eta_c` over the 2D model. See
-:doc:`../introduction/theoretical_foundations` section 7 for the full
+:doc:`../introduction/theoretical_foundations` section 5 for the full
 model.
 
 ----
@@ -22,7 +22,7 @@ model.
 1. When to pick the 3D variant?
 -------------------------------
 
-The 2D analyzer assumes axisymmetry: the joint fit collapses the
+The 2D analyzer assumes axisymmetry: the coupled fit collapses the
 droplet onto a 2D ``(xi, zi)`` profile via the radial coordinate
 :math:`\xi = \sqrt{x^2 + y^2}`. That assumption is excellent for
 clean spherical droplets but breaks if the droplet is asymmetric —
@@ -65,27 +65,27 @@ wasting work.
    filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
    oxygen_indices = LammpsDumpWaterFinder(
        filename, oxygen_type=1, hydrogen_type=2
-   ).get_water_oxygen_ids(frame_index=0)
+   ).get_water_oxygen_indices(frame_index=0)
 
    # 3D grid spec. xi/yi are in the droplet-centred frame; zi is in the
    # lab frame so the wall position retains physical meaning.
-   binning_params = {
+   grid_params = {
        "xi_0": -40.0,
        "xi_f": 40.0,
-       "bin_width_x": 3.2,
+       "dx": 3.2,
        "yi_0": -40.0,
        "yi_f": 40.0,
-       "bin_width_y": 3.2,
+       "dy": 3.2,
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "bin_width_z": 4.0,
+       "dz": 4.0,
    }
 
    analyzer = CoupledFit3DAnalyzer(
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       binning_params=binning_params,
+       grid_params=grid_params,
        # 3D density grids need more frames per batch than 2D ones to
        # reach the same per-cell noise; default is fully pooled.
        temporal_aggregator=TemporalAggregator(batch_size=-1),
@@ -169,24 +169,24 @@ the same angle within a few degrees. It's a useful sanity check:
    )
 
    # Same trajectory, same frames; pick comparable grids.
-   binning_2d = {
+   grid_2d = {
        "xi_0": 0.0,
        "xi_f": 40.0,
-       "bin_width_x": 1.0,
+       "dx": 1.0,
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "bin_width_z": 1.0,
+       "dz": 1.0,
    }
-   binning_3d = {
+   grid_3d = {
        "xi_0": -40.0,
        "xi_f": 40.0,
-       "bin_width_x": 3.2,
+       "dx": 3.2,
        "yi_0": -40.0,
        "yi_f": 40.0,
-       "bin_width_y": 3.2,
+       "dy": 3.2,
        "zi_0": 0.0,
        "zi_f": 40.0,
-       "bin_width_z": 4.0,
+       "dz": 4.0,
    }
 
    a2d = (
@@ -194,7 +194,7 @@ the same angle within a few degrees. It's a useful sanity check:
            parser=LammpsDumpParser(filename),
            atom_indices=oxygen_indices,
            droplet_geometry="spherical",
-           binning_params=binning_2d,
+           grid_params=grid_2d,
        )
        .analyze([1])
        .batches[0]
@@ -204,7 +204,7 @@ the same angle within a few degrees. It's a useful sanity check:
            parser=LammpsDumpParser(filename),
            atom_indices=oxygen_indices,
            droplet_geometry="spherical",
-           binning_params=binning_3d,
+           grid_params=grid_3d,
        )
        .analyze([1])
        .batches[0]

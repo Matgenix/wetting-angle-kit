@@ -1,11 +1,10 @@
-"""Coupled 2D-binning joint contact-angle analyzer.
+"""Coupled 2D contact-angle analyzer.
 
 :class:`CoupledFit2DAnalyzer` is the modern incarnation of the
 package's original binning method. Unlike :class:`TrajectoryAnalyzer`
 it does not separate interface extraction, wall detection, and surface
 fit — a seven-parameter hyperbolic-tangent model (rho1, rho2, R_eq,
-zi_c, zi_0, t1, t2) solves all three jointly on a binned 2D density
-grid.
+zi_c, zi_0, t1, t2) solves all three simultaneously on a 2D density grid.
 
 Use it when:
 
@@ -31,13 +30,13 @@ from wetting_angle_kit.analysis._base import (
     build_parser,
     gather_batch_coords,
 )
-from wetting_angle_kit.analysis._grid_utils import edges_from_bin_width
+from wetting_angle_kit.analysis._grid_utils import edges_from_cell_width
 from wetting_angle_kit.analysis.coupled_fit._base import (
     _CoupledFitAnalyzer,
     fit_model_params,
 )
 from wetting_angle_kit.analysis.coupled_fit._models import (
-    _default_binning_params as _default_binning_params_2d,
+    _default_grid_params as _default_grid_params_2d,
 )
 from wetting_angle_kit.analysis.coupled_fit._models import (
     _HyperbolicTangentModel2D,
@@ -55,7 +54,7 @@ logger = logging.getLogger(__name__)
 
 
 class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
-    """Joint contact-angle fit on a 2D binned density grid.
+    """Coupled contact-angle fit on a 2D density grid.
 
     Parameters
     ----------
@@ -71,22 +70,23 @@ class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
         droplets use the in-plane radial coordinate
         ``xi = sqrt(x^2 + y^2)``; cylindrical droplets use the
         coordinate perpendicular to the cylinder axis.
-    binning_params : dict, optional
-        2D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"bin_width_x"``,
-        ``"zi_0"``, ``"zi_f"``, ``"bin_width_z"``. The range bounds
+    grid_params : dict, optional
+        2D grid spec with keys ``"xi_0"``, ``"xi_f"``, ``"dx"``,
+        ``"zi_0"``, ``"zi_f"``, ``"dz"``. The range bounds
         are honoured exactly; the effective cell width is rounded to
-        fit and may differ slightly from the requested ``bin_width_*``.
+        fit and may differ slightly from the requested ``dx`` / ``dz``.
         If ``None``, an atom-derived default is used: ``xi/zi`` span
-        half the largest in-plane box dimension, with ``bin_width =
-        0.5 Å`` (half the model's default interface thickness ``t1``).
+        half the largest in-plane box dimension, with ``dx`` / ``dz`` =
+        0.5 Å (half the model's default interface thickness ``t1``).
         A warning is emitted when the default is used.
     density_estimator : DensityEstimator, optional
         How the per-cell density is computed from the pooled atom
         positions. Built via :meth:`DensityEstimator.binning` (the
         default, top-hat histogram with geometry-aware ``dV``
         normalisation) or :meth:`DensityEstimator.gaussian`
-        (3D Gaussian KDE evaluated at the cell centres; same kernel
-        the ``rays`` / ``grid`` with the Gaussian extractors use).
+        (3D Gaussian KDE evaluated at the cell centres; the same kernel
+        :meth:`SpaceSampling.rays` / :meth:`SpaceSampling.grid`
+        with :meth:`DensityEstimator.gaussian` use).
         Switching to the Gaussian variant smooths out per-cell
         Poisson noise — useful on per-frame / small-batch analyses
         where the histogram density is degenerate.
@@ -113,8 +113,8 @@ class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
     #: Results dataclass produced by the shared ``_build_results``.
     _RESULTS_CLS: ClassVar[type] = CoupledFit2DResults
 
-    def _default_binning_params(self, parser: Any) -> dict[str, Any]:
-        return _default_binning_params_2d(parser)
+    def _default_grid_params(self, parser: Any) -> dict[str, Any]:
+        return _default_grid_params_2d(parser)
 
     def _post_init(self, parser: Any) -> None:
         # Cylinder dV normalisation needs the box length along the
@@ -137,7 +137,7 @@ class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
             self.parser.filepath,
             self.atom_indices,
             self.droplet_geometry,
-            self.binning_params,
+            self.grid_params,
             self.density_estimator,
             self.initial_params,
             self.precentered,
@@ -149,7 +149,7 @@ class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
         filename: str,
         atom_indices: np.ndarray,
         droplet_geometry: DropletGeometry,
-        binning_params: dict[str, Any],
+        grid_params: dict[str, Any],
         density_estimator: DensityEstimator,
         initial_params: list[float] | None,
         precentered: bool,
@@ -161,7 +161,7 @@ class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
             parser=build_parser(filename),
             atom_indices=atom_indices,
             droplet_geometry=droplet_geometry,
-            binning_params=binning_params,
+            grid_params=grid_params,
             density_estimator=density_estimator,
             initial_params=initial_params,
             precentered=precentered,
@@ -176,7 +176,7 @@ class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
         parser = state["parser"]
         atom_indices: np.ndarray = state["atom_indices"]
         droplet_geometry: DropletGeometry = state["droplet_geometry"]
-        binning_params: dict[str, Any] = state["binning_params"]
+        grid_params: dict[str, Any] = state["grid_params"]
         density_estimator: DensityEstimator = state["density_estimator"]
         initial_params: list[float] | None = state["initial_params"]
         precentered: bool = state["precentered"]
@@ -202,15 +202,15 @@ class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
             )
             n_frames = len(frame_indices)
 
-            xi_edges = edges_from_bin_width(
-                binning_params["xi_0"],
-                binning_params["xi_f"],
-                binning_params["bin_width_x"],
+            xi_edges = edges_from_cell_width(
+                grid_params["xi_0"],
+                grid_params["xi_f"],
+                grid_params["dx"],
             )
-            zi_edges = edges_from_bin_width(
-                binning_params["zi_0"],
-                binning_params["zi_f"],
-                binning_params["bin_width_z"],
+            zi_edges = edges_from_cell_width(
+                grid_params["zi_0"],
+                grid_params["zi_f"],
+                grid_params["dz"],
             )
             xi_cc = 0.5 * (xi_edges[:-1] + xi_edges[1:])
             zi_cc = 0.5 * (zi_edges[:-1] + zi_edges[1:])
@@ -223,7 +223,7 @@ class CoupledFit2DAnalyzer(_CoupledFitAnalyzer):
                 box_dimension=box_dimension,
             )
 
-            # Joint tanh fit. ``_HyperbolicTangentModel2D`` expects the
+            # Coupled tanh fit. ``_HyperbolicTangentModel2D`` expects the
             # density and grid axes flattened in Fortran order so the
             # ``(xi, zi)`` pairs line up with their density values.
             model = _HyperbolicTangentModel2D(initial_params=initial_params)

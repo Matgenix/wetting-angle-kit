@@ -94,16 +94,16 @@ def test_coupled_fit_3d_rejects_cylinder() -> None:
         CoupledFit3DAnalyzer(
             parser=_MockParser(),
             droplet_geometry="cylinder_y",
-            binning_params={
+            grid_params={
                 "xi_0": -30,
                 "xi_f": 30,
-                "bin_width_x": 6.0,
+                "dx": 6.0,
                 "yi_0": -30,
                 "yi_f": 30,
-                "bin_width_y": 6.0,
+                "dy": 6.0,
                 "zi_0": 0,
                 "zi_f": 30,
-                "bin_width_z": 3.0,
+                "dz": 3.0,
             },
         )
 
@@ -131,39 +131,39 @@ def test_coupled_fit_3d_close_to_2d_on_lammps_fixture() -> None:
     oxygen_indices = finder.get_water_oxygen_indices(0)
 
     # 2D analyzer — radial (xi, zi).
-    binning_params_2d = {
+    grid_params_2d = {
         "xi_0": 0,
         "xi_f": 40,
-        "bin_width_x": 1.0,
+        "dx": 1.0,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "bin_width_z": 1.0,
+        "dz": 1.0,
     }
     analyzer_2d = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        binning_params=binning_params_2d,
+        grid_params=grid_params_2d,
     )
     angle_2d = float(analyzer_2d.analyze([1]).batches[0].angle)
 
     # 3D analyzer — full (xi, yi, zi).
-    binning_params_3d = {
+    grid_params_3d = {
         "xi_0": -40,
         "xi_f": 40,
-        "bin_width_x": 3.3,
+        "dx": 3.3,
         "yi_0": -40,
         "yi_f": 40,
-        "bin_width_y": 3.3,
+        "dy": 3.3,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "bin_width_z": 1.6,
+        "dz": 1.6,
     }
     new_3d = CoupledFit3DAnalyzer(
         parser=LammpsDumpParser(_FIXTURE),
         atom_indices=oxygen_indices,
         droplet_geometry="spherical",
-        binning_params=binning_params_3d,
+        grid_params=grid_params_3d,
     )
     angle_3d = float(new_3d.analyze([1]).batches[0].angle)
 

@@ -2,7 +2,7 @@ Tutorial: Contact Angle Analysis (Coupled Fit, 2D)
 ==================================================
 
 This tutorial covers :class:`CoupledFit2DAnalyzer`, the
-joint-fit alternative to the composable
+coupled-fit alternative to the composable
 :class:`TrajectoryAnalyzer` pipeline. The analyzer solves interface
 extraction, wall detection, and surface fit together by fitting a
 seven-parameter hyperbolic-tangent density model directly to a 2D
@@ -33,7 +33,7 @@ The pipeline does three things per batch:
    Apply geometry-aware volume normalisation
    (``dV = 2π xi dxi dzi`` for spherical, ``dV = box_y · dxi dzi``
    for cylinder).
-2. **Joint NLLS fit.** Fit a seven-parameter hyperbolic-tangent
+2. **NLLS fit.** Fit a seven-parameter hyperbolic-tangent
    density model
 
    .. math::
@@ -79,17 +79,17 @@ Example trajectory::
 
    # --- Step 2: Identify water-oxygen atoms ---
    wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
-   oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+   oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
    print("Number of water molecules:", len(oxygen_indices))
 
-   # --- Step 3: Define the 2D binning grid ---
-   binning_params = {
+   # --- Step 3: Define the 2D sampling grid ---
+   grid_params = {
        "xi_0": 0.0,
        "xi_f": 100.0,
-       "bin_width_x": 2.0,
+       "dx": 2.0,
        "zi_0": 0.0,
        "zi_f": 100.0,
-       "bin_width_z": 4.0,
+       "dz": 4.0,
    }
 
    # --- Step 4: Build the analyzer ---
@@ -97,7 +97,7 @@ Example trajectory::
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",
-       binning_params=binning_params,
+       grid_params=grid_params,
        # 10-frame pooled batches
        temporal_aggregator=TemporalAggregator(batch_size=10),
    )
@@ -144,17 +144,17 @@ Example printed output::
 -------
 
 - **Grid bounds and cell width**: pick ``xi_f`` and ``zi_f`` so the
-  droplet sits well inside the grid; pick ``bin_width_x`` and
-  ``bin_width_z`` so each cell receives many atoms when pooling. As
+  droplet sits well inside the grid; pick ``dx`` and
+  ``dz`` so each cell receives many atoms when pooling. As
   a rule of thumb, aim for at least 20 atoms per occupied cell after
   pooling across the batch. The range bounds are honoured exactly;
   the effective cell width is rounded so an integer number of cells
   fits, and may differ from the requested value by a few percent.
-- **No ``binning_params``?** Leaving it ``None`` uses an atom-derived
-  default: lateral half-box for ``xi``/``zi``, ``bin_width = 0.5 Å``
+- **No ``grid_params``?** Leaving it ``None`` uses an atom-derived
+  default: lateral half-box for ``xi``/``zi``, ``dx`` / ``dz`` = 0.5 Å
   (half the model's default interface thickness ``t1``). A warning
   is emitted to flag that the user didn't tune the grid.
-- **Batch size**: the joint fit benefits from statistics, so pool as
+- **Batch size**: the coupled fit benefits from statistics, so pool as
   many frames as your time-resolution needs allow. ``batch_size=-1``
   (the default) pools everything into one batch and returns a single
   angle.
@@ -194,13 +194,13 @@ along the cylinder axis):
        parser=LammpsDumpParser(cylinder_fixture),
        atom_indices=oxygen_indices,
        droplet_geometry="cylinder_y",
-       binning_params={
+       grid_params={
            "xi_0": 0.0,
            "xi_f": 100.0,
-           "bin_width_x": 2.0,
+           "dx": 2.0,
            "zi_0": 0.0,
            "zi_f": 100.0,
-           "bin_width_z": 4.0,
+           "dz": 4.0,
        },
    )
 
@@ -231,7 +231,7 @@ disappears at the cost of a small constant per-fit overhead:
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       binning_params=binning_params,
+       grid_params=grid_params,
        density_estimator=DensityEstimator.gaussian(density_sigma=2.5),
        # batch_size=1 now becomes viable — the KDE density is smooth
        # enough that per-frame fits don't fall into the degenerate
@@ -262,7 +262,7 @@ If your simulation uses different units or a different liquid, pass
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       binning_params=binning_params,
+       grid_params=grid_params,
        initial_params=[1e-3, 0.02, 25.0, 8.0, 5.0, 1.0, 1.0],
    )
 
@@ -283,11 +283,11 @@ Drop the ``temporal_aggregator`` argument (or set
        parser=LammpsDumpParser(filename),
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
-       binning_params=binning_params,
+       grid_params=grid_params,
    ).analyze(range(0, 200))
    print(results.batches[0].angle)  # single representative angle
 
-This is the natural mode for the coupled fit — the joint NLLS
+This is the natural mode for the coupled fit — the NLLS
 benefits from as much statistics as you can throw at it. Use
 ``batch_size=N`` only if you actually want time resolution
 (e.g. to see contact-angle relaxation during a wetting event).

@@ -1,8 +1,8 @@
 """Coupled-fit contact-angle example.
 
-Runs the joint hyperbolic-tangent fit on a 2D density grid via
+Runs the coupled hyperbolic-tangent fit on a 2D density grid via
 :class:`CoupledFit2DAnalyzer`. The analyzer solves interface extraction,
-wall detection, and surface fit jointly — one robust angle per pooled
+wall detection, and surface fitting together — one robust angle per pooled
 batch.
 
 Two density estimators are shown:
@@ -36,17 +36,17 @@ oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 print("Number of water molecules:", len(oxygen_indices))
 
 # --- Step 3: Define the grid ---
-binning_params = {
+grid_params = {
     "xi_0": 0.0,
     "xi_f": 70.0,
-    "bin_width_x": 2.0,
+    "dx": 2.0,
     "zi_0": 0.0,
     "zi_f": 70.0,
-    "bin_width_z": 2.0,
+    "dz": 2.0,
 }
 
 # --- Step 4: Pick a density estimator ---
-# Top-hat histogram on the binning grid (default):
+# Top-hat histogram on the sampling grid (default):
 estimator = DensityEstimator.binning()
 # Swap in the Gaussian KDE for smoother per-cell density. ``density_sigma``
 # is the Gaussian kernel width; 3 Å is a sensible default for
@@ -58,9 +58,9 @@ analyzer = CoupledFit2DAnalyzer(
     parser=LammpsDumpParser(filename),
     atom_indices=oxygen_indices,
     droplet_geometry="spherical",
-    binning_params=binning_params,
+    grid_params=grid_params,
     density_estimator=estimator,
-    # Pool 10 frames per batch — the joint fit benefits from
+    # Pool 10 frames per batch — the coupled fit benefits from
     # statistics; ``batch_size=-1`` pools the entire trajectory.
     temporal_aggregator=TemporalAggregator(batch_size=10),
 )

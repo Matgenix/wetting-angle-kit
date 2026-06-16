@@ -37,18 +37,18 @@ def oxygen_indices(filename: pathlib.Path) -> np.ndarray:
 
 
 @pytest.fixture
-def binning_params() -> dict:
+def grid_params() -> dict:
     # The per-frame tanh NLLS is sensitive to the grid layout on
-    # this fixture: ``bin_width_*`` values are chosen so the edge
+    # this fixture: ``dx`` / ``dz`` values are chosen so the edge
     # construction rounds to 49 × 24 cells, the grid the angle
     # anchors below were calibrated against.
     return {
         "xi_0": 0,
         "xi_f": 100.0,
-        "bin_width_x": 100.0 / 49.0,
+        "dx": 100.0 / 49.0,
         "zi_0": 0.0,
         "zi_f": 100.0,
-        "bin_width_z": 100.0 / 24.0,
+        "dz": 100.0 / 24.0,
     }
 
 
@@ -56,14 +56,14 @@ def binning_params() -> dict:
 def test_coupled_fit_2d_with_cylinder_fixture(
     filename: pathlib.Path,
     oxygen_indices: np.ndarray,
-    binning_params: dict,
+    grid_params: dict,
 ) -> None:
     """End-to-end ``CoupledFit2DAnalyzer`` on the cylinder droplet."""
     analyzer = CoupledFit2DAnalyzer(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
-        binning_params=binning_params,
+        grid_params=grid_params,
     )
     results = analyzer.analyze([1])
 
@@ -80,7 +80,7 @@ def test_coupled_fit_2d_with_cylinder_fixture(
 def test_coupled_fit_2d_per_frame_batches(
     filename: pathlib.Path,
     oxygen_indices: np.ndarray,
-    binning_params: dict,
+    grid_params: dict,
 ) -> None:
     """``batch_size=1``: one fit per frame."""
     frames = [1, 2, 3]
@@ -88,7 +88,7 @@ def test_coupled_fit_2d_per_frame_batches(
         parser=LammpsDumpParser(filename),
         atom_indices=oxygen_indices,
         droplet_geometry="cylinder_y",
-        binning_params=binning_params,
+        grid_params=grid_params,
         temporal_aggregator=TemporalAggregator(batch_size=1),
     )
     results = analyzer.analyze(frames)

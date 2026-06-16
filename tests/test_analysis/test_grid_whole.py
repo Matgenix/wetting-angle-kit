@@ -60,13 +60,13 @@ def _whole_grid_params(half_xy: float, z_lo: float, z_hi: float, nbins: int) -> 
     return {
         "xi_0": -half_xy,
         "xi_f": half_xy,
-        "bin_width_x": bw_xy,
+        "dx": bw_xy,
         "yi_0": -half_xy,
         "yi_f": half_xy,
-        "bin_width_y": bw_xy,
+        "dy": bw_xy,
         "zi_0": z_lo,
         "zi_f": z_hi,
-        "bin_width_z": bw_z,
+        "dz": bw_z,
     }
 
 
@@ -169,13 +169,13 @@ def test_grid_with_gaussian_whole_cylinder_recovers_horizontal_ridge() -> None:
     grid_params = {
         "xi_0": -1.5 * R_truth,
         "xi_f": 1.5 * R_truth,
-        "bin_width_x": 1.0,
+        "dx": 1.0,
         "yi_0": -y_extent / 2,
         "yi_f": y_extent / 2,
-        "bin_width_y": 1.5,
+        "dy": 1.5,
         "zi_0": 0.0,
         "zi_f": 2.5 * R_truth,
-        "bin_width_z": 1.0,
+        "dz": 1.0,
     }
     extractor = InterfaceExtractor(
         sampling=SpaceSampling.grid(grid_params=grid_params),

@@ -44,7 +44,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
    wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
 
    # --- Step 3: Identify oxygen atoms for frame 0 ---
-   oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+   oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
    print("Number of water molecules:", len(oxygen_indices))
 
    # --- Step 4: Initialize the parser ---

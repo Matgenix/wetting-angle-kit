@@ -65,10 +65,10 @@ def _default_grid_params(half: float) -> dict[str, object]:
     return {
         "xi_0": -half,
         "xi_f": half,
-        "bin_width_x": half / 25.0,
+        "dx": half / 25.0,
         "zi_0": 0.0,
         "zi_f": half,
-        "bin_width_z": half / 25.0,
+        "dz": half / 25.0,
     }
 
 
@@ -131,10 +131,10 @@ def test_grid_with_binning_recovers_known_spherical_cap_with_coarse_bins() -> No
     grid_params: dict[str, object] = {
         "xi_0": -35.0,
         "xi_f": 35.0,
-        "bin_width_x": 4.0,
+        "dx": 4.0,
         "zi_0": 0.0,
         "zi_f": 35.0,
-        "bin_width_z": 2.0,
+        "dz": 2.0,
     }
     extractor = InterfaceExtractor(
         sampling=SpaceSampling.grid(
@@ -174,10 +174,10 @@ def test_grid_with_gaussian_smoother_than_grid_with_binning() -> None:
     grid_params: dict[str, object] = {
         "xi_0": -35.0,
         "xi_f": 35.0,
-        "bin_width_x": 4.0,
+        "dx": 4.0,
         "zi_0": 0.0,
         "zi_f": 35.0,
-        "bin_width_z": 2.0,
+        "dz": 2.0,
     }
     geom = DropletGeometry.coerce("spherical")
 
@@ -258,10 +258,10 @@ def test_grid_extractors_end_to_end_close_to_rays_with_gaussian() -> None:
     grid_params_gauss = {
         "xi_0": -40.0,
         "xi_f": 40.0,
-        "bin_width_x": 3.0,
+        "dx": 3.0,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "bin_width_z": 1.6,
+        "dz": 1.6,
     }
     # grid + binning per-slice has fewer atoms per cell than rays + binning
     # (only atoms in the slab contribute, not all atoms along a ray):
@@ -269,10 +269,10 @@ def test_grid_extractors_end_to_end_close_to_rays_with_gaussian() -> None:
     grid_params_bin = {
         "xi_0": -40.0,
         "xi_f": 40.0,
-        "bin_width_x": 8.0,
+        "dx": 8.0,
         "zi_0": 0.0,
         "zi_f": 40.0,
-        "bin_width_z": 3.0,
+        "dz": 3.0,
     }
 
     def _angle(extractor: InterfaceExtractor) -> float:

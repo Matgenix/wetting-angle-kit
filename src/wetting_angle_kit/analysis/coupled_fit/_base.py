@@ -1,4 +1,4 @@
-"""Shared scaffolding for the coupled-fit joint analyzers.
+"""Shared scaffolding for the coupled-fit analyzers.
 
 :class:`_CoupledFitAnalyzer` factors out everything the 2D and 3D
 coupled-fit analyzers share — the constructor, the progress-bar label,
@@ -57,8 +57,8 @@ class _CoupledFitAnalyzer(_BatchedTrajectoryAnalyzer):
     :class:`CoupledFit3DAnalyzer`) provide:
 
     - ``_RESULTS_CLS`` — the results dataclass to wrap the batches in;
-    - ``_default_binning_params(parser)`` — the atom-derived default
-      grid used when ``binning_params`` is ``None``;
+    - ``_default_grid_params(parser)`` — the atom-derived default
+      grid used when ``grid_params`` is ``None``;
     - the worker triple (``_init_args`` / ``_init_worker`` /
       ``_process_batch_worker``), which differs by grid dimensionality;
     - optionally ``_check_geometry`` (the 3D fit rejects cylinders) and
@@ -74,7 +74,7 @@ class _CoupledFitAnalyzer(_BatchedTrajectoryAnalyzer):
         atom_indices: np.ndarray | None = None,
         droplet_geometry: DropletGeometry | str = "spherical",
         *,
-        binning_params: dict[str, Any] | None = None,
+        grid_params: dict[str, Any] | None = None,
         density_estimator: DensityEstimator | None = None,
         initial_params: list[float] | None = None,
         temporal_aggregator: TemporalAggregator | None = None,
@@ -91,9 +91,9 @@ class _CoupledFitAnalyzer(_BatchedTrajectoryAnalyzer):
         # Reject unsupported geometries before the (warning-emitting)
         # default-grid derivation runs.
         self._check_geometry()
-        if binning_params is None:
-            binning_params = self._default_binning_params(parser)
-        self.binning_params = binning_params
+        if grid_params is None:
+            grid_params = self._default_grid_params(parser)
+        self.grid_params = grid_params
         self.density_estimator = density_estimator or DensityEstimator.binning()
         self.initial_params = initial_params
         self._post_init(parser)
@@ -106,8 +106,8 @@ class _CoupledFitAnalyzer(_BatchedTrajectoryAnalyzer):
         """Reject unsupported droplet geometries. Default: accept all."""
 
     @abstractmethod
-    def _default_binning_params(self, parser: Any) -> dict[str, Any]:
-        """Atom-derived default grid spec when ``binning_params`` is None."""
+    def _default_grid_params(self, parser: Any) -> dict[str, Any]:
+        """Atom-derived default grid spec when ``grid_params`` is None."""
 
     def _post_init(self, parser: Any) -> None:
         """Construction hook run after the common fields are set."""
@@ -127,7 +127,7 @@ class _CoupledFitAnalyzer(_BatchedTrajectoryAnalyzer):
             batches=batches,
             method_metadata={
                 "droplet_geometry": self.droplet_geometry.name,
-                "binning_params": self.binning_params,
+                "grid_params": self.grid_params,
                 "initial_params": self.initial_params,
                 "batch_size": self.temporal_aggregator.batch_size,
             },

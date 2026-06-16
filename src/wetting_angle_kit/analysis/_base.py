@@ -123,8 +123,8 @@ def gather_batch_coords(
         If True, shift each frame's atoms onto its own droplet centre
         in the lateral ``(x, y)`` plane (``z`` is left in the lab
         frame). Used by the coupled-fit analyzers, which bin a
-        droplet-centred density; the ray/grid extractors leave it
-        False and read the per-frame centre from ``avg_center``.
+        droplet-centred density; SpaceSampling.rays / SpaceSampling.grid
+        leave it False and read the per-frame centre from ``avg_center``.
     progress_callback : callable, optional
         Called once with ``1`` after each frame is parsed. Used by
         the inline ``analyze`` path to drive a per-frame tqdm meter
@@ -139,7 +139,7 @@ def gather_batch_coords(
         (droplet-centred in ``(x, y)`` when ``center_on_com=True``).
     avg_center : ndarray, shape (3,)
         Mean of the per-frame liquid centres; used as the ray-fan
-        origin by extractors. Near-zero in ``(x, y)`` when
+        origin by SpaceSampling.rays. Near-zero in ``(x, y)`` when
         ``center_on_com=True``.
     """
     liquid_chunks: list[np.ndarray] = []

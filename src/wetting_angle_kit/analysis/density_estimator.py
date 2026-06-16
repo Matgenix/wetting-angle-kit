@@ -67,7 +67,7 @@ class DensityEstimator(ABC):
     kind: ClassVar[str]
 
     # ------------------------------------------------------------------
-    # Pointwise interface (rays extractor).
+    # Pointwise interface (SpaceSampling.rays).
     # ------------------------------------------------------------------
 
     @abstractmethod
@@ -75,8 +75,8 @@ class DensityEstimator(ABC):
         """Pointwise 3D density evaluator on the given atom set.
 
         Returns an object exposing ``evaluate(positions)`` for
-        arbitrary ``(N, 3)`` query points. Used by the rays
-        extractor to sample density along each ray.
+        arbitrary ``(N, 3)`` query points. Used by
+        :meth:`SpaceSampling.rays` to sample density along each ray.
 
         The binning estimator requires ``bin_width`` to have been set
         on the factory call; calling :meth:`build_field` without one
@@ -84,7 +84,7 @@ class DensityEstimator(ABC):
         """
 
     # ------------------------------------------------------------------
-    # Grid interface (grid extractor).
+    # Grid interface (SpaceSampling.grid).
     # ------------------------------------------------------------------
 
     @abstractmethod
@@ -186,8 +186,8 @@ class DensityEstimator(ABC):
         ----------
         bin_width : float, optional
             Side length (Å) of the 3D top-hat kernel used by
-            :meth:`build_field` for pointwise evaluation (the rays
-            extractor). Ignored by :meth:`evaluate_on_slice`,
+            :meth:`build_field` for pointwise evaluation
+            (:meth:`SpaceSampling.rays`). Ignored by :meth:`evaluate_on_slice`,
             :meth:`evaluate_on_3d_grid`, :meth:`evaluate_2d`, and
             :meth:`evaluate_3d` — those consumers derive their cell
             sizes from the grid spec they're given. Required only
@@ -230,7 +230,7 @@ class _BinningDensityEstimator(DensityEstimator):
     kind: ClassVar[str] = "binning"
 
     #: 3D top-hat kernel side length for pointwise evaluation. Required
-    #: only by :meth:`build_field` (the rays extractor); ``None`` is
+    #: only by :meth:`build_field` (:meth:`SpaceSampling.rays`); ``None`` is
     #: fine when this estimator is consumed by grid or coupled-fit.
     bin_width: float | None
 
@@ -238,7 +238,7 @@ class _BinningDensityEstimator(DensityEstimator):
         if self.bin_width is None:
             raise ValueError(
                 "DensityEstimator.binning() needs bin_width=... for "
-                "pointwise evaluation (the rays extractor). Either pass "
+                "pointwise evaluation (SpaceSampling.rays). Either pass "
                 "bin_width when building the estimator, or use it with the "
                 "grid / coupled-fit consumers that derive the cell size "
                 "from their grid spec."

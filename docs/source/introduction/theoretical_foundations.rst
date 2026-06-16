@@ -124,7 +124,7 @@ the interface:
   largely insensitive to the exact width, so fixing the slope instead
   of fitting a thickness does not bias the interface location; only the
   amplitude/width interpretation would change, and the downstream
-  geometry never uses it. (The joint coupled fit of §7 *does* treat the
+  geometry never uses it. (The coupled fit of §5 *does* treat the
   interface thicknesses :math:`t_1, t_2` as free parameters, because
   there the full density field — not just the crossing — is modelled.)
 
@@ -179,8 +179,8 @@ the interface:
   * ``grid`` + ``gaussian`` returns 3D density per Å³ directly from the KDE
     evaluation; no extra volume normalisation needed.
   * ``grid`` + ``binning``'s slab-cut histogram divides by
-    ``ds × dz × bin_width_x`` so the recovered field is also in
-    atoms/Å³. The slab thickness equals ``bin_width_x`` (the in-plane
+    ``ds × dz × dx`` so the recovered field is also in
+    atoms/Å³. The slab thickness equals ``dx`` (the in-plane
     horizontal cell width), which keeps the bin's cross-section in the
     ``(s, perpendicular)`` directions square.
 
@@ -262,19 +262,30 @@ to roughly a 3° shift in the recovered angle. So either pick the
 wall detector that matches your trust budget, or report the angle
 for two choices to make the dependence visible.
 
-5. Joint coupled fit
---------------------
+5. Coupled fit
+--------------
 
 The :class:`CoupledFit2DAnalyzer` and
 :class:`CoupledFit3DAnalyzer` skip the
 extractor/wall/fitter decomposition and fit a multi-parameter
-density model directly.
+density model directly to a density field on a fixed grid.
+
+The per-cell density is computed by the same pluggable
+:class:`DensityEstimator` strategy used elsewhere in the package:
+either a top-hat histogram (:meth:`DensityEstimator.binning`, the
+default) or a 3D Gaussian KDE evaluated at the cell centres
+(:meth:`DensityEstimator.gaussian`). The binning variant is fast
+and exact but intrinsically noisy at low per-cell atom counts; the
+Gaussian variant smooths out Poisson noise at the cost of a small
+constant overhead per batch. The choice of estimator does not
+affect the model or the fit procedure — only the density values
+fed into the NLLS solver.
 
 5.1 The 2D model (7 parameters)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-After projecting atoms to ``(xi, zi)`` via the droplet symmetry, the
-analyzer histograms the density and fits
+After projecting atoms to ``(xi, zi)`` via the droplet symmetry,
+the analyzer computes a per-cell density and fits
 
 .. math::
 
@@ -296,7 +307,7 @@ The radial sigmoid :math:`g(r)` describes the spherical-cap
 interface; the vertical sigmoid :math:`h(z - z_0)` cuts off the
 density below the wall plane :math:`z_0`. The seven free
 parameters :math:`(\rho_1, \rho_2, R_{eq}, z_c, z_0, t_1, t_2)` are
-fit jointly by a bounded nonlinear least-squares
+fit simultaneously by a bounded nonlinear least-squares
 (:func:`scipy.optimize.curve_fit`).
 
 The contact angle follows directly:
@@ -308,7 +319,8 @@ The contact angle follows directly:
 5.2 The 3D model (9 parameters)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The 3D extension bins the full ``(xi, yi, zi)`` density and fits
+The 3D extension computes a density on a full ``(xi, yi, zi)``
+Cartesian grid and fits
 
 .. math::
 
@@ -321,8 +333,8 @@ horizontal centre. Nine free parameters; same cap geometry for
 rejected at construction because translational symmetry along the
 cylinder axis already collapses the 3D problem onto the 2D one.
 
-5.3 Why a joint fit?
-^^^^^^^^^^^^^^^^^^^^
+5.3 Why a coupled fit?
+^^^^^^^^^^^^^^^^^^^^^^
 
 The coupled fit shares information across the cap and the wall:
 the radial sigmoid is constrained by the apex curvature and the
@@ -330,8 +342,8 @@ contact line simultaneously, and the vertical sigmoid pins the
 wall plane against the cap's lower extent. Statistically more
 efficient than the decoupled pipeline when you can afford to pool
 many frames per batch; less informative per batch (single angle)
-and slower per batch (a 7-parameter NLLS rather than four linear
-solves).
+and slower per batch (a 7-parameter NLLS rather than one
+closed-form Taubin solve per slice).
 
 6. Periodic boundaries and droplet recentering
 ----------------------------------------------

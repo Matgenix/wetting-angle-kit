@@ -203,11 +203,11 @@ class SpaceSampling(ABC):
         ----------
         grid_params : dict, optional
             Grid spec. For slicing, six keys: ``"xi_0"``, ``"xi_f"``,
-            ``"bin_width_x"``, ``"zi_0"``, ``"zi_f"``,
-            ``"bin_width_z"``. ``xi_0`` should be negative for a
+            ``"dx"``, ``"zi_0"``, ``"zi_f"``,
+            ``"dz"``. ``xi_0`` should be negative for a
             centred slice that spans both halves of the diameter. For
             whole, add three more: ``"yi_0"``, ``"yi_f"``,
-            ``"bin_width_y"`` (xi/yi grids are in the droplet-centred
+            ``"dy"`` (xi/yi grids are in the droplet-centred
             lateral frame; zi stays in the lab frame). If ``None``
             (default), the grid is auto-derived per batch from the
             atom bounding box plus a 5 Å buffer, with cell width set
