@@ -1,10 +1,10 @@
 Theoretical foundations
 =======================
 
-This chapter walks through the physics and numerics behind
+This section presents the physics and numerics behind
 wetting_angle_kit, from the contact-angle definition to the
-extraction, wall detection, and fitting strategies that the analyzers
-compose.
+extraction, wall detection, and fitting strategies of
+the analyzers.
 
 .. contents::
    :local:
@@ -42,7 +42,43 @@ The job of the analysis pipeline is to estimate :math:`R`,
 :math:`z_c`, and :math:`z_w` from atom positions, robustly enough
 that the recovered :math:`\theta` is meaningful.
 
-2. The liquid–vapor interface in MD trajectories
+2. Geometric symmetry classes
+-----------------------------
+
+Three geometries are supported via :class:`DropletGeometry`:
+
+* ``"spherical"`` — full 3D droplet with no special axis.
+* ``"cylinder_y"`` — cylindrical droplet along the :math:`y` axis
+  (the internal frame's cylinder axis).
+* ``"cylinder_x"`` — cylindrical droplet along the :math:`x` axis;
+  internally swapped to ``cylinder_y`` for the analysis (atom
+  positions are permuted, then the result is permuted back).
+
+The geometry choice cascades through every component:
+
+.. list-table::
+   :widths: 50 50
+   :align: center
+
+   * - .. image:: ../../images/wetting_angle_kit_cylinder.jpg
+          :width: 100%
+
+     - .. image:: ../../images/wetting_angle_kit_3d_droplet.jpg
+          :width: 100%
+
+* spherical droplets are treated as fully three-dimensional objects;
+* cylindrical droplets exploit translational symmetry along the
+  cylinder axis and can therefore be reduced to a two-dimensional
+  fitting problem;
+* the sampling strategy, wall detection, and fitting procedure are
+  automatically adapted to the selected geometry.
+
+The cylindrical and spherical geometries share the same fitting
+framework and contact-angle definition. The only difference is that
+the cylindrical analysis is performed on cross-sections along the
+cylinder axis rather than on azimuthal slices.
+
+3. The liquid–vapor interface in MD trajectories
 ------------------------------------------------
 
 There is no sharp surface in an MD frame: the density drops from
@@ -53,10 +89,10 @@ This interface is then used to fit a circle/sphere and recover the contact angle
 The extraction of the interface is based on two choices:
 
 * The density field may be computed via a Gaussian KDE or a 3D top-hat binning.
-* The density may be sampled along rays from the droplet COM
+* The density may be sampled along rays from the droplet Center of Mass (COM)
   or on a fixed grid in space.
 
-2.1. Estimating local density
+3.1. Estimating local density
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 We first need a local density estimate at each sample point.
@@ -93,7 +129,7 @@ Both estimators implement the same
 :class:`DensityFieldProtocol`, so the analysis pipeline can plug
 either one into the same ray-fan or grid extraction.
 
-2.2. Sampling the density field
+3.2. Sampling the density field
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Two strategies turn the density estimator into a clean point set on
@@ -101,7 +137,7 @@ the interface:
 
 **Ray fans**
   The :meth:`SpaceSampling.rays` factory emits a fan of rays from the droplet
-  COM, samples the density along each ray, and recovers the interface
+  Center of Mass (COM), samples the density along each ray, and recovers the interface
   position as the half-density point of a 1D tanh fit on that ray.
 
   In such samplings, the interface is recovered by fitting a one-dimensional
@@ -149,15 +185,17 @@ the interface:
     hit the wall plane and produce shell points at :math:`z \approx
     z_w`, which is what makes
     :meth:`WallDetector.min_plus_offset` work for the whole-fit.
-  * **whole + cylinder**: a per-:math:`y` ray fan in the ``(x, z)``
-    plane (planes spaced by ``delta_cylinder``); the resulting shell
-    is the union of these per-:math:`y` rings.
+  * **whole + cylinder**: at each step along the cylinder axis
+    (spaced by ``delta_cylinder``), a 2D ray fan is cast in the
+    plane perpendicular to that axis; the full interface shell
+    is the union of all per-step rings.
 
-  Why Fibonacci on the sphere? Naive uniform :math:`(\theta, \phi)`
-  gridding clusters rays near the poles, oversampling there and
-  undersampling the equator. The Fibonacci spiral (uniform
-  :math:`\cos\theta`, golden angle :math:`\phi`) gives near-perfect
-  equal-area coverage with no clustering anywhere.
+  The choice of Fibonacci on the sphere is motivated by the fact
+  that naive uniform :math:`(\theta, \phi)` gridding clusters rays
+  near the poles, oversampling there and undersampling the equator.
+  The Fibonacci spiral (uniform :math:`\cos\theta`, golden angle
+  :math:`\phi`) gives near-perfect equal-area coverage without
+  clusters.
 
 **Grid + iso-contour**
   The :meth:`SpaceSampling.grid` factory builds a fixed-cell grid in space and
@@ -184,7 +222,7 @@ the interface:
     horizontal cell width), which keeps the bin's cross-section in the
     ``(s, perpendicular)`` directions square.
 
-3. Fitting the cap: algebraic Taubin fits
+4. Fitting the cap: algebraic Taubin fits
 -----------------------------------------
 
 Given a clean point set on the interface, the surface fitter
@@ -210,16 +248,15 @@ smallest right singular vector of a small design matrix (one SVD, no
 iteration and no initial guess). The 2D circle fit is the same
 construction with the :math:`y` column dropped.
 
-The gradient normalisation is what makes this estimator
-**near-unbiased on partial arcs**, which is the regime that matters
-here: a droplet cap is only ever a partial arc — the liquid-vapor
-surface, never the full circle — and on a short, noisy arc the
-recovered radius feeds directly into
-:math:`\cos\theta = (z_w - z_c)/R`. On synthetic arcs of known
-radius the Taubin radius and angle match a full geometric
-(orthogonal-distance) fit to well under :math:`0.1^\circ`, at no
-extra variance; the geometric fit itself is avoided only because it
-needs an iterative solve and an initial guess.
+The gradient normalisation largely removes the bias that algebraic
+fits can exhibit on incomplete arcs. This is precisely the situation
+encountered for droplets, where only a portion of the underlying
+circle is observable. Since the recovered radius feeds directly into
+:math:`\cos\theta = (z_w - z_c)/R`, accurate fitting of partial arcs
+is essential. On synthetic datasets, Taubin fits agree with full
+orthogonal-distance fits to better than :math:`0.1^\circ`, while
+remaining a closed-form method that requires neither an initial guess
+nor numerical iteration.
 
 The slicing fitter (:meth:`SurfaceFitter.slicing`) runs one Taubin
 **circle** fit per slice in the slice's ``(x, z)`` plane, then
@@ -229,7 +266,7 @@ averages the per-slice angles. The whole fitter
 droplet, exploiting translational symmetry along :math:`y`) on the
 entire shell.
 
-4. Locating the wall plane
+5. Locating the wall plane
 --------------------------
 
 The contact angle is read from the cap–wall intersection, so the
@@ -238,7 +275,7 @@ wall plane :math:`z_w` has to be located explicitly:
 * :meth:`WallDetector.min_plus_offset` — derive :math:`z_w` from
   the interface itself, as :math:`z_w = \min(z_{\rm interface}) +
   \mathrm{offset}`. For slicing extractors the minimum across all
-  slices' interface points lands on the contact line; for the
+  slices' interface points is taken on the contact line; for the
   full-sphere ray fan, downward rays from the COM reach the wall
   plane, so :math:`\min(z_{\rm shell})` is again physically
   meaningful.
@@ -262,7 +299,7 @@ to roughly a 3° shift in the recovered angle. So either pick the
 wall detector that matches your trust budget, or report the angle
 for two choices to make the dependence visible.
 
-5. Coupled fit
+6. Coupled fit
 --------------
 
 The :class:`CoupledFit2DAnalyzer` and
@@ -281,7 +318,7 @@ constant overhead per batch. The choice of estimator does not
 affect the model or the fit procedure — only the density values
 fed into the NLLS solver.
 
-5.1 The 2D model (7 parameters)
+6.1 The 2D model (7 parameters)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 After projecting atoms to ``(xi, zi)`` via the droplet symmetry,
@@ -316,7 +353,7 @@ The contact angle follows directly:
 
    \cos \theta \;=\; \frac{z_0 - z_c}{R_{eq}}.
 
-5.2 The 3D model (9 parameters)
+6.2 The 3D model (9 parameters)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The 3D extension computes a density on a full ``(xi, yi, zi)``
@@ -329,11 +366,11 @@ Cartesian grid and fits
 
 with two extra parameters :math:`\xi_c, \eta_c` for the
 horizontal centre. Nine free parameters; same cap geometry for
-:math:`\theta`. Spherical droplets only — cylindrical droplets are
+:math:`\theta`. Spherical droplets only (cylindrical droplets are
 rejected at construction because translational symmetry along the
-cylinder axis already collapses the 3D problem onto the 2D one.
+cylinder axis already collapses the 3D problem onto the 2D one).
 
-5.3 Why a coupled fit?
+6.3 Why a coupled fit?
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The coupled fit shares information across the cap and the wall:
@@ -345,7 +382,7 @@ many frames per batch; less informative per batch (single angle)
 and slower per batch (a 7-parameter NLLS rather than one
 closed-form Taubin solve per slice).
 
-6. Periodic boundaries and droplet recentering
+7. Periodic boundaries and droplet recentering
 ----------------------------------------------
 
 MD simulations are run with periodic boundary conditions; a droplet
@@ -387,7 +424,7 @@ below the box length. If that condition is violated, the radial
 density profile is physically meaningless regardless of the
 centering strategy.
 
-7. Frame batching
+8. Frame batching
 -----------------
 
 The :class:`TemporalAggregator` groups trajectory frames into
@@ -417,34 +454,3 @@ inversely with :math:`\sqrt{N}` in regimes where shot noise
 dominates. For a 4k-atom droplet on a typical room-temperature
 trajectory, ``batch_size`` between 1 and 10 covers the useful
 range.
-
-8. Geometric symmetry classes
------------------------------
-
-Three geometries are supported via :class:`DropletGeometry`:
-
-* ``"spherical"`` — full 3D droplet with no special axis.
-* ``"cylinder_y"`` — cylindrical droplet along the :math:`y` axis
-  (the internal frame's cylinder axis).
-* ``"cylinder_x"`` — cylindrical droplet along the :math:`x` axis;
-  internally swapped to ``cylinder_y`` for the analysis (atom
-  positions are permuted, then the result is permuted back).
-
-The geometry choice cascades through every component:
-
-.. image:: ../../images/wetting_angle_kit_cylinder.jpg
-   :align: center
-
-* the interface extractor picks a 2D/3D ray fan or grid axis;
-* the wall detector reads :math:`\min(z)` over either the full
-  interface or per-slice as appropriate;
-* the surface fitter applies a sphere fit (spherical) or a 2D
-  circle fit in :math:`(x, z)` (cylinder, using the translational
-  invariance along :math:`y`).
-
-The cylindrical case is mechanically identical to the spherical
-one — same Taubin fit, same cap geometry, same :math:`\cos \theta
-= (z_w - z_c)/R` — but applied per-axis-step rather than
-azimuthally. The slicing tutorial includes a worked example;
-the whole-fit tutorial covers the cylinder case under
-"Alternative configurations".

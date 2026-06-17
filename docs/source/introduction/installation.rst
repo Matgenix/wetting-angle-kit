@@ -50,8 +50,8 @@ All optional dependencies
 Install OVITO
 ^^^^^^^^^^^^^
 
-OVITO must be installed using the following Conda command:
+OVITO must be installed using pip:
 
 .. code-block:: bash
 
-   conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forge ovito=3.11.3
+   pip install ovito==3.11.3

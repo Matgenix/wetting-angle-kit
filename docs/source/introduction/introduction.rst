@@ -130,8 +130,8 @@ All methods can analyse:
 
     ``fix recenter group_id INIT INIT NULL``
 
-    All methods do require that the simulation box be large enough
-    that the droplet does not interact with its periodic image
+    All methods require the simulation box to be large enough
+    so that the droplet does not interact with its periodic image
     (i.e. its lateral diameter is comfortably below the box length).
     If that condition is violated, the radial density profile is
     physically meaningless regardless of the centering strategy.
