@@ -54,10 +54,8 @@ The documentation is available [here](https://matgenix.github.io/wetting-angle-k
 
 ### Prerequisites
 
-Before installing wetting-angle-kit, ensure you have the following prerequisites:
-
-1. **Python 3.10 or higher**: Make sure you have Python 3.10 or higher installed on your system.
-2. **Conda**: Ensure you have Conda installed. If not, you can install it from [here](https://docs.conda.io/en/latest/miniconda.html).
+Before installing wetting-angle-kit, ensure you have **Python 3.10 or higher**
+installed on your system.
 
 Core (only to analyse simple xyz trajectories):
 
@@ -80,10 +78,10 @@ pip install wetting-angle-kit[all]
 
 #### Install OVITO
 
-OVITO must be installed first in the conda environment and using the following Conda command:
+OVITO must be installed first using pip:
 
 ```sh
-conda install --strict-channel-priority -c https://conda.ovito.org -c conda-forge ovito=3.11.3
+pip install  ovito==3.11.3
 ```
 
 ## Quick Start

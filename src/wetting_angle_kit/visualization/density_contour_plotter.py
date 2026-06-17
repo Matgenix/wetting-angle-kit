@@ -15,6 +15,7 @@ default). Accepts any of the coupled-fit result types:
 from typing import Any
 
 import numpy as np
+import plotly.colors as pc
 import plotly.graph_objects as go
 
 from wetting_angle_kit.analysis.results import (
@@ -154,6 +155,202 @@ class DensityContourPlotter:
         if save_path:
             fig.write_html(save_path)
         return fig
+
+    # ------------------------------------------------------------------
+    # 3D isosurface plot with density-threshold slider.
+    # ------------------------------------------------------------------
+
+    def plot_3d_isosurface(
+        self,
+        *,
+        n_levels: int = 10,
+        title: str | None = None,
+        save_path: str | None = None,
+    ) -> go.Figure:
+        """3D isosurface of the density field with a density-threshold slider.
+
+        Only accepts :class:`CoupledFit3DBatchResult` or
+        :class:`CoupledFit3DResults` sources (the full 3D density grid
+        is required).
+
+        Parameters
+        ----------
+        n_levels : int, default 10
+            Number of iso-density levels exposed in the slider.
+        title : str, optional
+            Figure title.  Defaults to
+            ``"Isosurface ρ ≥ ... — {label}"``.
+        save_path : str, optional
+            If provided, write the figure to standalone HTML.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+            3D isosurface with a wall plane and a density slider.
+        """
+        xi, yi, zi, density, params = self._extract_3d(self.source)
+
+        XI, YI, ZI = np.meshgrid(xi, yi, zi, indexing="ij")
+        positive = density[density > 0]
+        rho_min = float(positive.min()) if positive.size > 0 else 0.0
+        rho_max = float(density.max())
+        iso_levels = np.linspace(
+            rho_min + 0.05 * (rho_max - rho_min),
+            0.95 * rho_max,
+            n_levels,
+        )
+
+        # Sample one color per iso-level from the colorscale.
+        t_values = [
+            (iso_val - rho_min) / (rho_max - rho_min) if rho_max > rho_min else 0.5
+            for iso_val in iso_levels
+        ]
+        iso_colors = pc.sample_colorscale(self.colorscale, t_values)
+
+        fig = go.Figure()
+        for i, iso_val in enumerate(iso_levels):
+            color = iso_colors[i]
+            # Single-color colorscale so the entire isosurface is uniform.
+            uniform_cs = [[0, color], [1, color]]
+            fig.add_trace(
+                go.Isosurface(
+                    x=XI.ravel(),
+                    y=YI.ravel(),
+                    z=ZI.ravel(),
+                    value=density.ravel(),
+                    isomin=float(iso_val),
+                    isomax=float(rho_max),
+                    surface_count=1,
+                    caps={"x_show": False, "y_show": False, "z_show": False},
+                    colorscale=uniform_cs,
+                    visible=(i == 0),
+                    opacity=0.6,
+                    showscale=False,
+                )
+            )
+
+        # Semi-transparent wall plane.
+        z0 = float(params["zi_0"])
+        wall_x = np.array([[xi[0], xi[-1]], [xi[0], xi[-1]]])
+        wall_y = np.array([[yi[0], yi[0]], [yi[-1], yi[-1]]])
+        wall_z = np.full_like(wall_x, z0)
+        fig.add_trace(
+            go.Surface(
+                x=wall_x,
+                y=wall_y,
+                z=wall_z,
+                colorscale=[
+                    [0, "rgba(0,0,0,0.15)"],
+                    [1, "rgba(0,0,0,0.15)"],
+                ],
+                showscale=False,
+                name="Wall plane",
+            )
+        )
+
+        # Reference colorbar: an invisible Scatter3d that carries the
+        # full-range Jet colorbar so the user sees where the current
+        # iso-level sits on the density scale.
+        fig.add_trace(
+            go.Scatter3d(
+                x=[None],
+                y=[None],
+                z=[None],
+                mode="markers",
+                marker={
+                    "size": 0,
+                    "color": [rho_min, rho_max],
+                    "colorscale": self.colorscale,
+                    "showscale": True,
+                    "colorbar": {
+                        "title": {"text": "ρ", "font": {"size": 16}},
+                        "tickfont": {"size": 14},
+                        "len": 0.75,
+                    },
+                },
+                showlegend=False,
+                hoverinfo="none",
+            )
+        )
+
+        # Slider steps — each toggles one isosurface;
+        # wall + colorbar always on (last 2 traces).
+        steps = []
+        n_iso = len(iso_levels)
+        for i, iso_val in enumerate(iso_levels):
+            vis = [False] * n_iso + [True, True]  # wall + colorbar
+            vis[i] = True
+            steps.append(
+                {
+                    "method": "update",
+                    "args": [
+                        {"visible": vis},
+                        {
+                            "title": title
+                            or (f"Isosurface ρ = {iso_val:.4f} — {self.label}"),
+                        },
+                    ],
+                    "label": f"{iso_val:.4f}",
+                }
+            )
+
+        default_title = title or (f"Isosurface ρ = {iso_levels[0]:.4f} — {self.label}")
+        fig.update_layout(
+            sliders=[
+                {
+                    "active": 0,
+                    "currentvalue": {"prefix": "ρ = "},
+                    "pad": {"t": 50},
+                    "steps": steps,
+                }
+            ],
+            title=default_title,
+            template="plotly_white",
+            scene={
+                "xaxis_title": "ξ (Å)",
+                "yaxis_title": "η (Å)",
+                "zaxis_title": "z (Å)",
+                "aspectmode": "data",
+            },
+        )
+        if save_path:
+            fig.write_html(save_path)
+        return fig
+
+    # ------------------------------------------------------------------
+    # Internals — 3D source extraction.
+    # ------------------------------------------------------------------
+
+    def _extract_3d(
+        self, source: Any
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
+        """Return ``(xi, yi, zi, density_3d, model_params)`` from a 3D source."""
+        if isinstance(source, CoupledFit3DBatchResult):
+            return (
+                source.xi_grid,
+                source.yi_grid,
+                source.zi_grid,
+                source.density,
+                source.model_params,
+            )
+        if isinstance(source, CoupledFit3DResults):
+            if not source.batches:
+                raise ValueError("CoupledFit3DResults has no batches.")
+            ref = source.batches[0]
+            mean_density = np.stack([b.density for b in source.batches], axis=0).mean(
+                axis=0
+            )
+            return (
+                ref.xi_grid,
+                ref.yi_grid,
+                ref.zi_grid,
+                mean_density,
+                ref.model_params,
+            )
+        raise TypeError(
+            f"plot_3d_isosurface requires a CoupledFit3D source, "
+            f"got {type(source).__name__}."
+        )
 
     # ------------------------------------------------------------------
     # Internals — source dispatch.

@@ -71,7 +71,7 @@ logger = logging.getLogger(__name__)
 
 
 def build_parser(filename: str) -> BaseParser:
-    """Build a parser by sniffing the file's extension.
+    """Build a parser by detecting the file's extension.
 
     Used by worker processes to rebuild a parser locally from a
     filepath, since the parent's parser instance is generally not
