@@ -105,11 +105,7 @@ the wall position.
            surface_filter_offset=3.0,
            bootstrap_samples=100,  # 100 bootstrap resamples → angle_std
        ),
-       wall_detector=WallDetector.from_atoms(
-           wall_atom_indices=carbon_indices,
-           method="mean_top_layer",
-           top_layer_tolerance=1.0,
-       ),
+       wall_detector=WallDetector.min_plus_offset(),
        wall_atom_indices=carbon_indices,  # routed to the wall detector
    )
 

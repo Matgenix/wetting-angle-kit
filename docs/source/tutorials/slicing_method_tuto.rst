@@ -8,10 +8,14 @@ interface-derived wall detector. The slicing pipeline is the right
 choice when you want a per-frame angle trace plus a sense of the
 spread across slices.
 
+.. contents::
+   :local:
+   :depth: 2
+
 ----
 
-1. Overview
------------
+1. How it works
+---------------
 
 The pipeline does three things per batch:
 
@@ -31,10 +35,88 @@ The pipeline does three things per batch:
    line; the batch's reported angle is the mean across slices, and
    :attr:`SlicingBatchResult.angle_std` is the empirical std.
 
+.. _ray-param-reference:
+
+1.1 Ray parameter quick-reference
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+When configuring :meth:`SpaceSampling.rays`, the required parameters
+depend on which ``(surface_kind, droplet_geometry)`` pair the sampling
+is paired with. The table below summarises the mapping:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 30 30 40
+
+   * - surface_kind
+     - geometry
+     - required ray params
+   * - slicing
+     - spherical
+     - ``delta_azimuthal`` (+ ``delta_polar``)
+   * - slicing
+     - cylinder_x / cylinder_y
+     - ``delta_cylinder`` (+ ``delta_polar``)
+   * - whole
+     - spherical
+     - ``n_rays_sphere``
+   * - whole
+     - cylinder_x / cylinder_y
+     - ``delta_cylinder`` (+ ``delta_polar``)
+
+.. list-table::
+   :widths: 50 50
+   :align: center
+
+   * - .. image:: ../../images/wetting_angle_kit_cylinder.jpg
+          :width: 100%
+
+     - .. image:: ../../images/wetting_angle_kit_3d_droplet.png
+          :width: 100%
+
+**Parameter glossary:**
+
+- ``delta_azimuthal`` — azimuthal step (degrees) between slicing planes
+  for a **spherical** droplet.
+- ``delta_cylinder`` — step (Å) along the cylinder axis between slicing
+  planes for a **cylindrical** droplet (used by both slicing and whole
+  modes).
+- ``delta_polar`` — in-plane ray step (degrees). Shared by every mode
+  *except* whole + spherical (which uses a Fibonacci ray fan instead of
+  per-plane polar rays). Default: 8°.
+- ``n_rays_sphere`` — total number of Fibonacci-distributed rays over
+  the full sphere (whole + spherical only). Full-sphere coverage —
+  including downward rays — is intentional: downward rays from the COM
+  hit the wall plane and produce interface points at :math:`z \approx
+  z_w`, which keeps :meth:`WallDetector.min_plus_offset` consistent.
+
+Passing parameters that don't match the ``(surface_kind, geometry)``
+pair is silently ignored; omitting a required one raises at
+construction time via
+:meth:`SpaceSampling.validate_compatibility`.
+
+1.2 Key tuning knobs
+^^^^^^^^^^^^^^^^^^^^^
+
+- **Slicing step** (``delta_azimuthal`` for spherical droplets,
+  ``delta_cylinder`` for cylinders): smaller step → more slices,
+  more detail per batch, more cost. The default 20° gives 9 slices
+  for a spherical droplet, plenty for a stable mean.
+- **In-plane ray step** (``delta_polar``, both geometries): smaller
+  step → more rays per slice, denser interface contour, more cost.
+- **Wall offset** (``WallDetector.min_plus_offset(offset=O)``):\
+  raise ``O`` if the interface-derived baseline lands slightly into
+  the wall layer (visible as inflated angles).
+- **Surface filter offset**
+  (``SurfaceFitter.slicing(surface_filter_offset=...)``): excludes
+  interface points within this distance of the wall before the
+  circle fit. Raise it if the wall-adjacent density is distorted by
+  layering.
+
 ----
 
-2. Requirements
----------------
+2. Minimal working example
+---------------------------
 
 Before running the example, ensure you have installed the package
 with the ovito extra (for LAMMPS dump files):
@@ -47,11 +129,6 @@ with the ovito extra (for LAMMPS dump files):
 Example trajectory::
 
    tests/trajectories/traj_spherical_drop_4k.lammpstrj
-
-----
-
-3. Example Code
----------------
 
 .. code-block:: python
 
@@ -106,114 +183,81 @@ Example trajectory::
    for batch in results.batches[:3]:
        print(
            f"Frame {batch.frames[0]}: "
-           f"angle = {batch.angle:.2f}°, "
+           f"angle (mean) = {batch.angle:.2f}°, "
+           f"angle (median) = {batch.median_angle:.2f}°, "
            f"per-slice σ = {batch.angle_std:.2f}°, "
            f"rms residual = {batch.rms_residual:.2f} Å"
        )
 
 ----
 
-4. Expected Output
-------------------
+3. Understanding the results
+-----------------------------
 
 On the water/graphene fixture above, single-frame output looks like::
 
    Number of water molecules: 1320
    Mean contact angle (°): 95.16
    Std across batches (°): 0.0
-   Frame 0: angle = 95.16°, per-slice σ = 1.86°, rms residual = 0.45 Å
+   Frame 0: angle (mean) = 95.16°, angle (median) = 95.02°, per-slice σ = 1.86°, rms residual = 0.45 Å
 
 ``std_angle`` is 0 here because only one batch was requested; pass a
 multi-frame range to see the spread across batches.
+
+3.1 Per-batch fields
+^^^^^^^^^^^^^^^^^^^^
 
 The returned :class:`TrajectoryResults` object holds a list of
 :class:`SlicingBatchResult` entries (one per batch). Each batch
 carries:
 
-* ``angle`` — mean contact angle across slices (°).
+* ``angle`` — **mean** contact angle across slices (°). This is
+  ``nanmean(per_slice_angles)``.
+* ``median_angle`` — **median** contact angle across slices (°). More
+  robust than the mean when one or two slices are outliers (e.g. due
+  to asymmetric density near the periodic boundary).
 * ``angle_std`` — empirical standard deviation across slices (°).
-* ``per_slice_angles`` — array of per-slice angles.
+* ``per_slice_angles`` — full array of per-slice angles (``nan`` for
+  slices that produced no valid fit).
 * ``slice_surfaces`` / ``slice_popts`` — per-slice interface points
   and fitted circle parameters (for plotting; see
   :doc:`visualization_slicing_droplet`).
 * ``z_wall`` — wall position used by the fitter.
 * ``rms_residual`` — mean of per-slice circle-fit RMS residuals (Å).
+* ``n_slices_total`` / ``n_slices_used`` — total slices vs. how many
+  produced a valid angle. A gap signals per-slice attrition.
+
+3.2 Mean vs. median
+^^^^^^^^^^^^^^^^^^^^
+
+Both ``angle`` (the mean) and ``median_angle`` are computed from
+the same ``per_slice_angles`` array, ignoring ``nan`` entries.
+The **median** is the recommended default when reporting a single
+number, because a single outlier slice (e.g. a nearly empty
+azimuthal plane near a periodic edge) can pull the mean
+significantly. When the distribution across slices is symmetric,
+mean and median agree.
+
+The :class:`AngleEvolutionPlotter` supports both via its ``stat``
+parameter (``"median"`` by default).
 
 ----
 
-5. Tips
--------
+4. Common configurations
+-------------------------
 
-- **Slicing step** (``delta_azimuthal`` for spherical droplets,
-  ``delta_cylinder`` for cylinders): smaller step → more slices,
-  more detail per batch, more cost. The default 20° gives 9 slices
-  for a spherical droplet, plenty for a stable mean.
-- **In-plane ray step** (``delta_polar``, both geometries): smaller
-  step → more rays per slice, denser interface contour, more cost.
-- **Wall offset** (``WallDetector.min_plus_offset(offset=O)``):
-  raise ``O`` if the interface-derived baseline lands slightly into
-  the wall layer (visible as inflated angles).
-- **Surface filter offset**
-  (``SurfaceFitter.slicing(surface_filter_offset=...)``): excludes
-  interface points within this distance of the wall before the
-  circle fit. Raise it if the wall-adjacent density is distorted by
-  layering.
-- **Cylindrical droplets**: pass ``droplet_geometry="cylinder_y"``
-  (or ``"cylinder_x"``) and configure ``delta_cylinder`` instead of
-  ``delta_azimuthal`` on the extractor.
-
-For a side-by-side plot of the recovered interface and the fitted
-circle, see :doc:`visualization_slicing_droplet`.
-
-----
-
-6. Alternative configurations
------------------------------
-
-6.1 Cylindrical droplets
+4.1 Cylindrical droplets
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-For a cylindrical droplet (e.g. water on a periodic stripe), swap
-``delta_azimuthal`` for ``delta_cylinder`` (the step along the
-cylinder axis) and tell the analyzer which axis the cylinder runs
-along. Pick ``"cylinder_y"`` if the periodic ridge spans the box
-along the lab-frame ``y`` axis; pick ``"cylinder_x"`` if it spans
-along ``x``. The package handles ``cylinder_x`` by applying a
-self-inverse ``x↔y`` column swap at the parser/analyzer boundary so
-all downstream code can assume the cylinder axis is ``y`` —
-analysis logic isn't duplicated between the two cases. Picking the
+Use "cylinder_x" when the cylinder axis is x.
+Use "cylinder_y" when the cylinder axis is y
+Picking the
 wrong axis is the cylinder analogue of confusing the in-plane
-radial direction with the symmetry axis; symptoms are slicing
-planes that go across the ridge (almost no atoms per slice) and a
-fitter that either NaNs out or returns a non-physical angle:
+radial direction with the symmetry axis;could lead to NaNs
+angles output or non-physical angle:
 
-.. code-block:: python
-
-   analyzer = TrajectoryAnalyzer(
-       parser=LammpsDumpParser(filename),
-       atom_indices=oxygen_indices,
-       droplet_geometry="cylinder_y",  # or "cylinder_x"
-       interface_extractor=InterfaceExtractor(
-           sampling=SpaceSampling.rays(
-               delta_cylinder=5.0,  # 5 Å between slicing planes
-               delta_polar=8.0,
-           ),
-           density=DensityEstimator.gaussian(),
-       ),
-       surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
-       wall_detector=WallDetector.min_plus_offset(offset=0.0),
-       temporal_aggregator=TemporalAggregator(batch_size=1),
-   )
-
-The mechanics are identical to the spherical case — same Taubin
-circle fit per slice, same cap-angle formula — but slices step
-along the cylinder axis rather than rotating azimuthally. The
-fixture ``tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj``
-in the repository is a cylindrical-droplet trajectory you can use
-as a worked example.
-
-6.2 ``rays`` (binning) alternative
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+4.2 Binning density estimator
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The same ray-fan geometry is available with a 1D histogram density
 estimator instead of the Gaussian KDE. Use it when you want a
@@ -237,7 +281,7 @@ interface thickness (~1–3 Å for water) keeps the tanh fit
 well-conditioned. Numerically the bin width plays the same role
 ``density_sigma`` plays for ``rays`` (Gaussian).
 
-6.3 Pooled batches
+4.3 Pooled batches
 ^^^^^^^^^^^^^^^^^^
 
 Replace ``batch_size=1`` with ``batch_size=N`` to pool
@@ -276,13 +320,33 @@ per fit, less per-angle noise but no within-batch time resolution.
    harmless; for transient regimes (wetting, dewetting, vibration)
    ``batch_size=1`` is the correct choice.
 
-For physical context on the trade-off see
-:doc:`../introduction/theoretical_foundations` section 7.
-
-6.4 Grid alternative
+4.4 Grid alternative
 ^^^^^^^^^^^^^^^^^^^^
 
 The grid extractor (:meth:`SpaceSampling.grid`)
 pairs with the slicing fitter exactly the same
 way and is covered in :doc:`grid_method_tuto`. Use it when
 ray-fan sampling is too sparse to resolve the interface.
+
+----
+
+5. Further reading
+-------------------
+
+- **Theoretical foundations:** the physics behind each ray-fan layout
+  and the Taubin circle fits are detailed in
+  :doc:`../introduction/theoretical_foundations` (§3.2 for sampling,
+  §4 for the Taubin fit, §5 for wall detection, §8 for frame
+  batching).
+- **Visualization:** for a side-by-side plot of the recovered
+  interface and the fitted circle, see
+  :doc:`visualization_slicing_droplet`.
+- **Angle evolution:** to plot the per-batch angle trace over time
+  (mean or median, with running-mean overlay), see
+  :doc:`visualization_evolution_density`.
+- **Whole-fit pipeline:** for a single-fit approach on the full 3D
+  interface shell (with optional bootstrap uncertainty), see
+  :doc:`whole_fit_tuto`.
+- **Coupled fit:** for the NLLS coupled model that fits interface +
+  wall simultaneously, see :doc:`coupled_fit_2d_tuto` (2D) and
+  :doc:`coupled_fit_3d_tuto` (3D).

@@ -14,7 +14,7 @@ hyperbolic-tangent density model directly:
 
 with two extra horizontal-centre parameters
 :math:`\xi_c, \eta_c` over the 2D model. See
-:doc:`../introduction/theoretical_foundations` section 5 for the full
+:doc:`../introduction/theoretical_foundations` section 6 for the full
 model.
 
 ----
@@ -70,14 +70,14 @@ wasting work.
    # 3D grid spec. xi/yi are in the droplet-centred frame; zi is in the
    # lab frame so the wall position retains physical meaning.
    grid_params = {
-       "xi_0": -40.0,
-       "xi_f": 40.0,
+       "xi_0": -30.0,
+       "xi_f": 30.0,
        "dx": 3.2,
-       "yi_0": -40.0,
-       "yi_f": 40.0,
+       "yi_0": -30.0,
+       "yi_f": 30.0,
        "dy": 3.2,
        "zi_0": 0.0,
-       "zi_f": 40.0,
+       "zi_f": 60.0,
        "dz": 4.0,
    }
 
@@ -171,21 +171,21 @@ the same angle within a few degrees. It's a useful sanity check:
    # Same trajectory, same frames; pick comparable grids.
    grid_2d = {
        "xi_0": 0.0,
-       "xi_f": 40.0,
+       "xi_f": 30.0,
        "dx": 1.0,
        "zi_0": 0.0,
-       "zi_f": 40.0,
+       "zi_f": 60.0,
        "dz": 1.0,
    }
    grid_3d = {
-       "xi_0": -40.0,
-       "xi_f": 40.0,
+       "xi_0": -30.0,
+       "xi_f": 30.0,
        "dx": 3.2,
-       "yi_0": -40.0,
-       "yi_f": 40.0,
+       "yi_0": -30.0,
+       "yi_f": 30.0,
        "dy": 3.2,
        "zi_0": 0.0,
-       "zi_f": 40.0,
+       "zi_f": 60.0,
        "dz": 4.0,
    }
 

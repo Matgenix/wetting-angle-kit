@@ -48,13 +48,8 @@ that the recovered :math:`\theta` is meaningful.
 Three geometries are supported via :class:`DropletGeometry`:
 
 * ``"spherical"`` — full 3D droplet with no special axis.
-* ``"cylinder_y"`` — cylindrical droplet along the :math:`y` axis
-  (the internal frame's cylinder axis).
-* ``"cylinder_x"`` — cylindrical droplet along the :math:`x` axis;
-  internally swapped to ``cylinder_y`` for the analysis (atom
-  positions are permuted, then the result is permuted back).
-
-The geometry choice cascades through every component:
+* ``"cylinder_y"`` — cylindrical droplet along the :math:`y` axis.
+* ``"cylinder_x"`` — cylindrical droplet along the :math:`x` axis.
 
 .. list-table::
    :widths: 50 50
@@ -65,6 +60,8 @@ The geometry choice cascades through every component:
 
      - .. image:: ../../images/wetting_angle_kit_3d_droplet.png
           :width: 100%
+
+The geometry choice cascades through every component:
 
 * spherical droplets are treated as fully three-dimensional objects;
 * cylindrical droplets exploit translational symmetry along the
@@ -137,7 +134,7 @@ the interface:
 
 **Ray fans**
   The :meth:`SpaceSampling.rays` factory emits a fan of rays from the droplet
-  Center of Mass (COM), samples the density along each ray, and recovers the interface
+  COM, samples the density along each ray, and recovers the interface
   position as the half-density point of a 1D tanh fit on that ray.
 
   In such samplings, the interface is recovered by fitting a one-dimensional
@@ -265,6 +262,7 @@ averages the per-slice angles. The whole fitter
 (spherical droplet) or one Taubin **circle** fit (cylindrical
 droplet, exploiting translational symmetry along :math:`y`) on the
 entire shell.
+
 
 5. Locating the wall plane
 --------------------------

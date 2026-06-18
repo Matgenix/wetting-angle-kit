@@ -285,6 +285,17 @@ class _BatchedTrajectoryAnalyzer(BaseTrajectoryAnalyzer):
         """
         if frame_range is None:
             frame_range = list(range(self.parser.frame_count()))
+
+        # Validate that every requested frame is within the trajectory.
+        n_available = self.parser.frame_count()
+        max_requested = max(frame_range)
+        if max_requested >= n_available:
+            raise ValueError(
+                f"frame_range contains frame index {max_requested}, but the "
+                f"trajectory only has {n_available} frame(s) "
+                f"(valid indices: 0..{n_available - 1})."
+            )
+
         batches = list(self.temporal_aggregator.iter_batches(frame_range))
         if not batches:
             results = self._build_results(batches=[])

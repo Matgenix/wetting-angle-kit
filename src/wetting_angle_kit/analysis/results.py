@@ -74,6 +74,10 @@ class SlicingBatchResult(BatchResult):
     that does not reach the wall) is marked ``nan`` rather than dropped,
     so attrition is visible and the slice index is preserved.
 
+    The inherited :attr:`BatchResult.angle` field stores the
+    **mean** across slices (``nanmean``). Use :attr:`median_angle`
+    for the median, which is more robust to outlier slices.
+
     Attributes
     ----------
     per_slice_angles : ndarray
@@ -102,6 +106,16 @@ class SlicingBatchResult(BatchResult):
     slice_popts: np.ndarray
     n_slices_total: int
     n_slices_used: int
+
+    @property
+    def median_angle(self) -> float:
+        """Median contact angle across slices (degrees).
+
+        More robust than :attr:`angle` (the mean) when one or two
+        slices are outliers — e.g. due to asymmetric density near the
+        periodic boundary.  ``nan`` slices are ignored.
+        """
+        return float(np.nanmedian(self.per_slice_angles))
 
 
 @dataclass(frozen=True, eq=False, kw_only=True)

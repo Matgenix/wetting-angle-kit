@@ -53,6 +53,19 @@ KDE).
 
 ----
 
+Coupled-Fit 3D Contact Angle
+------------------------------
+
+Full 3D coupled hyperbolic-tangent fit via
+:class:`CoupledFit3DAnalyzer` — nine-parameter model on a
+``(xi, yi, zi)`` density grid. Spherical droplets only.
+
+.. literalinclude:: ../../examples/coupled_fit_3d_ca.py
+   :language: python
+   :linenos:
+
+----
+
 Visualising a Per-Frame Droplet Snapshot
 ----------------------------------------
 
