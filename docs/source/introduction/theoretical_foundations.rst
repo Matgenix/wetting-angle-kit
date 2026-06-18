@@ -63,7 +63,7 @@ The geometry choice cascades through every component:
    * - .. image:: ../../images/wetting_angle_kit_cylinder.jpg
           :width: 100%
 
-     - .. image:: ../../images/wetting_angle_kit_3d_droplet.jpg
+     - .. image:: ../../images/wetting_angle_kit_3d_droplet.png
           :width: 100%
 
 * spherical droplets are treated as fully three-dimensional objects;
