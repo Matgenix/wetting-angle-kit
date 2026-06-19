@@ -54,7 +54,7 @@ mean with its own cumulative ``±σ`` band).
        wall_detector=WallDetector.min_plus_offset(offset=0.0),
        temporal_aggregator=TemporalAggregator(batch_size=1),
    )
-   results = analyzer.analyze(range(0, 50))
+   results = analyzer.analyze(range(0, 24))
 
    plotter = AngleEvolutionPlotter(
        results,

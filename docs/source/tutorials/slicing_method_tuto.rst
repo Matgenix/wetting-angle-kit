@@ -175,7 +175,7 @@ Example trajectory::
    )
 
    # --- Step 4: Run the analysis on a frame range ---
-   results = analyzer.analyze(range(0, 50))
+   results = analyzer.analyze(range(0, 24))
 
    # --- Step 5: Inspect the results ---
    print("Mean contact angle (°):", results.mean_angle)

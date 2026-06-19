@@ -90,5 +90,5 @@ positions = xyz_parser.parse(frame_index=0)
 print("Total atoms loaded:", len(positions))
 
 # --- Extract subset of atoms (first 50) ---
-subset = xyz_parser.parse(frame_index=0, indices=list(range(50)))
+subset = xyz_parser.parse(frame_index=0, indices=list(range(24)))
 print("Subset (50 atoms) shape:", subset.shape)

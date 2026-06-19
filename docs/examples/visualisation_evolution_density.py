@@ -45,7 +45,7 @@ slicing = TrajectoryAnalyzer(
     wall_detector=WallDetector.min_plus_offset(offset=0.0),
     temporal_aggregator=TemporalAggregator(batch_size=1),
 )
-slicing_results = slicing.analyze(range(0, 50))
+slicing_results = slicing.analyze(range(0, 24))
 
 splot = AngleEvolutionPlotter(
     slicing_results,

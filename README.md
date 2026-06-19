@@ -124,7 +124,7 @@ slicing = TrajectoryAnalyzer(
     wall_detector=WallDetector.min_plus_offset(offset=0.0),
     temporal_aggregator=TemporalAggregator(batch_size=1),  # one angle per frame
 )
-results = slicing.analyze(range(0, 50))
+results = slicing.analyze(range(0, 24))
 print(results.mean_angle, results.std_angle)
 
 # --- Joint coupled-fit (one robust angle over a pooled batch) ---

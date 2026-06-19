@@ -63,7 +63,7 @@ class DensityEstimator(ABC):
     dispatched by the analyzer / extractor that consumes them.
     """
 
-    #: Human-readable kind tag (used in tqdm labels).
+    #: kind tag (used in tqdm labels).
     kind: ClassVar[str]
 
     # ------------------------------------------------------------------

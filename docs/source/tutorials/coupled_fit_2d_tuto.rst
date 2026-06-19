@@ -103,7 +103,7 @@ Example trajectory::
    )
 
    # --- Step 5: Run analysis for a frame range ---
-   results = analyzer.analyze(range(0, 100))
+   results = analyzer.analyze(range(0, 24))
    print("Mean contact angle (°):", results.mean_angle)
    print("Std across batches (°):", results.std_angle)
    for batch in results.batches[:3]:
@@ -284,7 +284,7 @@ Drop the ``temporal_aggregator`` argument (or set
        atom_indices=oxygen_indices,
        droplet_geometry="spherical",
        grid_params=grid_params,
-   ).analyze(range(0, 200))
+   ).analyze(range(0, 24))
    print(results.batches[0].angle)  # single representative angle
 
 This is the natural mode for the coupled fit — the NLLS

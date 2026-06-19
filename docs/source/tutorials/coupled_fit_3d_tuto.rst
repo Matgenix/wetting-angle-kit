@@ -90,7 +90,7 @@ wasting work.
        # reach the same per-cell noise; default is fully pooled.
        temporal_aggregator=TemporalAggregator(batch_size=-1),
    )
-   results = analyzer.analyze(range(0, 100))
+   results = analyzer.analyze(range(0, 24))
    batch = results.batches[0]
 
    print(f"Angle: {batch.angle:.2f}°")

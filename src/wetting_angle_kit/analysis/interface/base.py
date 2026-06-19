@@ -66,8 +66,8 @@ class SpaceSampling(ABC):
     composing :class:`InterfaceExtractor` after pooling atom positions.
     """
 
-    #: Human-readable kind tag (used in tqdm labels). Set by each
-    #: concrete subclass.
+    # kind tag (used in tqdm labels). Set by each
+    # concrete subclass.
     kind: ClassVar[SamplingKind]
 
     @abstractmethod

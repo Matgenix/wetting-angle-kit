@@ -112,7 +112,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 
    # --- Step 4 (Optional): Parse only a subset of atoms ---
    # For example, extract the first 50 atoms
-   subset_positions = xyz_parser.parse(frame_index=0, indices=list(range(50)))
+   subset_positions = xyz_parser.parse(frame_index=0, indices=list(range(24)))
    print("Subset of 50 atoms extracted successfully.")
 
 ----
