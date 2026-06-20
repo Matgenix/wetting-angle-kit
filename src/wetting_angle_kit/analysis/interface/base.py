@@ -125,7 +125,7 @@ class SpaceSampling(ABC):
     def rays(
         cls,
         *,
-        delta_azimuthal: float | None = None,
+        delta_azimuthal: float | None = 15.0,
         delta_cylinder: float | None = None,
         n_rays_sphere: int | None = None,
         delta_polar: float = 8.0,
@@ -140,7 +140,7 @@ class SpaceSampling(ABC):
         ==========================  =========================================
         surface_kind, geometry      required ray params
         ==========================  =========================================
-        slicing, spherical          ``delta_azimuthal`` (+ ``delta_polar``)
+        slicing, spherical          [``delta_azimuthal``] (+ ``delta_polar``)
         slicing, cylinder_x/y       ``delta_cylinder`` (+ ``delta_polar``)
         whole, spherical            ``n_rays_sphere``
         whole, cylinder_x/y         ``delta_cylinder`` (+ ``delta_polar``)
@@ -148,9 +148,10 @@ class SpaceSampling(ABC):
 
         Parameters
         ----------
-        delta_azimuthal : float, optional
+        delta_azimuthal : float or None, default 15.0
             Azimuthal step (degrees) between slicing planes for the
-            spherical slicing mode.
+            spherical slicing mode. ``None`` disables the parameter
+            (useful when only cylinder modes are needed).
         delta_cylinder : float, optional
             Step (Å) along the cylinder axis between slices for the
             cylinder modes (both slicing and whole).
@@ -186,7 +187,7 @@ class SpaceSampling(ABC):
         cls,
         *,
         grid_params: dict[str, Any] | None = None,
-        delta_azimuthal: float | None = None,
+        delta_azimuthal: float | None = 15.0,
         delta_cylinder: float | None = None,
     ) -> SpaceSampling:
         """Fixed-cell grid sampling layout.
@@ -213,10 +214,10 @@ class SpaceSampling(ABC):
             atom bounding box plus a 5 Å buffer, with cell width set
             to ``density_sigma / 2`` for Gaussian or ``2 Å`` for
             binning.
-        delta_azimuthal : float, optional
+        delta_azimuthal : float or None, default 15.0
             Azimuthal step (degrees) between slicing planes for
-            ``slicing + spherical``. Required for that case; ignored
-            otherwise.
+            ``slicing + spherical``. Ignored for cylinder geometries
+            and whole-fit modes.
         delta_cylinder : float, optional
             Step (Å) along the cylinder axis between slicing planes
             for ``slicing + cylinder``. Required for that case;

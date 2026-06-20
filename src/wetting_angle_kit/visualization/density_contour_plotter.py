@@ -164,6 +164,7 @@ class DensityContourPlotter:
         self,
         *,
         n_levels: int = 10,
+        show_fit: bool = True,
         title: str | None = None,
         save_path: str | None = None,
     ) -> go.Figure:
@@ -177,6 +178,9 @@ class DensityContourPlotter:
         ----------
         n_levels : int, default 10
             Number of iso-density levels exposed in the slider.
+        show_fit : bool, default True
+            If ``True``, overlay the fitted sphere as a black dashed
+            wireframe (meridians + parallels).
         title : str, optional
             Figure title.  Defaults to
             ``"Isosurface ρ ≥ ... — {label}"``.
@@ -273,12 +277,20 @@ class DensityContourPlotter:
             )
         )
 
+        # Fitted sphere wireframe.
+        sphere_traces: list[go.Scatter3d] = []
+        if show_fit:
+            sphere_traces = self._sphere_wireframe(params)
+            for tr in sphere_traces:
+                fig.add_trace(tr)
+
         # Slider steps — each toggles one isosurface;
-        # wall + colorbar always on (last 2 traces).
+        # wall + colorbar + sphere wireframe always on.
+        n_always_on = 2 + len(sphere_traces)  # wall, colorbar, sphere lines
         steps = []
         n_iso = len(iso_levels)
         for i, iso_val in enumerate(iso_levels):
-            vis = [False] * n_iso + [True, True]  # wall + colorbar
+            vis = [False] * n_iso + [True] * n_always_on
             vis[i] = True
             steps.append(
                 {
@@ -316,6 +328,124 @@ class DensityContourPlotter:
         if save_path:
             fig.write_html(save_path)
         return fig
+
+    # ------------------------------------------------------------------
+    # Internals — fitted-sphere wireframe for the 3D plot.
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _sphere_wireframe(
+        params: dict,
+        *,
+        n_meridians: int = 12,
+        n_parallels: int = 8,
+        pts_per_line: int = 80,
+    ) -> list[go.Scatter3d]:
+        """Build wireframe traces for the fitted sphere above the wall.
+
+        Only the portion of the sphere at or above the wall height
+        ``zi_0`` is drawn; anything below is clipped.
+
+        Parameters
+        ----------
+        params : dict
+            Model parameters with keys ``R_eq``, ``xi_c``, ``yi_c``,
+            ``zi_c``, ``zi_0``.
+        n_meridians : int
+            Number of longitude (meridian) great circles.
+        n_parallels : int
+            Number of latitude (parallel) circles evenly spaced
+            from bottom to top of the sphere.
+        pts_per_line : int
+            Points per wireframe line segment.
+
+        Returns
+        -------
+        list[go.Scatter3d]
+            Wireframe line traces (meridians + parallels), clipped
+            at the wall height.
+        """
+        R = float(params["R_eq"])
+        xc = float(params.get("xi_c", 0.0))
+        yc = float(params.get("yi_c", 0.0))
+        zc = float(params["zi_c"])
+        z0 = float(params["zi_0"])
+
+        line_style: dict = {
+            "color": "black",
+            "width": 3,
+            "dash": "dash",
+        }
+        traces: list[go.Scatter3d] = []
+
+        def _add_clipped_trace(
+            x: np.ndarray,
+            y: np.ndarray,
+            z: np.ndarray,
+        ) -> None:
+            """Append line segments for the portion with ``z >= z0``.
+
+            Contiguous runs of above-wall points are emitted as
+            separate traces so that Plotly does not draw a line
+            through the masked region.
+            """
+            mask = z >= z0
+            if not mask.any():
+                return
+            # Find contiguous runs of True in *mask*.
+            diff = np.diff(mask.astype(np.int8))
+            starts = np.flatnonzero(diff == 1) + 1
+            ends = np.flatnonzero(diff == -1) + 1
+            if mask[0]:
+                starts = np.r_[0, starts]
+            if mask[-1]:
+                ends = np.r_[ends, len(mask)]
+            for s, e in zip(starts, ends, strict=True):
+                traces.append(
+                    go.Scatter3d(
+                        x=x[s:e],
+                        y=y[s:e],
+                        z=z[s:e],
+                        mode="lines",
+                        line=line_style,
+                        showlegend=False,
+                        hoverinfo="none",
+                    )
+                )
+
+        # Meridians (longitude great circles) — clipped at the wall.
+        theta_arr = np.linspace(0.0, np.pi, pts_per_line)
+        for k in range(n_meridians):
+            phi = 2.0 * np.pi * k / n_meridians
+            x = xc + R * np.sin(theta_arr) * np.cos(phi)
+            y = yc + R * np.sin(theta_arr) * np.sin(phi)
+            z = zc + R * np.cos(theta_arr)
+            _add_clipped_trace(x, y, z)
+
+        # Parallels (latitude circles) — skip rings below the wall.
+        phi_arr = np.linspace(0.0, 2.0 * np.pi, pts_per_line)
+        theta_parallels = np.linspace(0.0, np.pi, n_parallels + 2)[1:-1]
+        for th in theta_parallels:
+            z_ring = zc + R * np.cos(th)
+            if z_ring < z0:
+                continue
+            r_ring = R * np.sin(th)
+            x = xc + r_ring * np.cos(phi_arr)
+            y = yc + r_ring * np.sin(phi_arr)
+            z = np.full_like(phi_arr, z_ring)
+            traces.append(
+                go.Scatter3d(
+                    x=x,
+                    y=y,
+                    z=z,
+                    mode="lines",
+                    line=line_style,
+                    showlegend=False,
+                    hoverinfo="none",
+                )
+            )
+
+        return traces
 
     # ------------------------------------------------------------------
     # Internals — 3D source extraction.
