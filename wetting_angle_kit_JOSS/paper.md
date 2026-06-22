@@ -160,7 +160,7 @@ The reported contact angles were obtained by analyzing droplets of increasing si
 and extrapolating to the macroscopic limit using the modified Young’s equation **ref**,
 where the contact angle is related to droplet size, enabling the estimation of the infinite-droplet contact angle through linear extrapolation.
 These results are consistent with values reported in the literature, obtained using
-similar interatomic potential parameters [@Jorgensen1996] for the MD simulation.
+similar interatomic potential parameters [@Jorgensen1996] for the MD simulation and SPC/E model for water [@Roberts1999].
 
 ![Size-dependent contact angle analysis for water droplets on graphite and PTFE substrates. Values of $\cos(\theta)$ are plotted as a function of the inverse square root of the droplet surface area for droplets containing between 500 and 6000 water molecules. A linear extrapolation following the modified Young’s equation is used to estimate the macroscopic (infinite-droplet) contact angle.](mean_cos_angle_vs_surface_graphite_ptfe.pdf)
 

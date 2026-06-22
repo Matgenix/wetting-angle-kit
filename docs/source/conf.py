@@ -43,6 +43,9 @@ extensions = [
 # Autosummary settings
 autosummary_generate = True
 
+# Allow zooming / panning on Mermaid diagrams so dense flowcharts stay
+# readable.  Requires sphinxcontrib-mermaid ≥ 0.9.
+mermaid_d3_zoom = True
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # Exclude input prompts from copybutton

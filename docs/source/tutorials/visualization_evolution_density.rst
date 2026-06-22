@@ -114,14 +114,14 @@ density field without touching anything else here:
        grid_params={
            "xi_0": 0.0,
            "xi_f": 70.0,
-           "dx": 2.0,
+           "dx": 4.0,
            "zi_0": 0.0,
            "zi_f": 70.0,
-           "dz": 2.0,
+           "dz": 4.0,
        },
        temporal_aggregator=TemporalAggregator(batch_size=10),
    )
-   results = coupled_fit.analyze(range(0, 100))
+   results = coupled_fit.analyze(range(0, 24))
 
    # One batch:
    DensityContourPlotter(results.batches[0], label="spherical_4k").plot().show()
@@ -137,7 +137,71 @@ azimuthal collapse so plots are unambiguous.
 
 ----
 
-3. Tips
+3. 3D isosurface visualisation
+------------------------------
+
+:class:`DensityContourPlotter` also supports interactive 3D
+isosurface plots via its :meth:`plot_3d_isosurface` method. This
+requires a **3D source** (:class:`CoupledFit3DResults` or
+:class:`CoupledFit3DBatchResult`) because the full 3D density grid
+is needed. The figure includes a density-threshold slider so you
+can sweep through iso-levels, a semi-transparent wall plane, and
+(optionally) the fitted sphere wireframe overlay.
+
+Below is a complete example that runs the 3D coupled-fit analysis
+and then generates both the azimuthally-averaged 2D contour and
+the full 3D isosurface:
+
+.. code-block:: python
+
+   from wetting_angle_kit.analysis import CoupledFit3DAnalyzer
+   from wetting_angle_kit.analysis.temporal import TemporalAggregator
+   from wetting_angle_kit.parsers import LammpsDumpParser, LammpsDumpWaterFinder
+   from wetting_angle_kit.visualization import DensityContourPlotter
+
+   filename = "../../tests/trajectories/traj_spherical_drop_4k.lammpstrj"
+   oxygen_indices = LammpsDumpWaterFinder(
+       filename, oxygen_type=1, hydrogen_type=2
+   ).get_water_oxygen_indices(frame_index=0)
+
+   analyzer = CoupledFit3DAnalyzer(
+       parser=LammpsDumpParser(filename),
+       atom_indices=oxygen_indices,
+       droplet_geometry="spherical",
+       grid_params={
+           "xi_0": -40.0,
+           "xi_f": 40.0,
+           "dx": 4.0,
+           "yi_0": -40.0,
+           "yi_f": 40.0,
+           "dy": 4.0,
+           "zi_0": 0.0,
+           "zi_f": 60.0,
+           "dz": 4.0,
+       },
+       temporal_aggregator=TemporalAggregator(batch_size=-1),
+   )
+   results = analyzer.analyze(range(0, 24))
+
+   plotter = DensityContourPlotter(results, label="4k spherical drop")
+
+   # 2D contour (azimuthally averaged) — works for any source type.
+   plotter.plot(save_path="density_contour_2d.html")
+   print("Saved: density_contour_2d.html")
+
+   # 3D isosurface with density-threshold slider (3D sources only).
+   plotter.plot_3d_isosurface(n_levels=10, save_path="density_isosurface_3d.html")
+   print("Saved: density_isosurface_3d.html")
+
+The slider exposes ``n_levels`` iso-density thresholds; each
+level is coloured consistently using the colorscale (Jet by
+default) so you can visually identify which density value each
+surface corresponds to. Set ``show_fit=False`` to hide the
+wireframe sphere if you only want the raw density surface.
+
+----
+
+4. Tips
 -------
 
 - Pass ``title=...`` on either ``.plot()`` to override the default.
@@ -151,3 +215,7 @@ azimuthal collapse so plots are unambiguous.
 - The package follows a "one plotter per concern" pattern rather
   than per analyzer — pass any analyzer's results object to either
   plotter, and the plotter dispatches on the result type.
+- For the 3D isosurface, using coarser grids (~25 bins per axis)
+  with many pooled frames (``batch_size=-1``) gives the best
+  visual result. Finer grids produce noisier surfaces without much
+  benefit for visualisation.

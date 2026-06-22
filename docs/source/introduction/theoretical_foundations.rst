@@ -10,75 +10,6 @@ the analyzers.
    :local:
    :depth: 2
 
-The following diagram summarises the composable components of the
-analysis module and how they connect:
-
-.. mermaid::
-
-   flowchart TD
-       %% ---------- role styles ----------
-       classDef decision fill:#fff3cd,stroke:#d39e00,color:#222;
-       classDef option   fill:#e7f1ff,stroke:#4a86e8,color:#222;
-       classDef analyzer fill:#d4edda,stroke:#28a745,color:#222;
-       classDef shared   fill:#f3e8ff,stroke:#8e44ad,color:#222;
-
-       start(["Analysis module"]):::analyzer
-
-       %% ===== Step 1: common to every analyzer =====
-       subgraph S1["Step 1 — common setup (all analyzers)"]
-           direction LR
-           geo{"Droplet geometry"}:::decision
-           geo --> spherical:::option
-           geo --> cylinder_x:::option
-           geo --> cylinder_y:::option
-           agg{"Temporal aggregation"}:::decision
-           agg --> b1["batch_size = 1\nper frame"]:::option
-           agg --> bn["batch_size = n\nn-frame blocks"]:::option
-           agg --> ball["batch_size = -1\nall frames pooled"]:::option
-       end
-
-       %% ===== Step 2: pick a method and configure it =====
-       subgraph S2["Step 2 — choose a method and configure it"]
-           method{"Which analyzer?"}:::decision
-           method -->|"separable steps,\nper-frame capable"| TA["TrajectoryAnalyzer"]:::analyzer
-           method -->|"coupled tanh fit,\n2D grid"| CF2["CoupledFit2DAnalyzer"]:::analyzer
-           method -->|"coupled tanh fit,\n3D grid (spherical only)"| CF3["CoupledFit3DAnalyzer"]:::analyzer
-
-           dens{"DensityEstimator"}:::shared
-           dens --> gaussian:::option
-           dens --> binning:::option
-
-           subgraph S2a["2a — TrajectoryAnalyzer components"]
-               ext["InterfaceExtractor\n= SpaceSampling + DensityEstimator"]:::shared
-               samp{"SpaceSampling"}:::decision
-               samp --> rays:::option
-               samp --> grid:::option
-               fit{"SurfaceFitter"}:::decision
-               fit --> slicing:::option
-               fit --> whole:::option
-               wall{"WallDetector"}:::decision
-               wall --> min_plus_offset:::option
-               wall --> explicit:::option
-               wall --> from_atoms:::option
-               ext --- samp
-           end
-
-           subgraph S2b["2b — coupled-fit components"]
-               grid_params["grid_params\n(or auto-derived)"]:::option
-               initial_params["initial_params\n(7-param tanh seed)"]:::option
-           end
-
-           TA --> S2a
-           CF2 --> S2b
-           CF3 --> S2b
-           ext -. uses .-> dens
-           CF2 -. uses .-> dens
-           CF3 -. uses .-> dens
-           fit -. "mode must match\nthe extractor" .- ext
-       end
-
-       start --> S1
-       S1 --> method
 
 1. The contact angle and the cap geometry
 -----------------------------------------
@@ -522,3 +453,76 @@ inversely with :math:`\sqrt{N}` in regimes where shot noise
 dominates. For a 4k-atom droplet on a typical room-temperature
 trajectory, ``batch_size`` between 1 and 10 covers the useful
 range.
+
+9. Modular Workflow
+--------------------
+
+The following diagram summarises the composable components of the
+analysis module and how they connect:
+
+.. mermaid::
+
+   flowchart TD
+       %% ---------- role styles ----------
+       classDef decision fill:#fff3cd,stroke:#d39e00,color:#222;
+       classDef option   fill:#e7f1ff,stroke:#4a86e8,color:#222;
+       classDef analyzer fill:#d4edda,stroke:#28a745,color:#222;
+       classDef shared   fill:#f3e8ff,stroke:#8e44ad,color:#222;
+
+       start(["Analysis module"]):::analyzer
+
+       %% ===== Step 1: common to every analyzer =====
+       subgraph S1["Step 1 — common setup (all analyzers)"]
+           direction LR
+           geo{"Droplet geometry"}:::decision
+           geo --> spherical:::option
+           geo --> cylinder_x:::option
+           geo --> cylinder_y:::option
+           agg{"Temporal aggregation"}:::decision
+           agg --> b1["batch_size = 1\nper frame"]:::option
+           agg --> bn["batch_size = n\nn-frame blocks"]:::option
+           agg --> ball["batch_size = -1\nall frames pooled"]:::option
+       end
+
+       %% ===== Step 2: pick a method and configure it =====
+       subgraph S2["Step 2 — choose a method and configure it"]
+           method{"Which analyzer?"}:::decision
+           method -->|"separable steps,\nper-frame capable"| TA["TrajectoryAnalyzer"]:::analyzer
+           method -->|"coupled tanh fit,\n2D grid"| CF2["CoupledFit2DAnalyzer"]:::analyzer
+           method -->|"coupled tanh fit,\n3D grid (spherical only)"| CF3["CoupledFit3DAnalyzer"]:::analyzer
+
+           dens{"DensityEstimator"}:::shared
+           dens --> gaussian:::option
+           dens --> binning:::option
+
+           subgraph S2a["2a — TrajectoryAnalyzer components"]
+               ext["InterfaceExtractor\n= SpaceSampling + DensityEstimator"]:::shared
+               samp{"SpaceSampling"}:::decision
+               samp --> rays:::option
+               samp --> grid:::option
+               fit{"SurfaceFitter"}:::decision
+               fit --> slicing:::option
+               fit --> whole:::option
+               wall{"WallDetector"}:::decision
+               wall --> min_plus_offset:::option
+               wall --> explicit:::option
+               wall --> from_atoms:::option
+               ext --- samp
+           end
+
+           subgraph S2b["2b — coupled-fit components"]
+               grid_params["grid_params\n(or auto-derived)"]:::option
+               initial_params["initial_params\n(7-param tanh seed)"]:::option
+           end
+
+           TA --> S2a
+           CF2 --> S2b
+           CF3 --> S2b
+           ext -. uses .-> dens
+           CF2 -. uses .-> dens
+           CF3 -. uses .-> dens
+           fit -. "mode must match\nthe extractor" .- ext
+       end
+
+       start --> S1
+       S1 --> method
