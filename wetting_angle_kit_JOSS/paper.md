@@ -11,7 +11,7 @@ authors:
     affiliation: "1, 2"
   - name: Edoardo Monti
     orcid: 0009-0002-8340-7940
-    affiliation: "4, 5"
+    affiliation: "4"
   - name: Guillaume Brunin
     orcid: 0000-0003-1159-8389
     affiliation: "1"
@@ -38,8 +38,6 @@ affiliations:
    index: 3
  - name: Department of Mathematics, Imperial College London, 180 Queen's Gate, London, SW7 2AZ, United Kingdom
    index: 4
- - name: Advanced Technology Division, Toyota Motor Europe NV/SA, Technical Center, Hoge Wei 33B, Zaventem, 1930, Belgium
-   index: 5
 
 date:  May 2026
 bibliography: paper.bib
