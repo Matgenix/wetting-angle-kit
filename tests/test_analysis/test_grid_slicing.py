@@ -223,9 +223,11 @@ def test_grid_with_gaussian_smoother_than_grid_with_binning() -> None:
 
 
 def test_grid_with_gaussian_rejects_missing_delta_azimuthal_for_spherical() -> None:
-    """slicing+spherical without ``delta_azimuthal`` must fail at validation."""
+    """slicing+spherical with ``delta_azimuthal=None`` must fail at validation."""
     extractor = InterfaceExtractor(
-        sampling=SpaceSampling.grid(grid_params=_default_grid_params(half=35.0)),
+        sampling=SpaceSampling.grid(
+            grid_params=_default_grid_params(half=35.0), delta_azimuthal=None
+        ),
         density=DensityEstimator.gaussian(density_sigma=2.0),
     )
     with pytest.raises(ValueError, match="delta_azimuthal"):
