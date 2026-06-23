@@ -14,33 +14,49 @@ Parser Module
 Analysis
 --------
 
-Base Analyzer
-^^^^^^^^^^^^^
+Top-level analyzers
+^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.analysis.analyzer
+.. automodule:: wetting_angle_kit.analysis.trajectory
    :members:
    :show-inheritance:
 
-Slicing Method
-^^^^^^^^^^^^^^
-
-.. automodule:: wetting_angle_kit.analysis.slicing
+.. automodule:: wetting_angle_kit.analysis.coupled_fit
    :members:
-   :undoc-members:
    :show-inheritance:
-   :exclude-members: SlicingFrameFitter
 
-Binning Method
-^^^^^^^^^^^^^^
+Strategy components
+^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: wetting_angle_kit.analysis.binning
+.. automodule:: wetting_angle_kit.analysis.interface
    :members:
-   :undoc-members:
    :show-inheritance:
-   :exclude-members: BinningBatchFitter
 
-Visualization and Statistics
------------------------------
+.. automodule:: wetting_angle_kit.analysis.fitters
+   :members:
+   :show-inheritance:
+
+.. automodule:: wetting_angle_kit.analysis.wall
+   :members:
+   :show-inheritance:
+
+.. automodule:: wetting_angle_kit.analysis.temporal
+   :members:
+   :show-inheritance:
+
+.. automodule:: wetting_angle_kit.analysis.geometry
+   :members:
+   :show-inheritance:
+
+Results dataclasses
+^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: wetting_angle_kit.analysis.results
+   :members:
+   :show-inheritance:
+
+Visualisation
+-------------
 
 .. automodule:: wetting_angle_kit.visualization
    :members:

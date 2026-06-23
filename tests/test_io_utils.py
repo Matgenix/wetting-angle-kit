@@ -6,11 +6,9 @@ import numpy as np
 import pytest
 
 from wetting_angle_kit.io_utils import (
-    VALID_DROPLET_GEOMETRIES,
     assert_orthogonal_cell,
     detect_parser_type,
     recenter_droplet_pbc,
-    validate_droplet_geometry,
 )
 
 # --- detect_parser_type ---
@@ -35,28 +33,6 @@ def test_detect_parser_type_supported(filename, expected):
 def test_detect_parser_type_rejects_unknown(filename):
     with pytest.raises(ValueError, match="Unsupported trajectory file format"):
         detect_parser_type(filename)
-
-
-# --- validate_droplet_geometry ---
-
-
-@pytest.mark.parametrize("geom", VALID_DROPLET_GEOMETRIES)
-def test_validate_droplet_geometry_accepts_valid(geom):
-    # Should not raise.
-    validate_droplet_geometry(geom)
-
-
-@pytest.mark.parametrize("bad", ["spheric", "cylinder", "Cylinder_y", "", "sphere"])
-def test_validate_droplet_geometry_rejects_invalid(bad):
-    with pytest.raises(ValueError, match="Unknown droplet_geometry"):
-        validate_droplet_geometry(bad)
-
-
-def test_valid_droplet_geometries_constant_is_a_tuple():
-    # Constant should be a frozen tuple-like sequence so callers cannot
-    # mutate the package-level whitelist accidentally.
-    assert isinstance(VALID_DROPLET_GEOMETRIES, tuple)
-    assert set(VALID_DROPLET_GEOMETRIES) == {"spherical", "cylinder_x", "cylinder_y"}
 
 
 # --- Round-trip with detect + temp file ---

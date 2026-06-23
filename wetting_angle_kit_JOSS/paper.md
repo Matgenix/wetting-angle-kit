@@ -11,7 +11,7 @@ authors:
     affiliation: "1, 2"
   - name: Edoardo Monti
     orcid: 0009-0002-8340-7940
-    affiliation: "4, 5"
+    affiliation: "4"
   - name: Guillaume Brunin
     orcid: 0000-0003-1159-8389
     affiliation: "1"
@@ -38,8 +38,6 @@ affiliations:
    index: 3
  - name: Department of Mathematics, Imperial College London, 180 Queen's Gate, London, SW7 2AZ, United Kingdom
    index: 4
- - name: Advanced Technology Division, Toyota Motor Europe NV/SA, Technical Center, Hoge Wei 33B, Zaventem, 1930, Belgium
-   index: 5
 
 date:  May 2026
 bibliography: paper.bib
@@ -119,27 +117,15 @@ simulation boundaries and avoiding artifacts in interface detection.
 This consistency facilitates seamless integration with downstream analysis methods, enabling researchers to easily
 incorporate support for additional file formats or simulation engines.
 
-The analysis module implements
-two complementary approaches for contact angle computation that are illustrated in Figure 2.
-The slicing method consists in a frame-by-frame geometric analysis,
-which enables a detailed temporal resolution.
-In practice, this approach provides a local characterization of
-the liquid–vapor interface, allowing the detection of asymmetries and transient
-deformations of the droplet shape. It is particularly well suited for non-equilibrium
-simulations or systems where the droplet deviates from an ideal spherical cap.
-In contrast, the binning method constructs time-averaged density fields,
-reducing thermal fluctuations and producing a smoother
-and more stable interface. This makes this approach suitable for extracting
-equilibrium contact angles from noisy datasets.
-However, this temporal averaging may obscure short-lived fluctuations and
-local deviations from ideal geometries.
-The binning method is also more suited to symmetric systems, since atoms are folded into a single quadrant.
-Due to the finer analysis it provides, the slicing method is one order of magnitude more
-expensive computationnally than its binning counterpart.
-These two approaches reflect a trade-off between temporal resolution and statistical
-robustness, allowing users to select the method best suited to their system.
+The analysis module provides several composable strategies for extracting contact angles from molecular dynamics trajectories (Fig. 2). Depending on the chosen workflow options, frames can either be analysed individually to preserve temporal information or concatenated into larger batches to improve statistical sampling. This choice allows users to balance temporal resolution against statistical robustness.
 
-![Schematic representation of the two methods developed in wetting-angle-kit to compute contact angle from a MD trajectory. In the slicing method (left), all trajectory frames are analyzed and a circle is fitted on each of those, providing a time evolution of the contact angle. In the binning method (right), all frames are concatenated to fictitiously increase the molecular density of the droplet, allowing for smoother statistics at the cost of losing the time dependence of the contact angle.](schema_methods_analysis.pdf){width=80%}
+Both spherical and cylindrical droplet geometries are supported throughout the analysis workflow [@Scocchi2011]. Spherical droplets provide a direct representation of the three-dimensional cap geometry, whereas cylindrical droplets reduce curvature effects and computational cost through translational symmetry along one direction. The latter geometry is therefore widely used for large systems or when finite-size effects are of primary interest, although it represents an idealized approximation of a fully three-dimensional droplet.
+
+Two approaches are available to estimate the liquid density field. The first uses a grid-based representation, where the local density is obtained by binning atomic positions into spatial bins. The second relies on Gaussian kernel density estimation (KDE), which provides a smooth continuous representation of the density field.
+
+Once the interface or density representation has been constructed, contact angles can be determined using different fitting strategies. Geometric fitting can be applied either to the entire droplet, providing an overall estimate of the contact angle, or independently to multiple slices of the droplet, allowing for the detection of asymmetries and transient shape fluctuations. Alternatively, a coupled-fit approach directly fits a hyperbolic-tangent density model to the density field, simultaneously determining the interface geometry and wall position from a single optimization procedure.
+
+![Schematic representation of the composable strategies in wetting-angle-kit to compute contact angle from a MD trajectory.](schema_methods_analysis.pdf){width=80%}
 
 Additionally, wetting-angle-kit supports two geometric models commonly used
 in the literature for droplets: spherical and cylindrical [@Scocchi2011] (see Figure 3).
@@ -172,7 +158,7 @@ The reported contact angles were obtained by analyzing droplets of increasing si
 and extrapolating to the macroscopic limit using the modified Young’s equation **ref**,
 where the contact angle is related to droplet size, enabling the estimation of the infinite-droplet contact angle through linear extrapolation.
 These results are consistent with values reported in the literature, obtained using
-similar interatomic potential parameters [@Jorgensen1996] for the MD simulation.
+similar interatomic potential parameters [@Jorgensen1996] for the MD simulation and SPC/E model for water [@Roberts1999].
 
 ![Size-dependent contact angle analysis for water droplets on graphite and PTFE substrates. Values of $\cos(\theta)$ are plotted as a function of the inverse square root of the droplet surface area for droplets containing between 500 and 6000 water molecules. A linear extrapolation following the modified Young’s equation is used to estimate the macroscopic (infinite-droplet) contact angle.](mean_cos_angle_vs_surface_graphite_ptfe.pdf)
 

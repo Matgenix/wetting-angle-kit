@@ -1,13 +1,19 @@
-"""End-to-end example: slicing contact-angle pipeline plus visualization.
+"""End-to-end example: slicing pipeline + per-frame droplet snapshot.
 
-Run a single-frame slicing analysis on a LAMMPS dump file and save a PNG of
-the droplet with the fitted circle, surface contour, and tangent at the
-contact point.
+Runs the slicing-fit pipeline on a LAMMPS dump file, pulls one slice's
+interface contour + fitted circle off the result, and renders the
+droplet snapshot with :class:`DropletSlicePlotter`.
 """
 
-import numpy as np
-
-from wetting_angle_kit.analysis.slicing import SlicingFrameFitter
+from wetting_angle_kit.analysis import (
+    DensityEstimator,
+    InterfaceExtractor,
+    SpaceSampling,
+    SurfaceFitter,
+    TrajectoryAnalyzer,
+    WallDetector,
+)
+from wetting_angle_kit.analysis.temporal import TemporalAggregator
 from wetting_angle_kit.parsers import (
     LammpsDumpParser,
     LammpsDumpWallParser,
@@ -15,45 +21,50 @@ from wetting_angle_kit.parsers import (
 )
 from wetting_angle_kit.visualization import DropletSlicePlotter
 
-# --- 1. Define the Input Trajectory ---
-# Adjust this to point to your local .lammpstrj file.
+# --- 1. Define the input trajectory ---
 filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
+frame_index = 10
 
-# --- 2. Identify Water Molecules ---
+# --- 2. Identify water-oxygen atoms ---
 wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
-
-oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
 print("Number of water molecules detected:", len(oxygen_indices))
 
-# --- 3. Parse Atomic Coordinates ---
+# --- 3. Read atom and wall positions for the frame ---
 parser = LammpsDumpParser(filepath=filename)
-oxygen_position = parser.parse(frame_index=10, indices=oxygen_indices)
+oxygen_position = parser.parse(frame_index=frame_index, indices=oxygen_indices)
 
-# Wall particles are everything not in the liquid types.
-coord_wall = LammpsDumpWallParser(filename, liquid_particle_types=[1, 2])
-wall_coords = coord_wall.parse(frame_index=10)
+# Wall parser: ``liquid_particle_types`` lists what to EXCLUDE
+# (the liquid), leaving the wall atoms.
+wall_parser = LammpsDumpWallParser(filename, liquid_particle_types=[1, 2])
+wall_coords = wall_parser.parse(frame_index=frame_index)
 
-# --- 4. Compute Contact Angles ---
-processor = SlicingFrameFitter(
-    liquid_coordinates=oxygen_position,
-    liquid_geom_center=np.mean(oxygen_position, axis=0),
+# --- 4. Run the slicing pipeline on the chosen frame ---
+analyzer = TrajectoryAnalyzer(
+    parser=LammpsDumpParser(filename),
+    atom_indices=oxygen_indices,
     droplet_geometry="cylinder_y",
-    delta_cylinder=5,
-    max_dist=100,
+    interface_extractor=InterfaceExtractor(
+        sampling=SpaceSampling.rays(delta_cylinder=5.0, delta_polar=8.0),
+        density=DensityEstimator.gaussian(),
+    ),
+    surface_fitter=SurfaceFitter.slicing(surface_filter_offset=2.0),
+    wall_detector=WallDetector.min_plus_offset(offset=0.0),
+    temporal_aggregator=TemporalAggregator(batch_size=1),
 )
+batch = analyzer.analyze([frame_index]).batches[0]
+print("Per-slice contact angles (°):", batch.per_slice_angles.tolist())
 
-list_alfas, array_surfaces, array_popt = processor.predict_contact_angle()
-print("Per-slice contact angles (°):", list_alfas)
-
-# --- 5. Visualize the Droplet ---
+# --- 5. Visualise one slice ---
 plotter = DropletSlicePlotter(center=True)
+slice_idx = 0  # any 0..len(slice_surfaces)-1
 
 fig = plotter.plot_surface_points(
     oxygen_position=oxygen_position,
-    surface_data=array_surfaces,
-    popt=array_popt[0],
+    surface_data=[batch.slice_surfaces[slice_idx]],
+    popt=batch.slice_popts[slice_idx],
     wall_coords=wall_coords,
-    alpha=list_alfas[0],
+    alpha=float(batch.per_slice_angles[slice_idx]),
 )
 
 fig.write_html("droplet_plot.html")

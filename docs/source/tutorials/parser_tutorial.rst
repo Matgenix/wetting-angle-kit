@@ -1,5 +1,5 @@
 Tutorial: Using the Parser Module
-===================================
+=================================
 
 This tutorial shows how to load different trajectory formats using the ``wetting_angle_kit.parsers`` submodule.
 
@@ -27,7 +27,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 ----
 
 2. Example: LAMMPS Dump File
------------------------------
+----------------------------
 
 .. code-block:: python
 
@@ -37,13 +37,14 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
    filename = "../../tests/trajectories/traj_10_3_330w_nve_4k_reajust.lammpstrj"
 
    # --- Step 2: Initialize the water molecule finder ---
-   # Specify particle types for the wall and for water oxygens and hydrogens
-   wat_find = LammpsDumpWaterFinder(
-       filename, particle_type_wall={3}, oxygen_type=1, hydrogen_type=2
-   )
+   # The LAMMPS finder only needs the oxygen and hydrogen type IDs;
+   # wall atoms are everything else and are read separately via
+   # LammpsDumpWallParser when (and only when) the analysis pipeline
+   # needs them.
+   wat_find = LammpsDumpWaterFinder(filename, oxygen_type=1, hydrogen_type=2)
 
    # --- Step 3: Identify oxygen atoms for frame 0 ---
-   oxygen_indices = wat_find.get_water_oxygen_ids(frame_index=0)
+   oxygen_indices = wat_find.get_water_oxygen_indices(frame_index=0)
    print("Number of water molecules:", len(oxygen_indices))
 
    # --- Step 4: Initialize the parser ---
@@ -61,7 +62,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 ----
 
 3. Example: ASE Trajectory File
---------------------------------
+-------------------------------
 
 .. code-block:: python
 
@@ -111,7 +112,7 @@ The ``.parse()`` method always returns a NumPy array of shape ``(N, 3)`` contain
 
    # --- Step 4 (Optional): Parse only a subset of atoms ---
    # For example, extract the first 50 atoms
-   subset_positions = xyz_parser.parse(frame_index=0, indices=list(range(50)))
+   subset_positions = xyz_parser.parse(frame_index=0, indices=list(range(24)))
    print("Subset of 50 atoms extracted successfully.")
 
 ----

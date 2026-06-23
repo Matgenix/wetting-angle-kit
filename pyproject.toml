@@ -10,7 +10,9 @@ readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["version"]
 classifiers = [
-    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
     "Operating System :: OS Independent",
     "Intended Audience :: Science/Research",
     "Topic :: Scientific/Engineering :: Physics",
@@ -28,8 +30,6 @@ dependencies = [
 dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
-    "black>=23.0.0",
-    "isort>=5.0.0",
     "mypy>=1.0.0",
     "ruff>=0.15.0",
     "pre-commit",
@@ -39,7 +39,6 @@ doc = [
     "sphinx-rtd-theme>=1.0.0",
     "sphinxemoji",
     "sphinx-copybutton",
-    "sphinx-argparse",
     "sphinx-code-tabs",
     "sphinx-issues",
     "nbsphinx>=0.8.0",
@@ -51,9 +50,20 @@ viz = [
 ]
 ase = ["ase>=3.23.0"]
 ovito = ["ovito~=3.11.3"]
+# scikit-image is only needed for whole-kind extraction with a grid
+# extractor (InterfaceExtractor with SpaceSampling.grid paired with
+# SurfaceFitter.whole), which uses marching cubes to recover a
+# 3D shell from the binned density. Slicing-only workflows do not
+# need this extra.
+grid3d = ["scikit-image>=0.22"]
 # Convenience extra: installs both trajectory backends and the optional
 # visualization helpers. Use ``[all,dev,doc]`` for a full developer setup.
-all = ["ase>=3.23.0", "ovito~=3.11.3", "ipython>=8.0.0"]
+all = [
+    "ase>=3.23.0",
+    "ovito~=3.11.3",
+    "ipython>=8.0.0",
+    "scikit-image>=0.22",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/Matgenix/wetting-angle-kit"
@@ -62,7 +72,7 @@ all = ["ase>=3.23.0", "ovito~=3.11.3", "ipython>=8.0.0"]
 "Documentation" = "https://matgenix.github.io/wetting-angle-kit"
 
 [build-system]
-requires = ["setuptools==76.0.0", "versioningit ~= 1.0", "wheel"]
+requires = ["setuptools>=76.0.0", "versioningit ~= 1.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
@@ -78,15 +88,6 @@ default-tag = "0.1.2"
 
 [tool.versioningit.write]
 file = "src/wetting_angle_kit/_version.py"
-
-[tool.black]
-line-length = 88
-target-version = ["py310"]
-include = '\.pyi?$'
-
-[tool.isort]
-profile = "black"
-multi_line_output = 3
 
 [tool.mypy]
 python_version = "3.10"
@@ -119,6 +120,17 @@ disable_error_code = ["import-untyped"]
 # NeighborList API, which has no inline type information in current stubs.
 module = ["ase.*", "wetting_angle_kit.parsers.ase"]
 disable_error_code = ["union-attr", "arg-type", "no-untyped-call"]
+
+[[tool.mypy.overrides]]
+# scikit-image is an optional dependency installed via the ``grid3d``
+# extra; the grid extractors import it lazily and raise a clean
+# ImportError otherwise. Telling mypy to ignore missing imports for
+# ``skimage.*`` makes inline ``# type: ignore[import-not-found]``
+# unnecessary AND keeps the check passing whether or not the user has
+# scikit-image in their environment — otherwise running mypy with and
+# without the extra produces flipped error states.
+module = ["skimage.*"]
+ignore_missing_imports = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

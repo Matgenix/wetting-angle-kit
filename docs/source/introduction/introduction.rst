@@ -6,18 +6,23 @@ Introduction
    :align: center
    :alt: wetting_angle_kit Logo
 
-**wetting_angle_kit** is a Python package designed to analyze the contact angle of droplets from molecular dynamics simulations. It provides a modular workflow to parse trajectories, compute contact angles using different theoretical methods, and visualize the results.
+**wetting_angle_kit** is a Python package that analyses droplet contact
+angles from molecular dynamics simulations. It exposes a modular
+workflow: parse trajectories, recover the liquid–vapor interface,
+locate the wall plane, fit a geometric shape, and visualise the
+result.
 
 Package Overview
 ----------------
 
-The package operates in three main stages: **Parsing**, **Calculation**, and **Visualization**.
+The package operates in three stages: **Parsing**, **Analysis**, and
+**Visualisation**.
 
 .. mermaid::
 
    graph LR
-      A[Trajectory Parser] --> B[Contact Angle Calculation]
-      B --> C[Visualization]
+      A[Trajectory Parser] --> B[Contact Angle Analysis]
+      B --> C[Visualisation]
 
       subgraph Parsing
       A
@@ -34,7 +39,8 @@ The package operates in three main stages: **Parsing**, **Calculation**, and **V
 1. Trajectory Parser
 --------------------
 
-The first step is to import the simulation trajectory. wetting_angle_kit supports common formats used in molecular dynamics:
+The first step is to import the simulation trajectory. wetting_angle_kit
+supports common formats used in molecular dynamics:
 
 .. list-table::
    :widths: 20 80
@@ -44,78 +50,184 @@ The first step is to import the simulation trajectory. wetting_angle_kit support
    * - .. image:: ../../images/Lammps-logo.png
           :width: 100
           :align: center
-     - **LAMMPS**: The package can parse ``.lammpstrj`` files natively, handling periodic boundaries and extracting specific atom types (e.g., liquid vs. solid).
+     - **LAMMPS**: ``.lammpstrj`` files are parsed natively, handling
+       periodic boundaries and extracting specific atom types
+       (e.g. liquid vs. wall).
    * - .. image:: ../../images/ase256.png
           :width: 80
           :align: center
-     - **ASE**: Support for the **Atomic Simulation Environment (ASE)** allows reading a wide range of trajectory formats beyond LAMMPS.
+     - **ASE**: support for the **Atomic Simulation Environment**
+       allows reading a wide range of trajectory formats beyond
+       LAMMPS, plus plain ``.xyz`` files.
 
-The parser identifies the coordinate system (x, y, z) and separates the atoms of interest (e.g., water molecules) from the substrate/wall.
+Each format has a paired ``*WaterFinder`` that identifies water-oxygen
+atoms via O–H connectivity, and an optional ``*WallParser`` for reading
+the wall atoms when the analysis pipeline needs them.
 
-2. Contact Angle Calculation
-----------------------------
+2. Contact Angle Analysis
+-------------------------
 
-Once the trajectory is parsed, the core analysis is performed. Two main theoretical methods are available:
+The analysis layer is built around four orthogonal strategy
+components, each replaceable:
 
-**Supported Geometries**
+- **Interface extractor** — turns the noisy liquid atom cloud into a
+  clean set of interface points (the liquid–vapor surface). Either a
+  ray fan with a 1D tanh fit along each ray, or a 2D/3D density grid
+  with an iso-density contour at the half-bulk level.
+- **Wall detector** — locates the wall plane z-coordinate. Either
+  derived from the interface itself (``min_plus_offset``), set
+  explicitly, or read from the wall atom positions
+  (``from_atoms``).
+- **Surface fitter** — fits a geometric shape (circle per slice, or
+  a single sphere/cylinder) to the interface points and reports the
+  cap/wall intersection angle.
+- **Temporal aggregator** — groups frames into batches: per-frame,
+  pooled by ``N``, or fully pooled.
+
+Two top-level entry points compose these strategies in different ways.
+
+**Top-level analyzers**
+^^^^^^^^^^^^^^^^^^^^^^^
+
+:class:`TrajectoryAnalyzer` is the **composable pipeline**: you pick
+an extractor, a wall detector, a surface fitter, and a temporal
+aggregator, and the analyzer runs them per batch. Examples of useful
+combinations:
+
+* ray-fan sampling + slicing fit + ``min_plus_offset`` wall +
+  per-frame batches — a per-frame angle trace with a per-slice ``±σ``
+  band;
+* ray-fan sampling + whole-fit + ``explicit`` wall + 10-frame pooled
+  batches — a whole-shape sphere fit with the wall position imported
+  from the simulation setup;
+* grid sampling + slicing fit + ``from_atoms`` wall + per-frame
+  batches — interface from a 2D density iso-contour, wall from the
+  actual substrate atoms.
+
+:class:`CoupledFit2DAnalyzer` and :class:`CoupledFit3DAnalyzer`
+are the **coupled-fit alternative**. They skip the
+extractor/wall/fitter decomposition and fit a seven-parameter (2D) or
+nine-parameter (3D) hyperbolic-tangent density model directly to the
+binned density. One robust angle per batch; ideal when you have many
+frames per batch and don't need per-frame time resolution.
+
+**Supported geometries**
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-Both methods are capable of analyzing:
+All methods can analyse:
 
-*   **Spherical Droplets**: Standard spherical cap shapes.
-*   **Cylindrical Droplets**: Cylindrical droplets (e.g., water on a nanowire or with periodic boundary conditions), analyzed along the cylinder's axis (x or y).
-
-**Slicing Method**
-^^^^^^^^^^^^^^^^^^
-
-The **Slicing Method** is ideal for analyzing the evolution of the contact angle over time or for symmetric droplets.
-
-*   **Theory**: The droplet is divided into vertical slices along the z-axis.
-*   **Process**: For each slice, the liquid-vapor interface is determined. A geometric model (such as a sphere or cylinder) is then fitted to these interface points.
-*   **Application**: Best for spherical droplets or specific 2D projections where a clear profile can be mathematically fitted.
-
-To accurately define the liquid-vapor interface of the droplet, we employ a vertical slicing strategy along the z-axis. First, a definition of a 2D slicing plane passing through the droplet's geometric center is determined by an azimuthal angle.
-
-Within this plane, we identify the interface coordinates by scanning radially from the geometric center. For a given axis (defined by an altitudinal angle), the local density is measured at discrete intervals.
-A function is then fitted to this density profile to locate the sharp drop in density that marks the limit between the liquid and vapor phases. This operation is repeated across a range of altitudinal angles to generate a cloud of points representing the droplet’s profile on that plane.
-
-To calculate the contact angle, points near the substrate are first excluded to avoid boundary effects. A circle is then fitted to the remaining interface points, and the contact angle is derived from the intersection of this circle with the bottom of the droplet (the substrate).
-Finally, the entire procedure is repeated for multiple azimuthal angles (rotating the slicing plane). This yields a distribution of contact angles, from which a mean contact angle is computed.
-
-
-**Binning Method**
-^^^^^^^^^^^^^^^^^^
+*   **spherical droplets** — standard spherical-cap shapes,
+*   **cylindrical droplets** — cylindrical droplets along the ``x`` or
+    ``y`` axis (e.g. water on a nanowire or a periodic stripe).
 
 .. note::
-    The binning and slicing methods both recenter the droplet per frame, using a periodic-image-aware (circular-mean) construction. This means trajectories where the droplet drifts during the run, or where atoms are wrapped across a periodic boundary, are handled transparently. Producing a pre-recentered trajectory at simulation time is therefore optional, though still convenient for visualization and post-processing:
+    Both methods recenter the droplet per frame using a
+    periodic-image-aware (circular-mean) construction. Trajectories
+    where the droplet drifts during the run, or where atoms wrap across
+    a periodic boundary, are handled transparently. Producing a
+    pre-recentered trajectory at simulation time is optional, though
+    still convenient for visualisation and post-processing:
 
     ``fix recenter group_id INIT INIT NULL``
 
-    Both methods do require that the simulation box be large enough that the droplet does not interact with its periodic image (i.e. its lateral diameter is comfortably below the box length). If that condition is violated, the radial density profile will be physically meaningless regardless of the centering strategy.
+    All methods require the simulation box to be large enough
+    so that the droplet does not interact with its periodic image
+    (i.e. its lateral diameter is comfortably below the box length).
+    If that condition is violated, the radial density profile is
+    physically meaningless regardless of the centering strategy.
 
-The **Binning Method** uses a spatial discretization approach, suitable for averaging over multiple frames to get a smooth density profile.
-
-*   **Theory**: The simulation box is divided into a grid (bins) in the plane of interest (e.g., x-z).
-*   **Process**: The local density of liquid particles is calculated for each bin. The interface is defined by the isodensity contour (where density drops to half the bulk value). The contact angle is derived from the tangent of this contour at the solid surface.
-*   **Application**: Robust for irregular shapes or when high statistical averaging is needed.
-
-3. Visualization
+3. Visualisation
 ----------------
 
-Finally, the results are visualized to validate the analysis.
+Three visualisation classes cover the most common needs:
 
-*   **Profile Plots**: View the fitted geometric shape (circle, ellipse) overlaying the droplet points (as seen in the Slicing method).
-*   **Heatmaps**: For the Binning method, a 2D density heatmap is generated, showing the liquid distribution and the computed interface line.
+* :class:`AngleEvolutionPlotter` — per-batch contact angle vs time,
+  with an optional ``±σ`` band (per-slice scatter for the slicing
+  fitter, bootstrap σ for the whole fitter) and a cumulative running
+  mean overlay.
+* :class:`DensityContourPlotter` — 2D density field with the fitted
+  spherical cap and wall line overlaid; accepts a single batch or a
+  full results object (averaged density), and also collapses 3D
+  results azimuthally onto the same plot.
+* :class:`DropletSlicePlotter` — single-frame snapshot of the droplet
+  with the fitted circle, surface contour, and tangent at the contact
+  point.
 
-Examples of these visualizations can be found in the respective tutorials for each method.
+Examples for each plot live in the :doc:`../tutorials/index` section.
+
+4. Parallelisation and progress reporting
+-----------------------------------------
+
+Every analyzer (:class:`TrajectoryAnalyzer`,
+:class:`CoupledFit2DAnalyzer`, :class:`CoupledFit3DAnalyzer`)
+accepts an ``n_jobs`` argument on :meth:`analyze` for worker-process
+parallelism, plus a ``temporal_aggregator`` constructor argument that
+controls how the requested frame range is partitioned into batches.
+The two interact in three regimes:
+
+* **Per-frame analysis** (``batch_size=1``, the default for
+  :class:`TrajectoryAnalyzer`): each frame is its own batch, so
+  ``n_jobs > 1`` distributes batches over a
+  :class:`multiprocessing.Pool`. This is the right combination for
+  long trajectories where you want a time-resolved angle trace and
+  CPU cores are the limiting resource.
+
+* **Bucketed batches** (``batch_size=N``, ``N > 1``): consecutive
+  groups of ``N`` frames are pooled into batches; ``n_jobs > 1``
+  distributes those batches across workers. Each batch gives one
+  pooled-density fit and ``angle_std`` reports spatial asymmetry of
+  the pooled cloud (see the note on pooled-batch slicing in the
+  :doc:`../tutorials/slicing_method_tuto`).
+
+* **Fully pooled** (``batch_size=-1``, the default for the
+  coupled-fit analyzers): every frame goes into one batch and one
+  fit. Because there's only one unit of work, ``n_jobs`` is silently
+  irrelevant — :meth:`analyze` always runs inline, and passing
+  ``n_jobs > 1`` emits a ``UserWarning`` to flag the wasted
+  expectation. Reach for ``batch_size=-1`` when you want one
+  maximally-noise-reduced angle over a steady-state window.
+
+The :class:`multiprocessing.Pool` uses the ``spawn`` start method, so
+trajectory parsers are reconstructed in each worker from the file
+path captured at :class:`TrajectoryAnalyzer.__init__`. Keep parser
+construction cheap (just a path string and a few light flags) — the
+spawn cost shows up once per worker per :meth:`analyze` call.
+
+Progress is reported in **frames**, not batches, so the tqdm meter
+stays informative regardless of ``batch_size``. Under
+``batch_size=-1`` the meter still updates frame-by-frame while the
+per-frame parse loop runs at the start of the batch; the subsequent
+extract/fit stage on the pooled cloud is opaque to the meter (a
+single long-running computation that the workers can't subdivide).
 
 Troubleshooting
 ---------------
 
-* **NaN angles**: Usually occur when the surface filter removes too many points (empty slice). Adjust ``surface_filter_offset`` (default 2.0) in ``SlicingFrameFitter`` or relax slice width. Ensure enough atoms remain after filtering (>=3) for circle fitting.
+* **NaN angles**: usually mean the surface filter removed too many
+  points (empty slice). Raise the offset on
+  :meth:`SurfaceFitter.slicing` (``surface_filter_offset``) or relax
+  the slicing step. Make sure each slice has ≥3 surviving interface
+  points for the circle fit.
 
-* **Empty outputs / NoneType failures**: Confirm ``delta_cylinder`` is passed for cylindrical models and ``delta_gamma`` for the spherical model. Parser must supply box dimensions for automatic max distance estimation.
+* **Misconfiguration errors at construction**:
+  :class:`TrajectoryAnalyzer` validates the extractor / fitter / wall
+  detector trio in ``__init__`` — a ``ValueError`` at construction
+  catches incompatible configurations before any trajectory I/O
+  happens. Read the message: it names the constraint that was
+  violated.
 
-* **Multiprocessing hangs**: ``SlicingTrajectoryAnalyzer.analyze`` uses the spawn start method; avoid invoking OVITO parsers inside global contexts before multiprocessing starts.
+* **Multiprocessing hangs**: the batched analyzers use the ``spawn``
+  start method. Avoid invoking OVITO parsers at module top level
+  before multiprocessing starts; pass file paths instead and let each
+  worker rebuild its own parser.
 
-* **OVITO ImportError**: Install with the ovito extra or via the Conda command listed above. Verify channel priority and version pin if dependency resolution fails.
+* **OVITO ImportError**: install with the ovito extra or via the Conda
+  command listed in the installation section. Verify channel priority
+  and version pin if dependency resolution fails.
+
+* **Whole-fit angle off by tens of degrees**: pair the whole fitter
+  with :meth:`WallDetector.explicit` or
+  :meth:`WallDetector.from_atoms` rather than
+  :meth:`WallDetector.min_plus_offset` when the difference between
+  the interface-derived baseline and the physical wall is large
+  enough to matter for your droplet's geometry.
