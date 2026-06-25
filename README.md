@@ -8,47 +8,48 @@
 [![License: BSD 3-Clause](https://img.shields.io/badge/License-BSD_3--Clause-blue.svg)](LICENSE)
 [![Documentation](https://img.shields.io/badge/docs-matgenix.github.io-blue)](https://matgenix.github.io/wetting-angle-kit)
 
-wetting-angle-kit parses MD trajectories (LAMMPS dump, XYZ, ASE) and computes the contact angle of a droplet sitting on a planar wall. The package follows the same conceptual recipe every method uses — extract the liquid-vapor interface from atom positions, decide where the wall plane sits, fit a geometric shape, read off the angle from the shape/wall intersection — but exposes each step as a swappable component so users can match the method to their system.
+**wetting-angle-kit** is a Python library for measuring contact angles directly from molecular dynamics trajectories.
 
-## How the methods are built
+It supports multiple interface extraction algorithms, several geometric fitting strategies, explicit or automatic wall detection, and both per-frame and pooled analyses through a fully modular analysis pipeline.
 
-### Interface extraction: how do we turn atoms into a surface?
+Supported trajectory formats include **LAMMPS**, **XYZ**, and **ASE**.
 
-The liquid-vapor interface isn't a sharp surface in an MD simulation — the density drops smoothly over ~1 Å. Two extraction strategies recover a clean set of interface points from the noisy atom cloud:
+<p align="center"> <img src="wetting_angle_kit/docs/images/pipeline_wak_3component.png" width="900"> </p>
 
-The package exposes two orthogonal strategy axes for interface extraction. A `SpaceSampling` decides *where* density is evaluated; a `DensityEstimator` decides *how*. An `InterfaceExtractor` composes one of each.
 
-- **Sampling: `SpaceSampling.rays(...)`** emits a fan of rays from the droplet centre of mass; the interface along each ray is the half-density point of a 1D tanh fit. The fan layout is azimuthal slices in the `(x, z)` plane (for a per-slice fit) or a Fibonacci sphere of directions (for a whole-shape fit).
-- **Sampling: `SpaceSampling.grid(...)`** builds a fixed-cell grid in space; the interface is the iso-density contour at the half-bulk level, traced via marching squares (slicing mode) or marching cubes (whole mode). In slicing mode the grid iterates per slice (per azimuthal angle for spherical droplets, per axial step for cylinder droplets), so the slicing fit sees one `(s, z)` contour per slice and can expose per-slice asymmetry. Closer to the "average over many frames" intuition than ray fans; works well when atom statistics are limited per frame.
-- **Density: `DensityEstimator.gaussian(density_sigma=…)`** is a 3D Gaussian KDE (smooth, no per-cell Poisson noise).
-- **Density: `DensityEstimator.binning(bin_width=…)`** is a 3D top-hat histogram (cheap; bin_width required only for the rays sampling, where it sets the pointwise kernel size).
+## How the methods work
 
-Any sampling × any density is a valid extractor.
+### Interface extraction: turning atoms into a surface
 
-### Surface fitting: what geometric shape do we fit to those points?
+In an MD simulation, the liquid-vapor interface isn't a sharp line — density drops smoothly over about 1 Å. Interface extraction recovers a clean set of interface points from that noisy atom cloud.
 
-- **Slicing fit** — independently fits an algebraic circle in each slice's `(x, z)` plane, then averages the per-slice contact angles. Good when the droplet might be slightly non-spherical: the per-slice scatter naturally reports a `±σ` band.
-- **Whole fit** — fits a single sphere (spherical droplet) or cylinder (cylindrical droplet) to the entire 3D interface shell. Uses the algebraic Taubin method, plus optional bootstrap resampling to put an uncertainty on the recovered angle.
-- **Coupled fit** (joint approach) — a 7-parameter (2D) or 9-parameter (3D) hyperbolic-tangent density model that solves "where is the interface", "where is the wall plane", and "what's the cap geometry" in one nonlinear least-squares fit on a density field. The per-cell density is computed by a pluggable `DensityEstimator` strategy: a top-hat histogram (`DensityEstimator.binning()`, default) or a 3D Gaussian KDE evaluated at the cell centres (`DensityEstimator.gaussian(density_sigma=…)`); the KDE variant trades a small constant cost for a smooth, Poisson-noise-free density. Statistically efficient when you pool many frames per batch.
+It's built from two independent choices: a `SpaceSampling` (*where* to evaluate density) and a `DensityEstimator` (*how* to evaluate it). An `InterfaceExtractor` combines one of each, and any combination is valid.
 
-### Wall detection: where is the wall plane?
+- **`SpaceSampling.rays(...)`** sends a fan of rays out from the droplet's center. The interface point along each ray is the half-density point of a 1D tanh fit. The fan can be azimuthal slices in the `(x, z)` plane, or a Fibonacci sphere of directions for a whole-shape fit.
+- **`SpaceSampling.grid(...)`** builds a fixed grid in space, then traces the half-density contour using marching squares (slicing mode) or marching cubes (whole mode). In slicing mode it iterates per slice, so each slice gets its own `(s, z)` contour, surfacing per-slice asymmetry. This works well when a single frame doesn't have many atoms.
+- **`DensityEstimator.gaussian(density_sigma=…)`** is a smooth 3D Gaussian KDE, with no per-cell noise.
+- **`DensityEstimator.binning(bin_width=…)`** is a cheap 3D histogram. `bin_width` is only required for ray sampling, where it sets the kernel size.
+### Surface fitting: choosing a shape to fit
 
-The contact angle is measured at the cap–wall intersection, so the wall plane has to be located explicitly:
+- **Slicing fit** fits a circle independently in each slice's `(x, z)` plane, then averages the per-slice angles. Good for droplets that aren't perfectly spherical — the spread across slices gives you a natural `±σ`.
+- **Whole fit** fits one sphere (spherical droplets) or cylinder (cylindrical droplets) to the full 3D interface. Uses the Taubin method, with optional bootstrap resampling for an uncertainty estimate.
+- **Coupled fit** solves everything at once: a 7-parameter (2D) or 9-parameter (3D) tanh density model fits the interface, the wall plane, and the cap geometry together in a single nonlinear least-squares fit. Density per cell comes from a `DensityEstimator` — histogram (`binning()`, default) or Gaussian KDE (`gaussian(density_sigma=…)`, smoother, no Poisson noise). Most statistically efficient when you pool many frames into one fit.
+### Wall detection: locating the wall plane
 
-- `min_plus_offset`: derive the wall from the interface itself (lowest interface point + offset). Works for slicing geometries and full-sphere ray fans, where the interface points reach the wall.
-- `from_atoms`: read the actual wall atom positions from the trajectory and place the wall at the mean of the top atomic layer. Most physically faithful when the simulation explicitly contains substrate atoms.
-- `explicit`: caller supplies the wall z directly — useful when the wall position is known a priori from the simulation setup.
+Contact angle is measured where the cap meets the wall, so the wall plane needs to be found:
 
-### Frame batching: per-frame angle or pooled batch?
+- **`min_plus_offset`** — derive the wall from the interface itself (lowest point + offset). Works when interface points actually reach the wall.
+- **`from_atoms`** — read real wall-atom positions from the trajectory, placing the wall at the mean of the top atomic layer. Most physically accurate when the simulation includes substrate atoms.
+- **`explicit`** — you supply the wall's z-position directly, if it's already known from the simulation setup.
+### Frame batching: one angle per frame, or per batch
 
-The `TemporalAggregator` groups trajectory frames into batches before fitting. `batch_size=1` runs the full pipeline once per frame (giving you an angle vs time curve); `batch_size=N` pools `N` frames together and fits one angle per pool (more atoms per fit → less noise, less time resolution); `batch_size=-1` pools everything into a single batch.
+`TemporalAggregator` groups trajectory frames before fitting. `batch_size=1` gives one angle per frame (an angle-vs-time curve). `batch_size=N` pools N frames per fit (less noise, less time resolution). `batch_size=-1` pools every frame into one fit.
 
-## Two top-level entry points
+## Two entry points
 
-1. **`TrajectoryAnalyzer`** — composes the four strategies above (`InterfaceExtractor` × `SurfaceFitter` × `WallDetector` × `TemporalAggregator`). Use it when you want per-frame time resolution or when you want to mix-and-match approaches (e.g. ray-fan extractor + whole-fit + explicit wall + 5-frame batches).
-2. **`CoupledFit2DAnalyzer` / `CoupledFit3DAnalyzer`** — the joint-fit alternative. One robust angle per pooled batch via the hyperbolic-tangent density model. The per-cell density estimator is pluggable (`DensityEstimator.binning()` or `DensityEstimator.gaussian(...)`). Best when you have many frames and don't need per-frame time resolution.
-
-The documentation is available [here](https://matgenix.github.io/wetting-angle-kit), with worked examples and tutorials.
+1. **`TrajectoryAnalyzer`** — combines the four pieces above (`InterfaceExtractor` × `SurfaceFitter` × `WallDetector` × `TemporalAggregator`). Use this for per-frame time resolution, or to mix and match approaches.
+2. **`CoupledFit2DAnalyzer` / `CoupledFit3DAnalyzer`** — the joint-fit shortcut. One angle per pooled batch from the tanh density model. The density estimator is still pluggable (`binning()` or `gaussian(...)`). Best with many frames and no need for per-frame resolution.
+Full docs, with worked examples and tutorials, are [here](https://matgenix.github.io/wetting-angle-kit).
 
 ## Installation
 
@@ -137,7 +138,7 @@ coupled_fit = CoupledFit2DAnalyzer(
         "zi_0": 0.0, "zi_f": 70.0, "bin_width_z": 2.0,
     },
     # Default: histogram density. Swap in `DensityEstimator.gaussian(
-    # density_sigma=2.5)` for a smooth Gaussian-KDE density field —
+    # density_sigma=2.5)` for a smooth Gaussian-KDE density field
     # useful on per-frame batches or sparse systems.
     density_estimator=DensityEstimator.binning(),
 )
