@@ -125,7 +125,7 @@ Two approaches are available to estimate the liquid density field. The first use
 
 Once the interface or density representation has been constructed, contact angles can be determined using different fitting strategies. Geometric fitting can be applied either to the entire droplet, providing an overall estimate of the contact angle, or independently to multiple slices of the droplet, allowing for the detection of asymmetries and transient shape fluctuations. Alternatively, a coupled-fit approach directly fits a hyperbolic-tangent density model to the density field, simultaneously determining the interface geometry and wall position from a single optimization procedure.
 
-![Schematic representation of the composable strategies in wetting-angle-kit to compute contact angle from a MD trajectory.](schema_methods_analysis.pdf){width=80%}
+![Schematic representation of the composable strategies in wetting-angle-kit to compute contact angle from a MD trajectory.](schema_methods_analysis.pdf){width=95%}
 
 Additionally, wetting-angle-kit supports two geometric models commonly used
 in the literature for droplets: spherical and cylindrical [@Scocchi2011] (see Figure 3).
