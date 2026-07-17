@@ -94,7 +94,7 @@ def gather_batch_coords(
     atom_indices: np.ndarray,
     droplet_geometry: DropletGeometry,
     precentered: bool,
-    center_on_com: bool = False,
+    center_on_com: bool = True,
     progress_callback: Callable[[int], None] | None = None,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Pool liquid-atom coordinates across one batch.
@@ -119,12 +119,11 @@ def gather_batch_coords(
     precentered : bool
         If True, skip the circular-mean PBC recentering and use the
         plain arithmetic-mean centre.
-    center_on_com : bool, default False
-        If True, shift each frame's atoms onto its own droplet centre
-        in the lateral ``(x, y)`` plane (``z`` is left in the lab
-        frame). Used by the coupled-fit analyzers, which bin a
-        droplet-centred density; SpaceSampling.rays / SpaceSampling.grid
-        leave it False and read the per-frame centre from ``avg_center``.
+    center_on_com : bool, default True
+        If False, keep the original center (leave it where
+        it is in the simulation box).
+        Otherwise, if True, the droplet is centered on the
+        center of mass of the liquid.
     progress_callback : callable, optional
         Called once with ``1`` after each frame is parsed. Used by
         the inline ``analyze`` path to drive a per-frame tqdm meter
