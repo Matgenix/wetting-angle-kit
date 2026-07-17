@@ -170,6 +170,8 @@ def gather_batch_coords(
         np.concatenate(liquid_chunks, axis=0) if liquid_chunks else np.empty((0, 3))
     )
     avg_center = np.mean(np.stack(centres, axis=0), axis=0) if centres else np.zeros(3)
+    if center_on_com:
+        avg_center = np.array([0.0, 0.0, avg_center[2]])
     return pooled, avg_center
 
 
